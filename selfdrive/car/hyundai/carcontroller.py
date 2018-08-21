@@ -136,13 +136,13 @@ class CarController(object):
           lkas11_byte3 = CamS.lkas11_b3
       # When LKAS Forward is disabled, we generate the entire LKAS message
     else:
-      lkas11_byte0 = self.lanes + 0x2
+      lkas11_byte0 = self.lanes + 0x06
       lkas11_byte1 = 0x00
       lkas11_byte2 = apply_steer_a
       lkas11_byte3 = apply_steer_b
       lkas11_byte4 = (self.idx * 16) + 0x04
       lkas11_byte5 = 0x00
-      lkas11_byte7 = 0x18
+      lkas11_byte7 = 0x02
         
 
 
