@@ -77,9 +77,9 @@ class CarInterface(object):
     ret.steerKf = 0.00008   # full torque for 20 deg at 80mph means 0.00007818594
     ret.steerRateCost = 1.
     stop_and_go = True
-    ret.mass = 1985 + std_cargo
-    ret.wheelbase = 2.78 
-    ret.steerRatio = 15.0
+    ret.mass = 2060 + std_cargo
+    ret.wheelbase = 3.01 
+    ret.steerRatio = 16.5
     ret.steerKpV, ret.steerKiV = [[0.20], [0.007]]
     ret.centerToFront = ret.wheelbase * 0.4
 
@@ -88,7 +88,7 @@ class CarInterface(object):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    ret.minEnableSpeed = -1.
+    ret.minEnableSpeed = 56.
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
