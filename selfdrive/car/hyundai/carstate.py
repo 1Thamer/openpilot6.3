@@ -132,8 +132,8 @@ class CarState(object):
 
     # There is a 2% error on Sorento GT due to slightly larger wheel diameter compared to poverty packs.
     #   Dash assumes about 4% which is excessive. Using 3% to be safe
-    if self.car_fingerprint == CAR.SORENTO:
-      self.v_wheel = self.v_wheel * 1.03 
+    if self.car_fingerprint == CAR.GENESIS:
+      self.v_wheel = self.v_wheel * 1.075 
     self.low_speed_lockout = self.v_wheel < 1.0
 
     # Kalman filter
