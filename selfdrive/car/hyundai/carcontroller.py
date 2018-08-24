@@ -143,6 +143,7 @@ class CarController(object):
       lkas11_byte4 = (self.idx * 16) + 0x04
       lkas11_byte5 = 0x00
       lkas11_byte7 = 0x02
+
         
 
 
