@@ -71,7 +71,7 @@ class CarInterface(object):
     tireStiffnessRear = 90000
 
     ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
-    ret.steerActuatorDelay = 0.2  # Default delay, Prius has larger delay
+    ret.steerActuatorDelay = 0.15  # Default delay, Prius has larger delay
 
     #borrowing a lot from corolla, given similar car size
     ret.steerKf = 0.000078   # full torque for 20 deg at 80mph means 0.00007818594
@@ -88,7 +88,8 @@ class CarInterface(object):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    ret.minEnableSpeed = 56 * CV.KPH_TO_MS
+    ret.minEnableSpeed = -1.
+
 
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for

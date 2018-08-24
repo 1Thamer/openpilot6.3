@@ -59,6 +59,7 @@ SPEED_FACTOR = {
   CAR.STINGER: 1,
 }
 
+
 DBC = {
   CAR.ELANTRA: dbc_dict('kia_sorento_2018', None),
   CAR.GENESIS: dbc_dict('kia_sorento_2018', None),

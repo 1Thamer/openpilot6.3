@@ -30,6 +30,7 @@ def get_can_parser2(CP):
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 
+
 class CamState(object):
   def __init__(self, CP):
     self.CP = CP

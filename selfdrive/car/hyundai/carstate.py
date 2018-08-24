@@ -13,6 +13,7 @@ def parse_gear_shifter(gear, vals):
         return "unknown"
 
     
+
 def get_can_parser(CP):
 
   signals = [
@@ -97,6 +98,7 @@ class CarState(object):
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = self.can_define.dv["GEAR_PACKET"]['GEAR']
 
+
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
 
@@ -139,6 +141,8 @@ class CarState(object):
     self.v_wheel_rl = cp.vl["WHL_SPD11"]['WHL_SPD_RL'] * CV.KPH_TO_MS * speed_factor
     self.v_wheel_rr = cp.vl["WHL_SPD11"]['WHL_SPD_RR'] * CV.KPH_TO_MS * speed_factor
     self.v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
+
+    self.low_speed_lockout = self.v_wheel < 1.0
 
 
     # Kalman filter
