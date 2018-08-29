@@ -145,6 +145,7 @@ class CarInterface(object):
       ret.minEnableSpeed = -1.
     
     else:
+      ret.steerActuatorDelay = 0.1  # Default delay, Prius has larger delay
       #borrowing a lot from corolla, given similar car size
       ret.steerKf = 0.00008   # full torque for 20 deg at 80mph means 0.00007818594
       ret.steerRateCost = 1.
