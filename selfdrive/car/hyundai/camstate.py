@@ -27,7 +27,7 @@ def get_can_parser2(CP):
     ("LKAS12", 10)      # LKAS12 = 10Hz
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 
 class CamState(object):
