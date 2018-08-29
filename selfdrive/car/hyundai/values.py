@@ -52,6 +52,12 @@ LKAS_12 = {
   CAR.STINGER: 1,
 }
 
+SPEED_FACTOR = {
+  CAR.ELANTRA: 1,
+  CAR.GENESIS: 1.075,
+  CAR.SORENTO: 1.03,
+  CAR.STINGER: 1,
+}
 
 DBC = {
   CAR.ELANTRA: dbc_dict('kia_sorento_2018', None),

@@ -1,4 +1,4 @@
-from selfdrive.car.hyundai.values import CAR, DBC
+from selfdrive.car.hyundai.values import CAR, DBC, speed_factor
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from common.kalman.simple_kalman import KF1D
@@ -124,16 +124,19 @@ class CarState(object):
     self.pcm_acc_status = int(self.acc_active)
 
     # calc best v_ego estimate, by averaging two opposite corners
-    self.v_wheel_fl = cp.vl["WHL_SPD11"]['WHL_SPD_FL'] * CV.KPH_TO_MS
-    self.v_wheel_fr = cp.vl["WHL_SPD11"]['WHL_SPD_FR'] * CV.KPH_TO_MS
-    self.v_wheel_rl = cp.vl["WHL_SPD11"]['WHL_SPD_RL'] * CV.KPH_TO_MS
-    self.v_wheel_rr = cp.vl["WHL_SPD11"]['WHL_SPD_RR'] * CV.KPH_TO_MS
+    self.v_wheel_fl = cp.vl["WHL_SPD11"]['WHL_SPD_FL'] * CV.KPH_TO_MS * speed_factor
+
+    self.v_wheel_fr = cp.vl["WHL_SPD11"]['WHL_SPD_FR'] * CV.KPH_TO_MS * speed_factor
+
+    self.v_wheel_rl = cp.vl["WHL_SPD11"]['WHL_SPD_RL'] * CV.KPH_TO_MS * speed_factor
+
+    self.v_wheel_rr = cp.vl["WHL_SPD11"]['WHL_SPD_RR'] * CV.KPH_TO_MS * speed_factor
+
     self.v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
 
-    # There is a 2% error on Sorento GT due to slightly larger wheel diameter compared to poverty packs.
+    
     #   Dash assumes about 4% which is excessive. Using 3% to be safe
-    if self.car_fingerprint == CAR.SORENTO:
-      self.v_wheel = self.v_wheel * 1.03 
+  
     self.low_speed_lockout = self.v_wheel < 1.0
 
     # Kalman filter
