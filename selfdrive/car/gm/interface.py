@@ -194,7 +194,8 @@ class CarInterface(object):
 
     # cruise state
     ret.cruiseState.available = bool(self.CS.main_on)
-    ret.cruiseState.enabled = self.CS.pcm_acc_status != 0
+    cruiseEnabled = self.CS.pcm_acc_status != 0
+    ret.cruiseState.enabled = cruiseEnabled
     ret.cruiseState.standstill = self.CS.pcm_acc_status == 4
 
     ret.leftBlinker = self.CS.left_blinker_on
@@ -228,7 +229,8 @@ class CarInterface(object):
         be.pressed = False
         but = self.CS.prev_cruise_buttons
       if but == CruiseButtons.RES_ACCEL:
-        be.type = 'accelCruise'
+        if not (cruiseEnabled and self.CS.standstill):
+          be.type = 'accelCruise' # Suppress resume button if we're resuming from stop so we don't adjust speed.
       elif but == CruiseButtons.DECEL_SET:
         be.type = 'decelCruise'
       elif but == CruiseButtons.CANCEL:
@@ -323,7 +325,11 @@ class CarInterface(object):
       "chimeRepeated": (CM.LOW_CHIME, -1),
       "chimeContinuous": (CM.LOW_CHIME, -1)}[str(c.hudControl.audibleAlert)]
 
-    self.CC.update(self.sendcan, c.enabled, self.CS, self.frame, \
+    # For Openpilot, "enabled" includes pre-enable.
+    # In GM, PCM faults out if ACC command overlaps user gas.
+    enabled = c.enabled and not self.CS.user_gas_pressed
+
+    self.CC.update(self.sendcan, enabled, self.CS, self.frame, \
       c.actuators,
       hud_v_cruise, c.hudControl.lanesVisible, \
       c.hudControl.leadVisible, \
