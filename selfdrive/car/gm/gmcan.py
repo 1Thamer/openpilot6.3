@@ -60,17 +60,15 @@ def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, at_full_st
 
 def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_full_stop):
 
-  if apply_brake == 0:
-    mode = 0x1
-  else:
+  mode = 0x1
+  if apply_brake > 0:
     mode = 0xa
 
-    if at_full_stop:
-      mode = 0xd
-    # TODO: this is to have GM bringing the car to complete stop,
-    # but currently it conflicts with OP controls, so turned off.
-    #elif near_stop:
-    #  mode = 0xb
+  if near_stop:
+    mode = 0xb
+
+  if at_full_stop:
+    mode = 0xd
 
   brake = (0x1000 - apply_brake) & 0xfff
   checksum = (0x10000 - (mode << 12) - brake - idx) & 0xffff
@@ -84,14 +82,21 @@ def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_f
 
   return packer.make_can_msg("EBCMFrictionBrakeCmd", bus, values)
 
-def create_acc_dashboard_command(bus, acc_engaged, target_speed_ms, lead_car_in_sight):
-  engaged = 0x90 if acc_engaged else 0
-  lead_car = 0x10 if lead_car_in_sight else 0
-  target_speed = int(target_speed_ms * 208) & 0xfff
-  speed_high = target_speed >> 8
-  speed_low = target_speed & 0xff
-  dat = [0x01, 0x00, engaged | speed_high, speed_low, 0x01, lead_car]
-  return [0x370, 0, "".join(map(chr, dat)), bus]
+def create_acc_dashboard_command(packer, bus, acc_engaged, target_speed_kph, lead_car_in_sight):
+  # Not a bit shift, dash can round up based on low 4 bits.
+  target_speed = int(target_speed_kph * 16) & 0xfff
+
+  values = {
+    "ACCAlwaysOne" : 1,
+    "ACCResumeButton" : 0,
+    "ACCSpeedSetpoint" : target_speed,
+    "ACCGapLevel" : 3 * acc_engaged, # 3 "far", 0 "inactive"
+    "ACCCmdActive" : acc_engaged,
+    "ACCAlwaysOne2" : 1,
+    "ACCLeadCar" : lead_car_in_sight
+  }
+
+  return packer.make_can_msg("ASCMActiveCruiseControlStatus", bus, values)
 
 def create_adas_time_status(bus, tt, idx):
   dat = [(tt >> 20) & 0xff, (tt >> 12) & 0xff, (tt >> 4) & 0xff,
