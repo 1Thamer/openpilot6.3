@@ -5,6 +5,14 @@ struct sample_t {
   int max;
 } sample_t_default = {{0}, 0, 0};
 
+// no float support in STM32F2 micros (cortex-m3)
+#ifdef PANDA
+struct lookup_t {
+  float x[3];
+  float y[3];
+};
+#endif
+
 void safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
 int safety_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
 int safety_tx_lin_hook(int lin_num, uint8_t *data, int len);
@@ -19,6 +27,9 @@ int driver_limit_check(int val, int val_last, struct sample_t *val_driver,
   const int MAX, const int MAX_RATE_UP, const int MAX_RATE_DOWN,
   const int MAX_ALLOWANCE, const int DRIVER_FACTOR);
 int rt_rate_limit_check(int val, int val_last, const int MAX_RT_DELTA);
+#ifdef PANDA
+float interpolate(struct lookup_t xy, float x);
+#endif
 
 typedef void (*safety_hook_init)(int16_t param);
 typedef void (*rx_hook)(CAN_FIFOMailBox_TypeDef *to_push);
@@ -39,6 +50,8 @@ typedef struct {
 // This can be set by the safety hooks.
 int controls_allowed = 0;
 
+void safety_cb_enable_all();
+
 // Include the actual safety policies.
 #include "safety/safety_defaults.h"
 #include "safety/safety_honda.h"
@@ -51,6 +64,7 @@ int controls_allowed = 0;
 #include "safety/safety_cadillac.h"
 #include "safety/safety_hyundai.h"
 #include "safety/safety_elm327.h"
+#include "safety/safety_forward.h"
 
 const safety_hooks *current_hooks = &nooutput_hooks;
 
@@ -93,6 +107,7 @@ typedef struct {
 #define SAFETY_TOYOTA_NOLIMITS 0x1336
 #define SAFETY_ALLOUTPUT 0x1337
 #define SAFETY_ELM327 0xE327
+#define SAFETY_FORWARD 0xFA0D
 
 const safety_hook_config safety_hook_registry[] = {
   {SAFETY_NOOUTPUT, &nooutput_hooks},
@@ -109,15 +124,19 @@ const safety_hook_config safety_hook_registry[] = {
 #endif
   {SAFETY_ALLOUTPUT, &alloutput_hooks},
   {SAFETY_ELM327, &elm327_hooks},
+  {SAFETY_FORWARD, &forward_hooks},
 };
 
 #define HOOK_CONFIG_COUNT (sizeof(safety_hook_registry)/sizeof(safety_hook_config))
+
+extern uint16_t current_safety_mode = SAFETY_NOOUTPUT;
 
 int safety_set_mode(uint16_t mode, int16_t param) {
   for (int i = 0; i < HOOK_CONFIG_COUNT; i++) {
     if (safety_hook_registry[i].id == mode) {
       current_hooks = safety_hook_registry[i].hooks;
       if (current_hooks->init) current_hooks->init(param);
+      current_safety_mode = mode;
       return 0;
     }
   }
@@ -204,3 +223,31 @@ int rt_rate_limit_check(int val, int val_last, const int MAX_RT_DELTA) {
   // check for violation
   return (val < lowest_val) || (val > highest_val);
 }
+
+
+#ifdef PANDA
+// interp function that holds extreme values
+float interpolate(struct lookup_t xy, float x) {
+  int size = sizeof(xy.x) / sizeof(xy.x[0]);
+  // x is lower than the first point in the x array. Return the first point
+  if (x <= xy.x[0]) {
+    return xy.y[0];
+
+  } else {
+    // find the index such that (xy.x[i] <= x < xy.x[i+1]) and linearly interp
+    for (int i=0; i < size-1; i++) {
+      if (x < xy.x[i+1]) {
+        float x0 = xy.x[i];
+        float y0 = xy.y[i];
+        float dx = xy.x[i+1] - x0;
+        float dy = xy.y[i+1] - y0;
+        // dx should not be zero as xy.x is supposed ot be monotonic
+        if (dx <= 0.) dx = 0.0001;
+        return dy * (x - x0) / dx + y0;
+      }
+    }
+    // if no such point is found, then x > xy.x[size-1]. Return last point
+    return xy.y[size - 1];
+  }
+}
+#endif
