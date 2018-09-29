@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from selfdrive.car.hyundai.values import DBC
+=======
+from selfdrive.car.hyundai.values import CAR, DBC
+>>>>>>> genesis
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from common.kalman.simple_kalman import KF1D
@@ -15,15 +19,23 @@ def get_can_parser(CP):
     ("WHL_SPD_RR", "WHL_SPD11", 0),
 
     ("YAW_RATE", "ESP12", 0),
+<<<<<<< HEAD
 
     ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
 
+=======
+    
+    ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
+>>>>>>> genesis
     ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
     ("CF_Gway_TSigLHSw", "CGW1", 0),
     ("CF_Gway_TurnSigLh", "CGW1", 0),
     ("CF_Gway_TSigRHSw", "CGW1", 0),
     ("CF_Gway_TurnSigRh", "CGW1", 0),
+<<<<<<< HEAD
     ("CF_Gway_ParkBrakeSw", "CGW1", 0),
+=======
+>>>>>>> genesis
 
     ("BRAKE_ACT", "EMS12", 0),
     ("PV_AV_CAN", "EMS12", 0),
@@ -32,6 +44,7 @@ def get_can_parser(CP):
     ("CYL_PRES", "ESP12", 0),
 
     ("CF_Clu_CruiseSwState", "CLU11", 0),
+<<<<<<< HEAD
     ("CF_Clu_CruiseSwMain" , "CLU11", 0),
     ("CF_Clu_SldMainSW", "CLU11", 0),
     ("CF_Clu_ParityBit1", "CLU11", 0),
@@ -43,14 +56,20 @@ def get_can_parser(CP):
     ("CF_Clu_CluInfo", "CLU11", 0),
     ("CF_Clu_AmpInfo", "CLU11", 0),
     ("CF_Clu_AliveCnt1", "CLU11", 0),
+=======
+    ("CF_Clu_CruiseSwMain", "CLU11", 0),
+>>>>>>> genesis
 
     ("CF_Clu_InhibitD", "CLU15", 0),
     ("CF_Clu_InhibitP", "CLU15", 0),
     ("CF_Clu_InhibitN", "CLU15", 0),
     ("CF_Clu_InhibitR", "CLU15", 0),
 
+<<<<<<< HEAD
     ("CF_Lvr_Gear","LVR12",0),
 
+=======
+>>>>>>> genesis
     ("ACCEnable", "TCS13", 0),
     ("ACC_REQ", "TCS13", 0),
     ("DriverBraking", "TCS13", 0),
@@ -58,7 +77,11 @@ def get_can_parser(CP):
 
     ("ESC_Off_Step", "TCS15", 0),
 
+<<<<<<< HEAD
     ("CF_Lvr_GearInf", "LVR11", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
+=======
+    ("Gear", "AT01", 0),        #Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
+>>>>>>> genesis
 
     ("CR_Mdps_DrvTq", "MDPS11", 0),
 
@@ -69,13 +92,21 @@ def get_can_parser(CP):
     ("CR_Mdps_OutTq", "MDPS12", 0),
 
     ("VSetDis", "SCC11", 0),
+<<<<<<< HEAD
     ("SCCInfoDisplay", "SCC11", 0),
+=======
+>>>>>>> genesis
     ("ACCMode", "SCC12", 1),
 
     ("SAS_Angle", "SAS11", 0),
     ("SAS_Speed", "SAS11", 0),
+<<<<<<< HEAD
   ]
 
+=======
+
+  ]
+>>>>>>> genesis
   checks = [
     # address, frequency
     ("MDPS12", 50),
@@ -83,7 +114,12 @@ def get_can_parser(CP):
     ("TCS15", 10),
     ("TCS13", 50),
     ("CLU11", 50),
+<<<<<<< HEAD
     ("ESP12", 100),
+=======
+    ("CLU15", 10),
+    ("ESP12", 100), 
+>>>>>>> genesis
     ("EMS12", 100),
     ("CGW1", 10),
     ("CGW4", 5),
@@ -95,6 +131,7 @@ def get_can_parser(CP):
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
+<<<<<<< HEAD
 def get_camera_parser(CP):
 
   signals = [
@@ -119,6 +156,8 @@ def get_camera_parser(CP):
   checks = []
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+=======
+>>>>>>> genesis
 
 class CarState(object):
   def __init__(self, CP):
@@ -142,7 +181,11 @@ class CarState(object):
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
 
+<<<<<<< HEAD
   def update(self, cp, cp_cam):
+=======
+  def update(self, cp):
+>>>>>>> genesis
     # copy can_valid
     self.can_valid = cp.can_valid
 
@@ -152,6 +195,7 @@ class CarState(object):
 
     self.door_all_closed = True
     self.seatbelt = cp.vl["CGW1"]['CF_Gway_DrvSeatBeltSw']
+<<<<<<< HEAD
 
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
     self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
@@ -159,6 +203,15 @@ class CarState(object):
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
     self.main_on = True
     self.acc_active = cp.vl["SCC12"]['ACCMode'] != 0
+=======
+    
+    self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
+    self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
+
+    self.park_brake = False
+    self.main_on = True
+    self.acc_active = cp.vl["SCC12"]['ACCMode'] == 1
+>>>>>>> genesis
     self.pcm_acc_status = int(self.acc_active)
 
     # calc best v_ego estimate, by averaging two opposite corners
@@ -168,9 +221,19 @@ class CarState(object):
     self.v_wheel_rr = cp.vl["WHL_SPD11"]['WHL_SPD_RR'] * CV.KPH_TO_MS
     self.v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
 
+<<<<<<< HEAD
     self.low_speed_lockout = self.v_wheel < 1.0
 
     # Kalman filter, even though Hyundai raw wheel speed is heaviliy filtered by default
+=======
+    # There is a 2% error on Sorento GT due to slightly larger wheel diameter compared to poverty packs.
+    #   Dash assumes about 4% which is excessive. Using 3% to be safe
+    if self.car_fingerprint == CAR.GENESIS:
+      self.v_wheel = self.v_wheel * 1.075 
+    self.low_speed_lockout = self.v_wheel < 1.0
+
+    # Kalman filter
+>>>>>>> genesis
     if abs(self.v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
       self.v_ego_x = np.matrix([[self.v_wheel], [0.0]])
 
@@ -178,10 +241,15 @@ class CarState(object):
     v_ego_x = self.v_ego_kf.update(self.v_wheel)
     self.v_ego = float(v_ego_x[0])
     self.a_ego = float(v_ego_x[1])
+<<<<<<< HEAD
     is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
     speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
     self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
     self.standstill = not self.v_wheel > 0.1
+=======
+    self.cruise_set_speed = cp.vl["SCC11"]['VSetDis']
+    self.standstill = not self.v_wheel > 0.001
+>>>>>>> genesis
 
     self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
     self.angle_steers_rate = cp.vl["SAS11"]['SAS_Speed']
@@ -191,6 +259,7 @@ class CarState(object):
     self.left_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
     self.right_blinker_on = cp.vl["CGW1"]['CF_Gway_TSigRHSw']
     self.right_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigRh']
+<<<<<<< HEAD
     self.steer_override = abs(cp.vl["MDPS11"]['CR_Mdps_DrvTq']) > 100.
     self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
     self.steer_error = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail']
@@ -198,6 +267,14 @@ class CarState(object):
     self.steer_torque_driver = cp.vl["MDPS11"]['CR_Mdps_DrvTq']
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
     self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
+=======
+    self.steer_override = abs(cp.vl["MDPS11"]['CR_Mdps_DrvTq']) > 1.0
+    self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
+    self.steer_error = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail']
+    self.brake_error = 0
+    self.steer_torque_driver = cp.vl["MDPS11"]['CR_Mdps_DrvTq'] 
+    self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
+>>>>>>> genesis
 
     self.user_brake = 0
 
@@ -205,6 +282,7 @@ class CarState(object):
     self.brake_lights = bool(self.brake_pressed)
     if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
       self.pedal_gas = 0
+<<<<<<< HEAD
     else:
       self.pedal_gas = cp.vl["EMS12"]['TPS']
     self.car_gas = cp.vl["EMS12"]['TPS']
@@ -237,3 +315,18 @@ class CarState(object):
     # save the entire LKAS11 and CLU11
     self.lkas11 = cp_cam.vl["LKAS11"]
     self.clu11 = cp.vl["CLU11"]
+=======
+    else: 
+      self.pedal_gas = cp.vl["EMS12"]['TPS']
+    self.car_gas = cp.vl["EMS12"]['TPS']
+
+    # Gear Selecton - This should be compatible with all Kia/Hyundai with Auto's
+    if cp.vl["CLU15"]["CF_Clu_InhibitD"] == 1:
+      self.gear_shifter = "drive"
+    elif cp.vl["CLU15"]["CF_Clu_InhibitN"] == 1:
+      self.gear_shifter = "neutral"
+    elif cp.vl["CLU15"]["CF_Clu_InhibitP"] == 1:
+      self.gear_shifter = "park"
+    elif cp.vl["CLU15"]["CF_Clu_InhibitR"] == 1:
+      self.gear_shifter = "reverse"
+>>>>>>> genesis
