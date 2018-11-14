@@ -11,6 +11,10 @@ const int HYUNDAI_DRIVER_TORQUE_FACTOR = 100;
 const int HYUNDAI_MAX_RT_DELTA = 128;
 const int32_t HYUNDAI_RT_INTERVAL = 250000;
 
+int hyundai_camera_detected = 0;
+int hyundai_camera_bus = 0;
+int hyundai_giraffe_switch_2 = 0;          // is giraffe switch 2 high?
+int hyundai_cruise_engaged_last = 0;
 int hyundai_rt_torque_last = 0;
 int hyundai_desired_torque_last = 0;
 uint32_t hyundai_ts_last = 0;
@@ -33,18 +37,17 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   }
   
   // LKA STEER: safety check
-  if (addr == 0x340) {
-    int rdlr = to_send->RDLR;
+  if (addr == 832) {
+    int desired_torque = ((to_send->RDLR >> 16) & 0x7ff) - 1024;
     //  Torque Request starts at bit 16 for 11 bits
-    int desired_torque = ((rdlr >> 24 & 0x7) << 8) + (rdlr >> 16 & 0xFF);
+
     uint32_t ts = TIM2->CNT;
     int violation = 0;
 
     if (controls_allowed) {
 
       // *** global torque limit check ***
-      violation |= max_limit_check(desired_torque, HYUNDAI_STEER_ZERO + HYUNDAI_MAX_STEER,
-        HYUNDAI_STEER_ZERO - HYUNDAI_MAX_STEER);
+      violation |= max_limit_check(desired_torque, HYUNDAI_MAX_STEER, -HYUNDAI_MAX_STEER);
 
       // *** torque rate limit check ***
       violation |= driver_limit_check(desired_torque, hyundai_desired_torque_last, &hyundai_torque_driver,
@@ -73,32 +76,26 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   return true;
 }
 
-static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
-  uint32_t addr;
-  if (to_push->RIR & 4) {
-    addr = to_push->RIR >> 3;
-  } else {
-    addr = to_push->RIR >> 21;
-  }
-  
-  
-  // Driver Override - Message 0x394, bits 45 to 46
-  if (addr == 0x394) {
-    int driver_override = ((to_push->RDHR >> 13) & 0x3);
-    if (driver_override > 0) {
-      controls_allowed = 0;
-    } else {
-      controls_allowed = 1;
-    }
-  }
-}
+
 
 static int hyundai_tx_lin_hook(int lin_num, uint8_t *data, int len) {
   return true;
 }
 
 static int hyundai_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+  // forward cam to ccan and viceversa, except lkas cmd
+  if ((bus_num == 0 || bus_num == hyundai_camera_bus) && hyundai_giraffe_switch_2) {
+
+    if ((to_fwd->RIR>>21) == 832 && bus_num == hyundai_camera_bus) return -1;
+    if (bus_num == 0) return hyundai_camera_bus;
+    if (bus_num == hyundai_camera_bus) return 0;
+  }
   return -1;
+}
+
+static void hyundai_init(int16_t param) {
+  controls_allowed = 0;
+  hyundai_giraffe_switch_2 = 0;
 }
 
 const safety_hooks hyundai_hooks = {
