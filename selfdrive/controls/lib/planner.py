@@ -151,9 +151,8 @@ class Planner(object):
     lead_1 = live20.live20.leadOne
     lead_2 = live20.live20.leadTwo
 
-
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
-    following = lead_1.status and 4.0 < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
+    following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
 
     v_speedlimit = NO_CURVATURE_SPEED
     v_curvature = NO_CURVATURE_SPEED
@@ -244,7 +243,7 @@ class Planner(object):
 
     blinkers = CS.carState.leftBlinker or CS.carState.rightBlinker
     fcw = self.fcw_checker.update(self.mpc1.mpc_solution, cur_time, v_ego, CS.carState.aEgo,
-                                  4.0, lead_1.vLead, lead_1.aLeadK,
+                                  lead_1.dRel, lead_1.vLead, lead_1.aLeadK,
                                   lead_1.yRel, lead_1.vLat,
                                   lead_1.fcw, blinkers) and not CS.carState.brakePressed
     if fcw:
