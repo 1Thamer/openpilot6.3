@@ -70,6 +70,7 @@ class RadarInterface(object):
 
     for ii in updated_messages:
       if ii in RADAR_A_MSGS:
+        cpt = self.rcp.vl[ii]
         if phantom:
           kegman.start_thread(5)  # keep read thread alive with 5 second intervals
           if ii not in self.pts or cpt['NEW_TRACK']:
@@ -84,7 +85,6 @@ class RadarInterface(object):
           self.pts[ii].yvRel = float('nan')
           self.pts[ii].measured = bool(cpt['VALID'])
           break
-        cpt = self.rcp.vl[ii]
 
         if cpt['LONG_DIST'] >=255 or cpt['NEW_TRACK']:
           self.valid_cnt[ii] = 0    # reset counter
