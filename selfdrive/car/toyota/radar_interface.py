@@ -86,7 +86,7 @@ class RadarInterface(object):
             self.pts[ii] = car.RadarState.RadarPoint.new_message()
             self.pts[ii].trackId = self.track_id
             self.track_id += 1
-          self.pts[ii].dRel = cpt['LONG_DIST']  # from front of car
+          self.pts[ii].dRel = 4.0  # from front of car
           self.pts[ii].yRel = -cpt['LAT_DIST']  # in car frame's y axis, left is positive
           self.pts[ii].vRel = cpt['REL_SPEED']
           self.pts[ii].aRel = float('nan')
