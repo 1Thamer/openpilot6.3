@@ -6,6 +6,13 @@ import time
 from selfdrive.swaglog import cloudlog
 from common.basedir import BASEDIR
 
+thread_counter = 0  # don't change
+thread_timeout = 5.0  # minutes to wait before stopping thread. reading or writing will reset the counter
+thread_interval = 30.0  # seconds to sleep between checks
+thread_started = False
+kegman_file = "/data/kegman.json"
+variables_written = []
+
 def read_config():
   default_config = {"cameraOffset": "0.06", "lastTrMode": "1", "battChargeMin": "90", "battChargeMax": "95",
                     "wheelTouchSeconds": "1800", "battPercOff": "25", "carVoltageMinEonShutdown": "11200",
@@ -54,7 +61,9 @@ def read_config():
     config = default_config
   return config
 
-def kegman_thread():  # read and write thread; now merges changes from file and variable
+conf = read_config()
+
+def kegman_thread(t_i=thread_interval):  # read and write thread; now merges changes from file and variable
   global conf
   global thread_counter
   global variables_written
@@ -63,7 +72,7 @@ def kegman_thread():  # read and write thread; now merges changes from file and 
   try:
     while True:
       thread_counter += 1
-      time.sleep(thread_interval)  # every n seconds check for conf change
+      time.sleep(t_i)  # every n seconds check for conf change
       with open(kegman_file, "r") as f:
         conf_tmp = json.load(f)
       if conf != last_conf or conf != conf_tmp:  # if either variable or file has changed
@@ -113,9 +122,9 @@ def save(data):  # allows for writing multiple key/value pairs
     variables_written.append(key)
   conf.update(data)
 
-def get(key_s=""):  # can get multiple keys from a list
+def get(key_s=None):  # can get multiple keys from a list
   global thread_counter
-  if key_s == "":  # get all
+  if key_s == None:  # get all
     return conf
   else:
     thread_counter = 0
@@ -126,10 +135,9 @@ def get(key_s=""):  # can get multiple keys from a list
     else:
       return None
 
-thread_counter = 0  # don't change
-thread_timeout = 5.0  # minutes to wait before stopping thread. reading or writing will reset the counter
-thread_interval = 30.0  # seconds to sleep between checks
-thread_started = False
-kegman_file = "/data/kegman.json"
-variables_written = []
-conf = read_config()
+def start_thread(t_i=thread_interval):  # call if file needs to read live updates from kegman.json but not write
+  global thread_started
+  if not thread_started and BASEDIR == "/data/openpilot":
+    threading.Thread(target=kegman_thread, args=(t_i,)).start()  # automatically start write thread if file needs it
+    thread_started = True
+    print("Starting thread!")
