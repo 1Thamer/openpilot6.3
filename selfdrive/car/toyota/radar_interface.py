@@ -43,6 +43,7 @@ class RadarInterface(object):
 
     context = zmq.Context()
     self.logcan = messaging.sub_sock(context, service_list['can'].port)
+    self.prev_messages = set()
 
   def update(self):
 
@@ -54,11 +55,22 @@ class RadarInterface(object):
 
     canMonoTimes = []
     updated_messages = set()
-    while 1:
-      tm = int(sec_since_boot() * 1e9)
-      updated_messages.update(self.rcp.update(tm, True))
-      if RADAR_B_MSGS[-1] in updated_messages:
-        break
+    if phantom:
+      if self.prev_messages == set():
+        while 1:
+          tm = int(sec_since_boot() * 1e9)
+          updated_messages.update(self.rcp.update(tm, True))
+          if RADAR_B_MSGS[-1] in updated_messages:
+            self.prev_messages = updated_messages
+            break
+      else:
+        updated_messages = self.prev_messages
+    else:
+      while 1:
+        tm = int(sec_since_boot() * 1e9)
+        updated_messages.update(self.rcp.update(tm, True))
+        if RADAR_B_MSGS[-1] in updated_messages:
+          break
 
     errors = []
     if not self.rcp.can_valid:

@@ -113,14 +113,14 @@ def radard_thread(gctx=None):
 
   rk = Ratekeeper(rate, print_delay_threshold=np.inf)
   while 1:
-    kegman.start_thread(5)
+    kegman.start_thread(5)  # keeps the read thread alive
     rr = RI.update()
 
     ar_pts = {}
     if phantom:
       tmp_dRel = kegman.get("dRel")
       for pt in rr.points:
-        ar_pts[pt.trackId] = [4.0 + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
+        ar_pts[pt.trackId] = [(tmp_dRel if tmp_dRel is not None else 4.0) + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
     else:
       for pt in rr.points:
         ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
