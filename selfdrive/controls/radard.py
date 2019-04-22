@@ -18,6 +18,9 @@ from cereal import car
 from common.params import Params
 from common.realtime import set_realtime_priority, Ratekeeper
 from common.kalman.ekf import EKF, SimpleSensor
+import selfdrive.kegman_conf as kegman
+
+phantom = True
 
 DEBUG = False
 
@@ -110,11 +113,17 @@ def radard_thread(gctx=None):
 
   rk = Ratekeeper(rate, print_delay_threshold=np.inf)
   while 1:
+    kegman.start_thread(5)
     rr = RI.update()
 
     ar_pts = {}
-    for pt in rr.points:
-      ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
+    if phantom:
+      tmp_dRel = kegman.get("dRel")
+      for pt in rr.points:
+        ar_pts[pt.trackId] = [4.0 + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
+    else:
+      for pt in rr.points:
+        ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
 
     # receive the live100s
     l100 = None

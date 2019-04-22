@@ -8,10 +8,8 @@ from common.realtime import sec_since_boot
 from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 from selfdrive.car.toyota.values import NO_DSU_CAR
-import selfdrive.kegman_conf as kegman
 
 phantom = True
-
 RADAR_A_MSGS = list(range(0x210, 0x220))
 RADAR_B_MSGS = list(range(0x220, 0x230))
 
@@ -71,20 +69,6 @@ class RadarInterface(object):
     for ii in updated_messages:
       if ii in RADAR_A_MSGS:
         cpt = self.rcp.vl[ii]
-        if phantom:
-          kegman.start_thread(5)  # keep read thread alive with 5 second intervals
-          if ii not in self.pts or cpt['NEW_TRACK']:
-            self.pts[ii] = car.RadarState.RadarPoint.new_message()
-            self.pts[ii].trackId = self.track_id
-            self.track_id += 1
-          tmp_dRel = kegman.get("dRel")
-          self.pts[ii].dRel = tmp_dRel if tmp_dRel is not None else 4.0  # from front of car
-          self.pts[ii].yRel = -cpt['LAT_DIST']  # in car frame's y axis, left is positive
-          self.pts[ii].vRel = 0.0
-          self.pts[ii].aRel = float('nan')
-          self.pts[ii].yvRel = float('nan')
-          self.pts[ii].measured = bool(cpt['VALID'])
-          break
 
         if cpt['LONG_DIST'] >=255 or cpt['NEW_TRACK']:
           self.valid_cnt[ii] = 0    # reset counter
@@ -102,7 +86,10 @@ class RadarInterface(object):
             self.pts[ii] = car.RadarState.RadarPoint.new_message()
             self.pts[ii].trackId = self.track_id
             self.track_id += 1
-          self.pts[ii].dRel = cpt['LONG_DIST']  # from front of car
+          if phantom:
+            self.pts[ii].dRel = 4  # from front of car
+          else:
+            self.pts[ii].dRel = cpt['LONG_DIST']  # from front of car
           self.pts[ii].yRel = -cpt['LAT_DIST']  # in car frame's y axis, left is positive
           self.pts[ii].vRel = cpt['REL_SPEED']
           self.pts[ii].aRel = float('nan')
