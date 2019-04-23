@@ -189,7 +189,7 @@ class CarController(object):
     phantom.read_phantom_file()
     # steer torque
     if phantom.data["status"]:
-      if abs(CS.angle_steers - phantom.data["angle"]) > 2.5:
+      if abs(CS.angle_steers - phantom.data["angle"]) > 2:
         if CS.angle_steers > phantom.data["angle"]:
           apply_steer = int(round(.66 * SteerLimitParams.STEER_MAX))
         else:
