@@ -194,6 +194,8 @@ class CarController(object):
           apply_steer = int(round(.66 * SteerLimitParams.STEER_MAX))
         else:
           apply_steer = int(round(-.66 * SteerLimitParams.STEER_MAX))
+      else:
+        apply_steer = 0
     else:
       apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
 
