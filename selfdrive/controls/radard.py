@@ -18,9 +18,9 @@ from cereal import car
 from common.params import Params
 from common.realtime import set_realtime_priority, Ratekeeper
 from common.kalman.ekf import EKF, SimpleSensor
-import selfdrive.kegman_conf as kegman
+from selfdrive.phantom import Phantom
 
-phantom = True
+phantom = Phantom()
 
 DEBUG = False
 
@@ -113,17 +113,7 @@ def radard_thread(gctx=None):
 
   rk = Ratekeeper(rate, print_delay_threshold=np.inf)
   while 1:
-    kegman.start_thread(5)  # keeps the read thread alive
     rr = RI.update()
-
-    ar_pts = {}
-    if phantom:
-      tmp_dRel = kegman.get("dRel")
-      for pt in rr.points:
-        ar_pts[pt.trackId] = [(tmp_dRel if tmp_dRel is not None else 4.0) + RDR_TO_LDR, 0.0, pt.vRel, pt.measured]
-    else:
-      for pt in rr.points:
-        ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
 
     # receive the live100s
     l100 = None
@@ -145,12 +135,21 @@ def radard_thread(gctx=None):
       steer_override = l100.live100.steerOverride
 
       v_ego_hist_v.append(v_ego)
-      v_ego_hist_t.append(float(rk.frame)/rate)
+      v_ego_hist_t.append(float(rk.frame) / rate)
 
       last_l100_ts = l100.logMonoTime
 
     if v_ego is None:
       continue
+
+    phantom.read_phantom_file()  # update from file from phone
+    ar_pts = {}
+    if phantom.data["status"]:
+      for pt in rr.points:
+        ar_pts[pt.trackId] = [4.0 + RDR_TO_LDR, 0.0, (phantom.data["speed"] - v_ego), pt.measured]
+    else:
+      for pt in rr.points:
+        ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
 
     if md is not None:
       last_md_ts = md.logMonoTime
