@@ -120,7 +120,7 @@ def radard_thread(gctx=None):
     if phantom:
       tmp_dRel = kegman.get("dRel")
       for pt in rr.points:
-        ar_pts[pt.trackId] = [(tmp_dRel if tmp_dRel is not None else 4.0) + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
+        ar_pts[pt.trackId] = [(tmp_dRel if tmp_dRel is not None else 4.0) + RDR_TO_LDR, 0.0, pt.vRel, pt.measured]
     else:
       for pt in rr.points:
         ar_pts[pt.trackId] = [pt.dRel + RDR_TO_LDR, pt.yRel, pt.vRel, pt.measured]
