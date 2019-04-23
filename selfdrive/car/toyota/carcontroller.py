@@ -191,9 +191,9 @@ class CarController(object):
     if phantom.data["status"]:
       if abs(CS.angle_steers - phantom.data["angle"]) > 2:
         if CS.angle_steers > phantom.data["angle"]:
-          apply_steer = int(round(.66 * SteerLimitParams.STEER_MAX))
+          apply_steer = int(round(.2 * SteerLimitParams.STEER_MAX))
         else:
-          apply_steer = int(round(-.66 * SteerLimitParams.STEER_MAX))
+          apply_steer = int(round(-.2 * SteerLimitParams.STEER_MAX))
       else:
         apply_steer = 0
     else:
