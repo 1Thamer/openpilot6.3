@@ -149,6 +149,8 @@ class CarController(object):
     self.ALCA = ALCAController(self,True,False)  # Enabled True and SteerByAngle only False
 
     self.packer = CANPacker(dbc_name)
+    self.prev_phantom_angle = None
+    self.frames_since_new_angle = 0
 
   def update(self, sendcan, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera, left_line, right_line, lead, leftLane_Depart, rightLane_Depart):
@@ -189,11 +191,20 @@ class CarController(object):
     phantom.read_phantom_file()
     # steer torque
     if phantom.data["status"]:
+      x = [0, 50, 100, 150, 200]
+      y = [.2, .4, .6, .4, .2]
+      if phantom.data["angle"] != self.prev_phantom_angle:
+        self.prev_phantom_angle = phantom.data["angle"]
+        self.frames_since_new_angle = 0
+      else:
+        self.frames_since_new_angle += 1
+      if self.frames_since_new_angle > 200:
+        self.frames_since_new_angle = 0
       if abs(CS.angle_steers - phantom.data["angle"]) > 2:
         if CS.angle_steers > phantom.data["angle"]:
-          apply_steer = int(round(.2 * SteerLimitParams.STEER_MAX))
+          apply_steer = int(round(interp(self.frames_since_new_angle, x, y) * SteerLimitParams.STEER_MAX))
         else:
-          apply_steer = int(round(-.2 * SteerLimitParams.STEER_MAX))
+          apply_steer = int(round(-interp(self.frames_since_new_angle, x, y) * SteerLimitParams.STEER_MAX))
       else:
         apply_steer = 0
     else:
