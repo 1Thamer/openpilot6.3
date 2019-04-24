@@ -9,9 +9,6 @@ from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT
 from selfdrive.controls.lib.model_parser import ModelParser
 import selfdrive.messaging as messaging
-from selfdrive.phantom import Phantom
-
-phantom = Phantom()
 
 
 def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
@@ -87,11 +84,8 @@ class PathPlanner(object):
       rate_desired = 0.0
 
     self.cur_state[0].delta = delta_desired
-    phantom.read_phantom_file()
-    if phantom.data["status"]:
-      self.angle_steers_des_mpc = phantom.data["angle"]
-    else:
-      self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.sR) + angle_offset_bias)
+
+    self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.sR) + angle_offset_bias)
 
 
     #  Check for infeasable MPC solution
