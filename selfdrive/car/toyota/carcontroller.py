@@ -200,7 +200,7 @@ class CarController(object):
         self.frames_since_new_angle += 1
       if self.frames_since_new_angle > 200:
         self.frames_since_new_angle = 0
-      if abs(CS.angle_steers - phantom.data["angle"]) > 2:
+      if abs(CS.angle_steers - phantom.data["angle"]) > 1:
         if CS.angle_steers > phantom.data["angle"]:
           apply_steer = int(round(interp(self.frames_since_new_angle, x, y) * SteerLimitParams.STEER_MAX))
         else:
