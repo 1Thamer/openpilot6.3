@@ -192,7 +192,7 @@ class CarController(object):
     # steer torque
     if phantom.data["status"]:
       x = [0, 50, 100, 150, 200]
-      y = [.2, .4, .6, .4, .2]
+      y = [.45, .6, 1.0, .6, .45]
       if phantom.data["angle"] != self.prev_phantom_angle:
         self.prev_phantom_angle = phantom.data["angle"]
         self.frames_since_new_angle = 0

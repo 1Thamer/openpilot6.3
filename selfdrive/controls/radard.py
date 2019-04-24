@@ -146,7 +146,7 @@ def radard_thread(gctx=None):
     ar_pts = {}
     if phantom.data["status"]:
       for pt in rr.points:
-        if phantom.data["speed"] == 0:
+        if phantom.data["speed"] == 0.0:
           ar_pts[pt.trackId] = [4.0 + RDR_TO_LDR, 0.0, phantom.data["speed"], pt.measured]
         else:
           ar_pts[pt.trackId] = [12.0 + RDR_TO_LDR, 0.0, (phantom.data["speed"] - v_ego), pt.measured]
