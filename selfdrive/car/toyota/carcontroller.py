@@ -188,27 +188,9 @@ class CarController(object):
     alca_angle, alca_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
     #apply_steer = int(round(alca_steer * STEER_MAX))
 
-    phantom.read_phantom_file()
+
     # steer torque
-    if phantom.data["status"]:
-      x = [0, 25, 50, 75, 100]
-      y = [.66, .8, 1.0, .8, .66]
-      if phantom.data["angle"] != self.prev_phantom_angle:
-        self.prev_phantom_angle = phantom.data["angle"]
-        self.frames_since_new_angle = 0
-      else:
-        self.frames_since_new_angle += 1
-      if self.frames_since_new_angle > 200:
-        self.frames_since_new_angle = 0
-      if abs(CS.angle_steers - phantom.data["angle"]) > 1:
-        if CS.angle_steers > phantom.data["angle"]:
-          apply_steer = int(round(interp(self.frames_since_new_angle, x, y) * SteerLimitParams.STEER_MAX))
-        else:
-          apply_steer = int(round(-interp(self.frames_since_new_angle, x, y) * SteerLimitParams.STEER_MAX))
-      else:
-        apply_steer = 0
-    else:
-      apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
+    apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
 
     apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
 
