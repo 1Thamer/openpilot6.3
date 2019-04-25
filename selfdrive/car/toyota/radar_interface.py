@@ -9,6 +9,7 @@ from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 from selfdrive.car.toyota.values import NO_DSU_CAR
 
+
 RADAR_A_MSGS = list(range(0x210, 0x220))
 RADAR_B_MSGS = list(range(0x220, 0x230))
 
