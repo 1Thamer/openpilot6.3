@@ -8,7 +8,7 @@ from selfdrive.controls.lib.longitudinal_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 from scipy import interpolate
 import math
-import json
+from selfdrive.phantom import Phantom
 
 
 class LongitudinalMpc(object):
@@ -32,7 +32,11 @@ class LongitudinalMpc(object):
     self.relative_velocity = None
     self.relative_distance = None
     self.stop_and_go = False
-    #self.dict_builder = {}
+    if mpc_id == 2:
+      self.phantom = Phantom()
+    else:
+      self.phantom = None
+    self.is_phantom = False
 
   def save_car_data(self, self_vel):
     if len(self.dynamic_follow_dict["self_vels"]) >= 200:  # 100hz, so 200 items is 2 seconds
@@ -222,26 +226,40 @@ class LongitudinalMpc(object):
     return cost
 
   def update(self, CS, lead, v_cruise_setpoint):
+    if self.mpc_id == 2:  # if lead 2
+      self.phantom.update()
+      self.is_phantom = self.phantom.data["status"]
+    else:
+      self.is_phantom = False
+
     v_ego = CS.carState.vEgo
 
-    try:
-      self.relative_velocity = lead.vRel
-      self.relative_distance = lead.dRel
-    except: #if no lead car
-      self.relative_velocity = None
-      self.relative_distance = None
+    if self.is_phantom:
+      self.relative_velocity = self.phantom.data["speed"] - v_ego
+      self.relative_distance = 16.7
+    else:
+      try:
+        self.relative_velocity = lead.vRel
+        self.relative_distance = lead.dRel
+      except: #if no lead car
+        self.relative_velocity = None
+        self.relative_distance = None
 
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
 
     if lead is not None and lead.status:
-      x_lead = max(0, lead.dRel - 1)
-      v_lead = max(0.0, lead.vLead)
-      a_lead = lead.aLeadK
-
-      if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
-        v_lead = 0.0
-        a_lead = 0.0
+      if self.is_phantom:
+        x_lead = max(0, self.relative_distance - 1)
+        v_lead = max(0.0, self.phantom.data["speed"])
+        a_lead = 0
+      else:
+        x_lead = max(0, lead.dRel - 1)
+        v_lead = max(0.0, lead.vLead)
+        a_lead = lead.aLeadK
+        if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
+          v_lead = 0.0
+          a_lead = 0.0
 
       self.a_lead_tau = max(lead.aLeadTau, (a_lead ** 2 * math.pi) / (2 * (v_lead + 0.01) ** 2))
       self.new_lead = False
@@ -264,9 +282,6 @@ class LongitudinalMpc(object):
     # Calculate mpc
     t = sec_since_boot()
     TR = self.calculate_tr(v_ego, CS.carState)
-    '''with open("/data/op-tools-data/dynamic-follow.json", "w") as d_f:
-      d_f.write(json.dumps(self.dict_builder))'''
-    #self.dict_builder = {}
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
     duration = int((sec_since_boot() - t) * 1e9)
     self.send_mpc_solution(n_its, duration)

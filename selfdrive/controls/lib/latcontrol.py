@@ -36,7 +36,7 @@ class LatControl(object):
     self.previous_integral = self.pid.i
 
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
-    phantom.read_phantom_file()
+    phantom.update()
     if phantom.data["status"]:
       v_ego += 8.9408  # add 20 mph to real speed, this will allow the pid system to apply enough torque at 5 or lower mph
     if v_ego < 0.3 or not active:

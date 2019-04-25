@@ -3,10 +3,10 @@ import json
 class Phantom():
   def __init__(self):
     self.data = None
-    self.read_phantom_file()
+    self.update()
     self.phantom_file = "/data/phantom.json"
 
-  def read_phantom_file(self):
+  def update(self):
     try:
       with open(self.phantom_file, "r") as p_f:
         self.data = json.load(p_f)
