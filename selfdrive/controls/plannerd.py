@@ -67,7 +67,6 @@ def plannerd_thread():
         live_map_data = messaging.recv_one(socket)
       elif socket is live20_sock:
         live20 = messaging.recv_one(socket)
-        live20.
         PL.update(car_state, CP, VM, PP, live20, live100, model, live_map_data)
 
 
