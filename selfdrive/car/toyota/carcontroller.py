@@ -10,6 +10,8 @@ from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
 from selfdrive.car.toyota.values import ECU, STATIC_MSGS
 from selfdrive.can.packer import CANPacker
 from selfdrive.car.modules.ALCA_module import ALCAController
+from selfdrive.phantom import Phantom
+phantom = Phantom()
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
@@ -147,6 +149,8 @@ class CarController(object):
     self.ALCA = ALCAController(self,True,False)  # Enabled True and SteerByAngle only False
 
     self.packer = CANPacker(dbc_name)
+    #self.prev_phantom_angle = None
+    #self.frames_since_new_angle = 0
 
   def update(self, sendcan, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera, left_line, right_line, lead, leftLane_Depart, rightLane_Depart):
@@ -185,7 +189,11 @@ class CarController(object):
     #apply_steer = int(round(alca_steer * STEER_MAX))
 
     # steer torque
-    apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
+    phantom.update()
+    if phantom.data["status"]:
+      apply_steer = int(round(phantom.data["angle"] * SteerLimitParams.STEER_MAX))
+    else:
+      apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
 
     apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
 
