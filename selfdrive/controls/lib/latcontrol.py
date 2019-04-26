@@ -38,7 +38,7 @@ class LatControl(object):
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
     phantom.update()
     if phantom.data["status"]:
-      v_ego += 8.9408  # add 20 mph to real speed, this will allow the pid system to apply enough torque at 5 or lower mph
+      v_ego += 4.4704  # add 10 mph to real speed, should trick the pid loop
     if v_ego < 0.3 or not active:
       output_steer = 0.0
       self.pid.reset()
@@ -49,7 +49,7 @@ class LatControl(object):
       #dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
       #self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
       if phantom.data["status"]:
-        self.angle_steers_des = float(phantom.data["angle"])  # get from MPC/PathPlanner
+        self.angle_steers_des = float(phantom.data["angle"]) * 1.5  # get from MPC/PathPlanner
       else:
         self.angle_steers_des = path_plan.angleSteers
 

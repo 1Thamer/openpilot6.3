@@ -33,6 +33,8 @@ class LongitudinalMpc(object):
     self.relative_distance = None
     self.stop_and_go = False
     self.phantom = Phantom()
+    self.prev_phantom_speed = 0
+    self.frames_since_stopped = 0
 
   def save_car_data(self, self_vel):
     if len(self.dynamic_follow_dict["self_vels"]) >= 200:  # 100hz, so 200 items is 2 seconds
@@ -250,7 +252,19 @@ class LongitudinalMpc(object):
 
     if self.phantom.data["status"]:
       x_lead = max(0, self.relative_distance - 1)
-      v_lead = max(0.0, self.phantom.data["speed"])
+      if self.phantom.data["speed"] == 0 and self.prev_phantom_speed != 0:
+        if self.frames_since_stopped < 50:
+          self.frames_since_stopped += 1
+          v_lead = self.prev_phantom_speed / 2.0
+        else:
+          self.frames_since_stopped = 0
+          self.prev_phantom_speed = 0.0
+          v_lead = self.phantom.data["speed"]
+      else:
+        self.frames_since_stopped = 0
+        v_lead = self.phantom.data["speed"]
+        self.prev_phantom_speed = self.phantom.data["speed"]
+
       a_lead = 0.0
       self.a_lead_tau = max(0, (a_lead ** 2 * math.pi) / (2 * (v_lead + 0.01) ** 2))
       self.new_lead = False
