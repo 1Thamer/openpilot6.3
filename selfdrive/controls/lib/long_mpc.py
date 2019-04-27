@@ -253,18 +253,18 @@ class LongitudinalMpc(object):
     if self.phantom.data["status"]:
       x_lead = self.relative_distance
       if self.phantom.data["speed"] == 0 and self.prev_phantom_speed != 0:
-        if self.frames_since_stopped < 150:
+        if self.frames_since_stopped < 100:
           self.frames_since_stopped += 1
-          stop_x = [0, 150]  # smooth deceleration
-          stop_y = [self.prev_phantom_speed, 0.0]
+          stop_x = [0, 100]  # smooth deceleration
+          stop_y = [self.prev_phantom_speed - v_ego, -v_ego]
           v_lead = interp(self.frames_since_stopped, stop_x, stop_y)
         else:
           self.frames_since_stopped = 0
           self.prev_phantom_speed = 0.0
-          v_lead = self.phantom.data["speed"]
+          v_lead = self.phantom.data["speed"] - v_ego
       else:
         self.frames_since_stopped = 0
-        v_lead = self.phantom.data["speed"]
+        v_lead = self.phantom.data["speed"] - v_ego
         self.prev_phantom_speed = self.phantom.data["speed"]
 
       a_lead = 0.0
