@@ -253,9 +253,9 @@ class LongitudinalMpc(object):
     if self.phantom.data["status"]:
       x_lead = max(0, self.relative_distance - 1)
       if self.phantom.data["speed"] == 0 and self.prev_phantom_speed != 0:
-        if self.frames_since_stopped < 50:
+        if self.frames_since_stopped < 100:
           self.frames_since_stopped += 1
-          v_lead = self.prev_phantom_speed / 3.0
+          v_lead = self.prev_phantom_speed / 4.0
         else:
           self.frames_since_stopped = 0
           self.prev_phantom_speed = 0.0
