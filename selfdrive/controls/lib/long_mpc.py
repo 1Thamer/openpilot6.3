@@ -224,9 +224,6 @@ class LongitudinalMpc(object):
     cost = round(float(interp(TR, x, y)), 3)
     return cost
 
-  def stop_phantom(self):
-    None
-
   def update(self, CS, lead, v_cruise_setpoint):
     self.phantom.update()
 
