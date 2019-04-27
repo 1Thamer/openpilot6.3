@@ -257,7 +257,8 @@ class LongitudinalMpc(object):
     self.cur_state[0].x_ego = 0.0
 
     if self.phantom.data["status"]:
-      if not self.phantom_timeout and self.phantom.data["time"] != self.prev_phantom_time:
+      if not self.phantom_timeout or self.phantom.data["time"] != self.prev_phantom_time:
+        self.phantom_timeout = False
         if self.phantom.data["time"] != self.prev_phantom_time:
           self.prev_phantom_time = self.phantom.data["time"]
           self.frames_since_time = 0
