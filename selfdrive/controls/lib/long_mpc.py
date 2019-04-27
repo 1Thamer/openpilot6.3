@@ -8,7 +8,7 @@ from selfdrive.controls.lib.longitudinal_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 from scipy import interpolate
 import math
-from selfdrive.phantom import Phantom
+import json
 
 
 class LongitudinalMpc(object):
@@ -32,12 +32,6 @@ class LongitudinalMpc(object):
     self.relative_velocity = None
     self.relative_distance = None
     self.stop_and_go = False
-    self.phantom = Phantom()
-    self.prev_phantom_speed = 0
-    self.frames_since_stopped = 0
-    self.prev_phantom_time = 0
-    self.frames_since_time = 0
-    self.phantom_timeout = False
 
   def save_car_data(self, self_vel):
     if len(self.dynamic_follow_dict["self_vels"]) >= 200:  # 100hz, so 200 items is 2 seconds
@@ -67,11 +61,6 @@ class LongitudinalMpc(object):
     v_ego: Vehicle speed [m/s]
     read_distance_lines: ACC setting showing how much follow distance the user has set [1|2|3]
     """
-    if self.phantom.data["status"]:
-      if self.last_cost != 0.1:
-        self.libmpc.init(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-        self.last_cost = 0.1
-      return 1.6
 
     read_distance_lines = car_state.readdistancelines
     if v_ego < 2.0 and read_distance_lines != 2:  # if under 2m/s and not dynamic follow
@@ -142,7 +131,6 @@ class LongitudinalMpc(object):
 
   def get_traffic_level(self, lead_vels):  # generate a value to modify TR by based on fluctuations in lead speed
     if len(lead_vels) < 40:
-      #self.dict_builder["traffic_modifier"] = None
       return 1.0  # if less than 20 seconds of traffic data do nothing to TR
     lead_vel_diffs = []
     for idx, vel in enumerate(lead_vels):
@@ -151,7 +139,6 @@ class LongitudinalMpc(object):
     x = [0, len(lead_vels)]
     y = [1.35, 1.0]  # min and max values to modify TR by
     traffic = interp(sum(lead_vel_diffs), x, y)
-    #self.dict_builder["traffic_modifier"] = traffic
     return traffic
 
   def get_acceleration(self, velocity_list, is_self):  # calculate acceleration to generate more accurate following distances
@@ -179,7 +166,7 @@ class LongitudinalMpc(object):
 
     stop_and_go_magic_number = 8.9408  # 20 mph
 
-    if velocity <= 0.44704:  # 1 mph
+    if velocity <= 0.044704:  # .1 mph
       self.stop_and_go = True
     elif velocity >= stop_and_go_magic_number:
       self.stop_and_go = False
@@ -199,20 +186,16 @@ class LongitudinalMpc(object):
       x = [-4.4704, -2.2352, -0.8941, 0.0, 1.3411]   # self acceleration values
       y = [0.158, 0.058, 0.016, 0, -0.13]  # modification values
       TR_mod += interp(self.get_acceleration(self.dynamic_follow_dict["self_vels"], True), x, y)  # factor in self acceleration
-      #self.dict_builder["self_accel"] = self.get_acceleration(self.dynamic_follow_dict["self_vels"], True)
 
       x = [-4.49033, -1.87397, -0.66245, -0.26291, 0.0, 0.5588, 1.34112]  # lead acceleration values
       y = [0.37909, 0.30045, 0.20378, 0.04158, 0, -0.115, -0.195]  # modification values
       TR_mod += interp(self.get_acceleration(self.dynamic_follow_dict["lead_vels"], False), x, y)  # factor in lead car's acceleration; should perform better
-      #self.dict_builder["lead_accel"] = self.get_acceleration(self.dynamic_follow_dict["lead_vels"], False)
 
       x = [0, 2.2352, 22.352, 33.528]  # 0, 5, 50, 75 mph
       y = [.25, 1.0, 1.0, .90, .85]  # multiply sum of all TR modifications by this
       TR += (float(TR_mod) * interp(velocity, x, y))  # lower TR modification for stop and go, and at higher speeds
 
       TR = float(TR) * self.get_traffic_level(self.dynamic_follow_dict["traffic_vels"])  # modify TR based on last minute of traffic data
-
-    #self.dict_builder["TR"] = TR
 
     if TR < 0.65:
       return 0.65
@@ -228,72 +211,30 @@ class LongitudinalMpc(object):
         TR = real_TR
 
     cost = round(float(interp(TR, x, y)), 3)
-    #self.dict_builder["generated_cost"] = cost
     return cost
 
-  def stop_phantom(self):
-    None
-
   def update(self, CS, lead, v_cruise_setpoint):
-    self.phantom.update()
-
     v_ego = CS.carState.vEgo
-
-    if self.phantom.data["status"]:
-      self.relative_velocity = self.phantom.data["speed"] - v_ego
-      if self.phantom.data["speed"] == 0.0 or self.phantom_timeout:
-        self.relative_distance = 5.7
-      else:
-        self.relative_distance = 16.7
-    else:
-      try:
-        self.relative_velocity = lead.vRel
-        self.relative_distance = lead.dRel
-      except: #if no lead car
-        self.relative_velocity = None
-        self.relative_distance = None
+    try:
+      self.relative_velocity = lead.vRel
+      self.relative_distance = lead.dRel
+    except:  # if no lead car
+      self.relative_velocity = None
+      self.relative_distance = None
 
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
 
-    if self.phantom.data["status"]:
-      if not self.phantom_timeout or self.phantom.data["time"] != self.prev_phantom_time:
-        self.phantom_timeout = False
-        if self.phantom.data["time"] != self.prev_phantom_time:
-          self.prev_phantom_time = self.phantom.data["time"]
-          self.frames_since_time = 0
-        if self.frames_since_time <= 200:
-          self.frames_since_time += 1
-        else:
-          self.prev_phantom_time = self.phantom.data["time"]
-          self.frames_since_time = 0
-          self.phantom_timeout = True
-        x_lead = self.relative_distance
-        if self.phantom.data["speed"] == 0 and self.prev_phantom_speed != 0:
-          if self.frames_since_stopped < 200:
-            self.frames_since_stopped += 1
-            stop_x = [0, 200]  # smooth deceleration
-            stop_y = [min(self.prev_phantom_speed - v_ego, 0), -min(v_ego, 0)]
-            v_lead = interp(self.frames_since_stopped, stop_x, stop_y)
-          else:
-            self.frames_since_stopped = 0
-            self.prev_phantom_speed = 0.0
-            v_lead = min(self.phantom.data["speed"] - v_ego, 0)
-        else:
-          self.frames_since_stopped = 0
-          v_lead = min(self.phantom.data["speed"] - v_ego, 0)
-          self.prev_phantom_speed = self.phantom.data["speed"]
-      else:
-        if self.frames_since_time <= 200:
-          self.frames_since_time += 1
-          stop_x = [0, 200]  # smooth deceleration
-          stop_y = [min(self.prev_phantom_speed - v_ego, 0), -min(v_ego, 0)]
-          v_lead = interp(self.frames_since_time, stop_x, stop_y)
-        else:
-          v_lead = -min(v_ego, 0)
+    if lead is not None and lead.status:
+      x_lead = max(0, lead.dRel - 1)
+      v_lead = max(0.0, lead.vLead)
+      a_lead = lead.aLeadK
 
-      a_lead = 0.0
-      self.a_lead_tau = max(0, (a_lead ** 2 * math.pi) / (2 * (v_lead + 0.01) ** 2))
+      if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
+        v_lead = 0.0
+        a_lead = 0.0
+
+      self.a_lead_tau = max(lead.aLeadTau, (a_lead ** 2 * math.pi) / (2 * (v_lead + 0.01) ** 2))
       self.new_lead = False
       if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
         self.libmpc.init_with_simulation(self.v_mpc, x_lead, v_lead, a_lead, self.a_lead_tau)
@@ -304,31 +245,12 @@ class LongitudinalMpc(object):
       self.cur_state[0].x_l = x_lead
       self.cur_state[0].v_l = v_lead
     else:
-      if lead is not None and lead.status:
-        x_lead = max(0, lead.dRel - 1)
-        v_lead = max(0.0, lead.vLead)
-        a_lead = lead.aLeadK
-        if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
-          v_lead = 0.0
-          a_lead = 0.0
-
-        self.a_lead_tau = max(lead.aLeadTau, (a_lead ** 2 * math.pi) / (2 * (v_lead + 0.01) ** 2))
-        self.new_lead = False
-        if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
-          self.libmpc.init_with_simulation(self.v_mpc, x_lead, v_lead, a_lead, self.a_lead_tau)
-          self.new_lead = True
-
-        self.prev_lead_status = True
-        self.prev_lead_x = x_lead
-        self.cur_state[0].x_l = x_lead
-        self.cur_state[0].v_l = v_lead
-      else:
-        self.prev_lead_status = False
-        # Fake a fast lead car, so mpc keeps running
-        self.cur_state[0].x_l = 50.0
-        self.cur_state[0].v_l = v_ego + 10.0
-        a_lead = 0.0
-        self.a_lead_tau = _LEAD_ACCEL_TAU
+      self.prev_lead_status = False
+      # Fake a fast lead car, so mpc keeps running
+      self.cur_state[0].x_l = 50.0
+      self.cur_state[0].v_l = v_ego + 10.0
+      a_lead = 0.0
+      self.a_lead_tau = _LEAD_ACCEL_TAU
 
     # Calculate mpc
     t = sec_since_boot()
