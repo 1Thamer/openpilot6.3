@@ -158,6 +158,7 @@ class CarState(object):
     self.blind_spot_on = bool(0)
     #labels for ALCA modes
     self.alcaLabels = ["MadMax","Normal","Wifey","off"]
+    steerRatio = CP.steerRatio
     self.trLabels = ["0.9","dyn","2.7"]
     self.alcaMode = int(kegman.conf['lastALCAMode'])     # default to last ALCA Mode on startup
     if self.alcaMode > 3:
@@ -170,8 +171,8 @@ class CarState(object):
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
-    self.CL_MAX_ANGLE_DELTA_BP = [10., 32., 44.]
-    self.CL_MAX_ANGLE_DELTA = [2.0, 1., 0.5]
+    self.CL_MAX_ANGLE_DELTA_BP = [10., 32., 55.]
+    self.CL_MAX_ANGLE_DELTA = [2.0 * 15.4 / steerRatio, 1. * 15.4 / steerRatio, 0.5 * 15.4 / steerRatio]
     # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
     self.CL_ADJUST_FACTOR_BP = [10., 44.]
     self.CL_ADJUST_FACTOR = [16. , 8.]
@@ -444,8 +445,7 @@ class CarState(object):
         self.trMode = (self.trMode + 1 ) % 3
         kegman.save({'lastTrMode': int(self.trMode)})  # write last distance bar setting to file
         self.cstm_btns.btns[4].btn_label2 = self.trLabels[self.trMode]
-    self.prev_cruise_setting = self.cruise_setting
-    self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
+    
     self.read_distance_lines = self.trMode + 1
     if self.read_distance_lines <> self.read_distance_lines_prev:
       if self.read_distance_lines == 1:
@@ -463,6 +463,10 @@ class CarState(object):
           self.lkMode = False
         else:
           self.lkMode = True
+          
+    self.prev_cruise_setting = self.cruise_setting
+    self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
+    
     if self.cstm_btns.get_button_status("lka") == 0:
       self.lane_departure_toggle_on = False
     else:

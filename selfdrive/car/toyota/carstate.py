@@ -149,6 +149,7 @@ class CarState(object):
   def __init__(self, CP):
     self.brakefactor = float(kegman.conf['brakefactor'])
     self.trfix = False
+    steerRatio = CP.steerRatio
     self.Angles = np.zeros(250)
     self.Angles_later = np.zeros(250)
     self.Angle_counter = 0
@@ -165,8 +166,8 @@ class CarState(object):
     #if (CP.carFingerprint == CAR.MODELS):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
-    self.CL_MAX_ANGLE_DELTA_BP = [10., 15., 32., 50.]#[10., 44.]
-    self.CL_MAX_ANGLE_DELTA = [2.0, 1.75, 1.25, 0.5]
+    self.CL_MAX_ANGLE_DELTA_BP = [10., 15., 32., 55.]#[10., 44.]
+    self.CL_MAX_ANGLE_DELTA = [2.0 * 15.5 / steerRatio, 1.75 * 15.5 / steerRatio, 1.25 * 15.5 / steerRatio, 0.5 * 15.5 / steerRatio]
      # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
     self.CL_ADJUST_FACTOR_BP = [10., 50.]
     self.CL_ADJUST_FACTOR = [16. , 8.]
@@ -205,6 +206,10 @@ class CarState(object):
     #gps_ext_sock = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, poller)
     self.gps_location = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, conflate=True, poller=self.poller)
     self.lat_Control = messaging.sub_sock(context, service_list['latControl'].port, conflate=True, poller=self.poller)
+    self.live_MapData = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True, poller=self.poller)
+    self.traffic_data_sock = messaging.pub_sock(context, service_list['liveTrafficData'].port)
+    
+    self.spdval1 = 0
     self.CP = CP
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = self.can_define.dv["GEAR_PACKET"]['GEAR']
@@ -316,12 +321,23 @@ class CarState(object):
     self.can_valid = cp.can_valid
     self.cam_can_valid = cp_cam.can_valid
     msg = None
+    lastspeedlimit = None
+    lastlive_MapData = None
     for socket, event in self.poller.poll(0):
       if socket is self.gps_location:
         msg = messaging.recv_one(socket)
       elif socket is self.lat_Control:
         self.lastlat_Control = messaging.recv_one(socket).latControl
+      elif socket is self.live_MapData:
+        lastlive_MapData =  messaging.recv_one(socket).liveMapData
+    if lastlive_MapData is not None:
+      if lastlive_MapData.speedLimitValid:
+        self.lastspeedlimit = lastlive_MapData.speedLimit
+        self.lastspeedlimitvalid = True
+      else:
+        self.lastspeedlimitvalid = False
 
+      
     if msg is not None:
       gps_pkt = msg.gpsLocationExternal
       self.inaccuracy = gps_pkt.accuracy
@@ -504,15 +520,28 @@ class CarState(object):
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
     self.tsgn1 = cp_cam.vl["RSA1"]['TSGN1']
     self.spdval1 = cp_cam.vl["RSA1"]['SPDVAL1']
-    #if self.spdval1 > 0:
-    #  print self.spdval1
+    
     self.splsgn1 = cp_cam.vl["RSA1"]['SPLSGN1']
     self.tsgn2 = cp_cam.vl["RSA1"]['TSGN2']
     self.spdval2 = cp_cam.vl["RSA1"]['SPDVAL2']
+    
     self.splsgn2 = cp_cam.vl["RSA1"]['SPLSGN2']
     self.tsgn3 = cp_cam.vl["RSA2"]['TSGN3']
     self.splsgn3 = cp_cam.vl["RSA2"]['SPLSGN3']
     self.tsgn4 = cp_cam.vl["RSA2"]['TSGN4']
     self.splsgn4 = cp_cam.vl["RSA2"]['SPLSGN4']
     self.noovertake = self.tsgn1 == 65 or self.tsgn2 == 65 or self.tsgn3 == 65 or self.tsgn4 == 65 or self.tsgn1 == 66 or self.tsgn2 == 66 or self.tsgn3 == 66 or self.tsgn4 == 66
-    
+    if self.spdval1 > 0 or self.spdval2 > 0:
+      dat = messaging.new_message()
+      dat.init('liveTrafficData')
+      if self.spdval1 > 0:
+        dat.liveTrafficData.speedLimitValid = True
+        dat.liveTrafficData.speedLimit = self.spdval1
+      else:
+        dat.liveTrafficData.speedLimitValid = False
+      if self.spdval2 > 0:
+        dat.liveTrafficData.speedAdvisoryValid = True
+        dat.liveTrafficData.speedAdvisory = self.spdval2
+      else:
+        dat.liveTrafficData.speedAdvisoryValid = False
+      self.traffic_data_sock.send(dat.to_bytes())
