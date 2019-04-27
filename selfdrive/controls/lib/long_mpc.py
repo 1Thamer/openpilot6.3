@@ -35,6 +35,9 @@ class LongitudinalMpc(object):
     self.phantom = Phantom()
     self.prev_phantom_speed = 0
     self.frames_since_stopped = 0
+    self.prev_phantom_time = 0
+    self.frames_since_time = 0
+    self.phantom_timeout = False
 
   def save_car_data(self, self_vel):
     if len(self.dynamic_follow_dict["self_vels"]) >= 200:  # 100hz, so 200 items is 2 seconds
@@ -228,6 +231,9 @@ class LongitudinalMpc(object):
     #self.dict_builder["generated_cost"] = cost
     return cost
 
+  def stop_phantom(self):
+    None
+
   def update(self, CS, lead, v_cruise_setpoint):
     self.phantom.update()
 
@@ -235,7 +241,7 @@ class LongitudinalMpc(object):
 
     if self.phantom.data["status"]:
       self.relative_velocity = self.phantom.data["speed"] - v_ego
-      if self.phantom.data["speed"] == 0.0:
+      if self.phantom.data["speed"] == 0.0 or self.phantom_timeout:
         self.relative_distance = 5.7
       else:
         self.relative_distance = 16.7
@@ -251,21 +257,39 @@ class LongitudinalMpc(object):
     self.cur_state[0].x_ego = 0.0
 
     if self.phantom.data["status"]:
-      x_lead = self.relative_distance
-      if self.phantom.data["speed"] == 0 and self.prev_phantom_speed != 0:
-        if self.frames_since_stopped < 100:
-          self.frames_since_stopped += 1
-          stop_x = [0, 100]  # smooth deceleration
-          stop_y = [self.prev_phantom_speed - v_ego, -v_ego]
-          v_lead = interp(self.frames_since_stopped, stop_x, stop_y)
+      if not self.phantom_timeout and self.phantom.data["time"] != self.prev_phantom_time:
+        if self.phantom.data["time"] != self.prev_phantom_time:
+          self.prev_phantom_time = self.phantom.data["time"]
+          self.frames_since_time = 0
+        if self.frames_since_time <= 200:
+          self.frames_since_time += 1
+        else:
+          self.prev_phantom_time = self.phantom.data["time"]
+          self.frames_since_time = 0
+          self.phantom_timeout = True
+        x_lead = self.relative_distance
+        if self.phantom.data["speed"] == 0 and self.prev_phantom_speed != 0:
+          if self.frames_since_stopped < 200:
+            self.frames_since_stopped += 1
+            stop_x = [0, 200]  # smooth deceleration
+            stop_y = [min(self.prev_phantom_speed - v_ego, 0), -min(v_ego, 0)]
+            v_lead = interp(self.frames_since_stopped, stop_x, stop_y)
+          else:
+            self.frames_since_stopped = 0
+            self.prev_phantom_speed = 0.0
+            v_lead = min(self.phantom.data["speed"] - v_ego, 0)
         else:
           self.frames_since_stopped = 0
-          self.prev_phantom_speed = 0.0
-          v_lead = self.phantom.data["speed"] - v_ego
+          v_lead = min(self.phantom.data["speed"] - v_ego, 0)
+          self.prev_phantom_speed = self.phantom.data["speed"]
       else:
-        self.frames_since_stopped = 0
-        v_lead = self.phantom.data["speed"] - v_ego
-        self.prev_phantom_speed = self.phantom.data["speed"]
+        if self.frames_since_time <= 200:
+          self.frames_since_time += 1
+          stop_x = [0, 200]  # smooth deceleration
+          stop_y = [min(self.prev_phantom_speed - v_ego, 0), -min(v_ego, 0)]
+          v_lead = interp(self.frames_since_time, stop_x, stop_y)
+        else:
+          v_lead = -min(v_ego, 0)
 
       a_lead = 0.0
       self.a_lead_tau = max(0, (a_lead ** 2 * math.pi) / (2 * (v_lead + 0.01) ** 2))
