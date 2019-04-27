@@ -1,6 +1,9 @@
 from selfdrive.controls.lib.pid import PIController
 from common.numpy_fast import interp
 from cereal import car
+from selfdrive.phantom import Phantom
+
+phantom = Phantom()
 
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz
@@ -33,6 +36,10 @@ class LatControl(object):
     self.previous_integral = self.pid.i
 
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
+    phantom.update()
+    if phantom.data["status"]:
+      v_ego += 11.176  # add 10 mph to real speed, should trick the pid loop
+      active = True
     if v_ego < 0.3 or not active:
       output_steer = 0.0
       self.pid.reset()
@@ -42,7 +49,10 @@ class LatControl(object):
       # constant for 0.05s.
       #dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
       #self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
-      self.angle_steers_des = path_plan.angleSteers  # get from MPC/PathPlanner
+      if phantom.data["status"]:
+        self.angle_steers_des = float(phantom.data["angle"])
+      else:
+        self.angle_steers_des = path_plan.angleSteers  # get from MPC/PathPlanner
 
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max
@@ -54,20 +64,20 @@ class LatControl(object):
         angle_feedforward *= self.angle_ff_ratio * self.angle_ff_gain
         rate_feedforward = (1.0 - self.angle_ff_ratio) * self.rate_ff_gain * path_plan.rateSteers
         steer_feedforward = v_ego**2 * (rate_feedforward + angle_feedforward)
-        
+
         if v_ego > 10.0:
           if abs(angle_steers) > (self.angle_ff_bp[0][1] / 2.0):
             self.adjust_angle_gain()
           else:
             self.previous_integral = self.pid.i
-        
+
       deadzone = 0.0
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
-    
+
     self.sat_flag = self.pid.saturated
-    return output_steer, float(self.angle_steers_des)    
-    
+    return output_steer, float(self.angle_steers_des)
+
     # ALCA works better with the non-interpolated angle
     #if CP.steerControlType == car.CarParams.SteerControlType.torque:
     #  return output_steer, float(self.angle_steers_des_mpc)
