@@ -39,6 +39,7 @@ class LatControl(object):
     phantom.update()
     if phantom.data["status"]:
       v_ego += 4.4704  # add 10 mph to real speed, should trick the pid loop
+      active = True
     if v_ego < 0.3 or not active:
       output_steer = 0.0
       self.pid.reset()
