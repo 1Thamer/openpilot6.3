@@ -236,7 +236,7 @@ class LongitudinalMpc(object):
     if self.phantom.data["status"]:
       self.relative_velocity = self.phantom.data["speed"] - v_ego
       if self.phantom.data["speed"] == 0.0:
-        self.relative_distance = 4.7
+        self.relative_distance = 5.7
       else:
         self.relative_distance = 16.7
     else:
@@ -253,9 +253,11 @@ class LongitudinalMpc(object):
     if self.phantom.data["status"]:
       x_lead = max(0, self.relative_distance - 1)
       if self.phantom.data["speed"] == 0 and self.prev_phantom_speed != 0:
-        if self.frames_since_stopped < 100:
+        if self.frames_since_stopped < 150:
           self.frames_since_stopped += 1
-          v_lead = self.prev_phantom_speed / 4.0
+          stop_x = [0, 150]  # smooth deceleration
+          stop_y = [self.prev_phantom_speed, 0.0]
+          v_lead = interp(self.frames_since_stopped, stop_x, stop_y)
         else:
           self.frames_since_stopped = 0
           self.prev_phantom_speed = 0.0
