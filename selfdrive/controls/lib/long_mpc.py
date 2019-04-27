@@ -68,7 +68,7 @@ class LongitudinalMpc(object):
       if self.last_cost != 0.1:
         self.libmpc.init(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = 0.1
-      return 1.8
+      return 1.6
 
     read_distance_lines = car_state.readdistancelines
     if v_ego < 2.0 and read_distance_lines != 2:  # if under 2m/s and not dynamic follow
@@ -176,7 +176,7 @@ class LongitudinalMpc(object):
 
     stop_and_go_magic_number = 8.9408  # 20 mph
 
-    if velocity <= 0.044704:  # .1 mph
+    if velocity <= 0.44704:  # 1 mph
       self.stop_and_go = True
     elif velocity >= stop_and_go_magic_number:
       self.stop_and_go = False
@@ -251,7 +251,7 @@ class LongitudinalMpc(object):
     self.cur_state[0].x_ego = 0.0
 
     if self.phantom.data["status"]:
-      x_lead = max(0, self.relative_distance - 1)
+      x_lead = self.relative_distance
       if self.phantom.data["speed"] == 0 and self.prev_phantom_speed != 0:
         if self.frames_since_stopped < 150:
           self.frames_since_stopped += 1
