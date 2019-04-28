@@ -262,7 +262,7 @@ class LongitudinalMpc(object):
           if self.frames_since_stopped < 200:
             self.frames_since_stopped += 1
             stop_x = [0, 200]  # smooth deceleration
-            stop_y = [min(self.prev_phantom_speed - v_ego, 0), -min(v_ego, 0)]
+            stop_y = [min(self.prev_phantom_speed - v_ego, 0), min(-v_ego, 0)]
             v_lead = interp(self.frames_since_stopped, stop_x, stop_y)
           else:
             self.frames_since_stopped = 0
@@ -276,7 +276,7 @@ class LongitudinalMpc(object):
         if self.frames_since_time <= 200:
           self.frames_since_time += 1
           stop_x = [0, 200]  # smooth deceleration
-          stop_y = [min(self.prev_phantom_speed - v_ego, 0), -min(v_ego, 0)]
+          stop_y = [min(self.prev_phantom_speed - v_ego, 0), min(-v_ego, 0)]
           v_lead = interp(self.frames_since_time, stop_x, stop_y)
         else:
           v_lead = min(-v_ego, 0)
