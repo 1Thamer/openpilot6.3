@@ -224,9 +224,6 @@ class LongitudinalMpc(object):
     cost = round(float(interp(TR, x, y)), 3)
     return cost
 
-  def stop_phantom(self):
-    None
-
   def update(self, CS, lead, v_cruise_setpoint):
     self.phantom.update()
 
@@ -261,12 +258,11 @@ class LongitudinalMpc(object):
           self.prev_phantom_time = self.phantom.data["time"]
           self.frames_since_time = 0
           self.phantom_timeout = True
-        x_lead = self.relative_distance
         if self.phantom.data["speed"] == 0 and self.prev_phantom_speed != 0:
           if self.frames_since_stopped < 200:
             self.frames_since_stopped += 1
             stop_x = [0, 200]  # smooth deceleration
-            stop_y = [min(self.prev_phantom_speed - v_ego, 0), -min(v_ego, 0)]
+            stop_y = [min(self.prev_phantom_speed - v_ego, 0), min(-v_ego, 0)]
             v_lead = interp(self.frames_since_stopped, stop_x, stop_y)
           else:
             self.frames_since_stopped = 0
@@ -280,11 +276,12 @@ class LongitudinalMpc(object):
         if self.frames_since_time <= 200:
           self.frames_since_time += 1
           stop_x = [0, 200]  # smooth deceleration
-          stop_y = [min(self.prev_phantom_speed - v_ego, 0), -min(v_ego, 0)]
+          stop_y = [min(self.prev_phantom_speed - v_ego, 0), min(-v_ego, 0)]
           v_lead = interp(self.frames_since_time, stop_x, stop_y)
         else:
-          v_lead = -min(v_ego, 0)
+          v_lead = min(-v_ego, 0)
 
+      x_lead = self.relative_distance
       a_lead = 0.0
       self.a_lead_tau = max(0, (a_lead ** 2 * math.pi) / (2 * (v_lead + 0.01) ** 2))
       self.new_lead = False
