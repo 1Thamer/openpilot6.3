@@ -3,7 +3,7 @@ from common.numpy_fast import interp
 from cereal import car
 from selfdrive.phantom import Phantom
 
-phantom = Phantom()
+phantom = Phantom(20)
 
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz

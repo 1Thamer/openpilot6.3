@@ -32,7 +32,7 @@ class LongitudinalMpc(object):
     self.relative_velocity = None
     self.relative_distance = None
     self.stop_and_go = False
-    self.phantom = Phantom()
+    self.phantom = Phantom(50)
     self.prev_phantom_speed = 0
     self.frames_since_stopped = 0
     self.prev_phantom_time = 0
