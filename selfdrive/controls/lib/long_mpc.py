@@ -279,7 +279,7 @@ class LongitudinalMpc(object):
           stop_y = [min(self.prev_phantom_speed - v_ego, 0), -min(v_ego, 0)]
           v_lead = interp(self.frames_since_time, stop_x, stop_y)
         else:
-          v_lead = -min(v_ego, 0)
+          v_lead = min(-v_ego, 0)
 
       x_lead = self.relative_distance
       a_lead = 0.0
