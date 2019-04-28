@@ -280,7 +280,7 @@ class LongitudinalMpc(object):
           v_lead = interp(self.frames_since_time, stop_x, stop_y)
         else:
           v_lead = -min(v_ego, 0)
-      
+
       x_lead = self.relative_distance
       a_lead = 0.0
       self.a_lead_tau = max(0, (a_lead ** 2 * math.pi) / (2 * (v_lead + 0.01) ** 2))

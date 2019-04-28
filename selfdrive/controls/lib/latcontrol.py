@@ -24,6 +24,7 @@ class LatControl(object):
     self.angle_ff_gain = 1.0
     self.rate_ff_gain = 0.01
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
+    self.previous_integral = 0.0
     
   def reset(self):
     self.pid.reset()
