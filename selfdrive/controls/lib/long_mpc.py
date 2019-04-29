@@ -242,12 +242,8 @@ class LongitudinalMpc(object):
 
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
-    test_var = []
-    test_var.append(phantom.data["status"])
-    test_var.append(self.phantom_timeout)
     if phantom.data["status"]:
       if not self.phantom_timeout or phantom.data["time"] != self.prev_phantom_time:
-        test_var.append("here")
         self.phantom_timeout = False
         if phantom.data["time"] != self.prev_phantom_time:
           self.prev_phantom_time = phantom.data["time"]
@@ -273,7 +269,6 @@ class LongitudinalMpc(object):
           v_lead = phantom.data["speed"]
           self.prev_phantom_speed = phantom.data["speed"]
       else:
-        test_var.append("shouldn't be here")
         if self.frames_since_time <= 300:
           self.frames_since_time += 1
           stop_x = [0, 300]  # smooth deceleration
@@ -320,8 +315,6 @@ class LongitudinalMpc(object):
         self.cur_state[0].v_l = v_ego + 10.0
         a_lead = 0.0
         self.a_lead_tau = _LEAD_ACCEL_TAU
-    with open("/data/test_file.tmp", "a") as f:
-      f.write(str(test_var)+"\n")
     # Calculate mpc
     t = sec_since_boot()
     TR = self.calculate_tr(v_ego, CS.carState)

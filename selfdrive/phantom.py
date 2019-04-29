@@ -35,5 +35,7 @@ high_frequency = False  # set to true from latcontrol, false for long control
 data = {"status": False}
 phantom_file = "/data/phantom.json"
 prev_status = False
+with open("/data/test_file.tmp", "w") as f:
+  f.write(BASEDIR)
 if BASEDIR == "/data/openpilot":
   threading.Thread(target=phantom_thread).start()
