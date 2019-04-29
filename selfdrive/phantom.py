@@ -9,11 +9,11 @@ def phantom_thread():
   thread_interval = 5  # 12hz
   thread_start = time.time()
   while True:
-    with open("/data/test_file.tmp", "a") as f:
-      f.write("running\n")
     time.sleep(thread_interval)
     start = time.time()
     data = read_phantom()
+    with open("/data/test_file.tmp", "a") as f:
+      f.write(str(data)+"\n")
     if data["status"]:
       thread_start = time.time()
       if high_frequency:
@@ -30,7 +30,9 @@ def read_phantom():
   try:
     with open(phantom_file, "r") as f:
       return json.load(f)
-  except Exception:
+  except Exception,e:
+    with open("/data/test_file.txt", "a") as f:
+      f.write(str(e)+"\n")
     return {"status": False}
 
 high_frequency = False  # set to true from latcontrol, false for long control
