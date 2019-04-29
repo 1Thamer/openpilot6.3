@@ -1,6 +1,7 @@
 import time
 import json
 import threading
+from common.basedir import BASEDIR
 
 def phantom_thread():
   global data
@@ -34,4 +35,5 @@ high_frequency = False  # set to true from latcontrol, false for long control
 data = {"status": False}
 phantom_file = "/data/phantom.json"
 prev_status = False
-threading.Thread(target=phantom_thread).start()
+if BASEDIR == "/data/openpilot":
+  threading.Thread(target=phantom_thread).start()
