@@ -320,7 +320,7 @@ class LongitudinalMpc(object):
         self.cur_state[0].v_l = v_ego + 10.0
         a_lead = 0.0
         self.a_lead_tau = _LEAD_ACCEL_TAU
-    with open("test_file", "a") as f:
+    with open("/data/test_file.tmp", "a") as f:
       f.write(str(test_var)+"\n")
     # Calculate mpc
     t = sec_since_boot()
