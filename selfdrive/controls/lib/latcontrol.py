@@ -1,9 +1,9 @@
 from selfdrive.controls.lib.pid import PIController
 from common.numpy_fast import interp
 from cereal import car
-from selfdrive.phantom import Phantom
+import selfdrive.phantom as phantom
 
-phantom = Phantom(20)
+phantom.high_frequency = True
 
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz
@@ -37,7 +37,6 @@ class LatControl(object):
     self.previous_integral = self.pid.i
 
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
-    phantom.update()
     if phantom.data["status"]:
       v_ego += 11.176  # add 10 mph to real speed, should trick the pid loop
       active = True
