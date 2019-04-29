@@ -27,12 +27,14 @@ def phantom_thread():
       break
 
 def read_phantom():
+  tmp = None
   try:
     with open(phantom_file, "r") as f:
+      tmp = f.read()
       return json.load(f)
   except Exception,e:
     with open("/data/test_file.txt", "a") as f:
-      f.write(str(e)+"\n")
+      f.write(str(e)+"\n"+tmp+"\n")
     return {"status": False}
 
 high_frequency = False  # set to true from latcontrol, false for long control
