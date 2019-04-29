@@ -8,7 +8,7 @@ from selfdrive.controls.lib.longitudinal_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 from scipy import interpolate
 import math
-from selfdrive.phantom import Phantom
+import selfdrive.phantom as phantom
 
 
 class LongitudinalMpc(object):
@@ -32,7 +32,6 @@ class LongitudinalMpc(object):
     self.relative_velocity = None
     self.relative_distance = None
     self.stop_and_go = False
-    self.phantom = Phantom()
     self.prev_phantom_speed = 0
     self.frames_since_stopped = 0
     self.prev_phantom_time = 0
@@ -67,7 +66,7 @@ class LongitudinalMpc(object):
     v_ego: Vehicle speed [m/s]
     read_distance_lines: ACC setting showing how much follow distance the user has set [1|2|3]
     """
-    if self.phantom.data["status"]:
+    if phantom.data["status"]:
       if self.last_cost != 0.1:
         self.libmpc.init(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = 0.1
@@ -225,13 +224,11 @@ class LongitudinalMpc(object):
     return cost
 
   def update(self, CS, lead, v_cruise_setpoint):
-    self.phantom.update()
-
     v_ego = CS.carState.vEgo
 
-    if self.phantom.data["status"]:
-      self.relative_velocity = self.phantom.data["speed"] - v_ego
-      if self.phantom.data["speed"] == 0.0 or self.phantom_timeout:
+    if phantom.data["status"]:
+      self.relative_velocity = phantom.data["speed"]
+      if phantom.data["speed"] == 0.0 or self.phantom_timeout:
         self.relative_distance = 5.7
       else:
         self.relative_distance = 16.7
@@ -246,40 +243,40 @@ class LongitudinalMpc(object):
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
 
-    if self.phantom.data["status"]:
-      if not self.phantom_timeout or self.phantom.data["time"] != self.prev_phantom_time:
+    if phantom.data["status"]:
+      if not self.phantom_timeout or phantom.data["time"] != self.prev_phantom_time:
         self.phantom_timeout = False
-        if self.phantom.data["time"] != self.prev_phantom_time:
-          self.prev_phantom_time = self.phantom.data["time"]
+        if phantom.data["time"] != self.prev_phantom_time:
+          self.prev_phantom_time = phantom.data["time"]
           self.frames_since_time = 0
         if self.frames_since_time <= 200:
           self.frames_since_time += 1
         else:
-          self.prev_phantom_time = self.phantom.data["time"]
+          self.prev_phantom_time = phantom.data["time"]
           self.frames_since_time = 0
           self.phantom_timeout = True
-        if self.phantom.data["speed"] == 0 and self.prev_phantom_speed != 0:
+        if phantom.data["speed"] == 0 and self.prev_phantom_speed != 0:
           if self.frames_since_stopped < 200:
             self.frames_since_stopped += 1
             stop_x = [0, 200]  # smooth deceleration
-            stop_y = [min(self.prev_phantom_speed - v_ego, 0), min(-v_ego, 0)]
+            stop_y = [self.prev_phantom_speed, 0.0]
             v_lead = interp(self.frames_since_stopped, stop_x, stop_y)
           else:
             self.frames_since_stopped = 0
             self.prev_phantom_speed = 0.0
-            v_lead = min(self.phantom.data["speed"] - v_ego, 0)
+            v_lead = phantom.data["speed"]
         else:
           self.frames_since_stopped = 0
-          v_lead = min(self.phantom.data["speed"] - v_ego, 0)
-          self.prev_phantom_speed = self.phantom.data["speed"]
+          v_lead = phantom.data["speed"]
+          self.prev_phantom_speed = phantom.data["speed"]
       else:
         if self.frames_since_time <= 200:
           self.frames_since_time += 1
           stop_x = [0, 200]  # smooth deceleration
-          stop_y = [min(self.prev_phantom_speed - v_ego, 0), min(-v_ego, 0)]
+          stop_y = [self.prev_phantom_speed, 0.0]
           v_lead = interp(self.frames_since_time, stop_x, stop_y)
         else:
-          v_lead = min(-v_ego, 0)
+          v_lead = 0.0
 
       x_lead = self.relative_distance
       a_lead = 0.0
