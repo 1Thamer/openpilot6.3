@@ -28,7 +28,7 @@ def read_phantom():
   try:
     with open(phantom_file, "r") as f:
       return json.load(f)
-  except:
+  except Exception,e:
     return {"status": False}
 
 high_frequency = False  # set to true from latcontrol, false for long control
