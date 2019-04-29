@@ -9,6 +9,8 @@ def phantom_thread():
   thread_interval = 5  # 12hz
   thread_start = time.time()
   while True:
+    with open("/data/test_file.tmp", "a") as f:
+      f.write("running\n")
     time.sleep(thread_interval)
     start = time.time()
     data = read_phantom()
@@ -28,14 +30,11 @@ def read_phantom():
   try:
     with open(phantom_file, "r") as f:
       return json.load(f)
-  except Exception,e:
+  except Exception:
     return {"status": False}
 
 high_frequency = False  # set to true from latcontrol, false for long control
 data = {"status": False}
 phantom_file = "/data/phantom.json"
-prev_status = False
-with open("/data/test_file.tmp", "w") as f:
-  f.write(BASEDIR)
 if BASEDIR == "/data/openpilot":
   threading.Thread(target=phantom_thread).start()
