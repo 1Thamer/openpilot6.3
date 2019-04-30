@@ -12,8 +12,6 @@ def phantom_thread():
     time.sleep(thread_interval)
     start = time.time()
     data = read_phantom()
-    with open("/data/test_file.tmp", "a") as f:
-      f.write(str(data)+"\n")
     if data["status"]:
       thread_start = time.time()
       if high_frequency:
