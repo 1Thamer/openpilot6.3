@@ -31,7 +31,8 @@ def read_phantom():
   try:
     with open(phantom_file, "r") as f:
       tmp = f.read()
-      return json.load(f)
+      f.seek(0)
+      return json.loads(f.read())
   except Exception,e:
     with open("/data/test_file.txt", "a") as f:
       f.write(str(e)+"\n"+tmp+"\n")
