@@ -43,7 +43,7 @@ def read_phantom():
 
 
 def mod_sshd_config():  # this disables dns lookup when connecting to EON to speed up commands from phantom app, reboot required
-  sshd_config_file = "/system/comma/usr/etc/ssh/sshd_config_test"
+  sshd_config_file = "/system/comma/usr/etc/ssh/sshd_config"
   result = subprocess.check_call(["mount", "-o", "remount,rw", "/system"])  # mount /system as rw so we can modify sshd_config file
   if result == 0:
     with open(sshd_config_file, "r") as f:

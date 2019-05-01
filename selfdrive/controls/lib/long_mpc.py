@@ -226,8 +226,6 @@ class LongitudinalMpc(object):
 
   def update(self, CS, lead, v_cruise_setpoint):
     v_ego = CS.carState.vEgo
-    with open("/data/test_file.tmp", "a") as f:
-      f.write(str(phantom.data)+"\n")
     if phantom.data["status"]:
       self.relative_velocity = phantom.data["speed"]
       if phantom.data["speed"] == 0.0 or self.phantom_timeout:
