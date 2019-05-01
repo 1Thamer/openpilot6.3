@@ -239,22 +239,23 @@ class LongitudinalMpc(object):
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
     if phantom.data["status"]:
+      change_state_time = 200  # 2 seconds
       self.relative_distance = 5.7
       if not self.phantom_timeout or phantom.data["time"] != self.prev_phantom_time:
         self.phantom_timeout = False
         if phantom.data["time"] != self.prev_phantom_time:
           self.prev_phantom_time = phantom.data["time"]
           self.frames_since_time = 0
-        if self.frames_since_time <= 300:
+        if self.frames_since_time <= change_state_time:
           self.frames_since_time += 1
         else:
           self.prev_phantom_time = phantom.data["time"]
           self.frames_since_time = 0
           self.phantom_timeout = True
         if phantom.data["speed"] == 0 and self.prev_phantom_speed != 0:
-          if self.frames_since_stopped < 300:
+          if self.frames_since_stopped < change_state_time:
             self.frames_since_stopped += 1
-            stop_x = [0, 300]  # smooth deceleration
+            stop_x = [0, change_state_time]  # smooth deceleration
             stop_y = [self.prev_phantom_speed, 0.0]
             stop_y_dist = [16.7, 5.7]
             self.relative_distance = interp(self.frames_since_stopped, stop_x, stop_y_dist)
@@ -270,9 +271,9 @@ class LongitudinalMpc(object):
           v_lead = phantom.data["speed"]  # if phantom enabled and button held
           self.prev_phantom_speed = phantom.data["speed"]
       else:  # if timeout
-        if self.frames_since_time <= 300:
+        if self.frames_since_time <= change_state_time:
           self.frames_since_time += 1
-          stop_x = [0, 300]  # smooth deceleration
+          stop_x = [0, change_state_time]  # smooth deceleration
           stop_y = [self.prev_phantom_speed, 0.0]
           stop_y_dist = [16.7, 5.7]
           self.relative_distance = interp(self.frames_since_time, stop_x, stop_y_dist)
