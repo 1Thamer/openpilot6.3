@@ -5,6 +5,7 @@ import selfdrive.kegman_conf as kegman
 import subprocess
 from common.basedir import BASEDIR
 
+
 def phantom_thread():
   global data
   global high_frequency
@@ -28,6 +29,7 @@ def phantom_thread():
         f.write("thread timeout\n")
       data = {"status": False}
       break
+
 
 def read_phantom():
   tmp = None
@@ -61,7 +63,6 @@ def mod_sshd_config():  # this disables dns lookup when connecting to EON to spe
     kegman.save({"UseDNS": False})
 
 
-
 def start(high_freq=False):
   global high_frequency
   high_frequency = high_freq  # set to true from latcontrol, false for long control
@@ -69,6 +70,7 @@ def start(high_freq=False):
     if not kegman.get("UseDNS") or kegman.get("UseDNS") is None:
       mod_sshd_config()
     threading.Thread(target=phantom_thread).start()
+
 
 data = {"status": False}
 phantom_file = "/data/phantom.json"

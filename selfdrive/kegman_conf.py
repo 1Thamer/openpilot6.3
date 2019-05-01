@@ -55,6 +55,7 @@ def read_config():
     config = default_config
   return config
 
+
 def kegman_thread():  # read and write thread; now merges changes from file and variable
   global conf
   global thread_counter
@@ -93,6 +94,7 @@ def kegman_thread():  # read and write thread; now merges changes from file and 
     cloudlog.warning("error in kegman thread")
     thread_started = False
 
+
 def write_config(conf):  # never to be called outside kegman_conf
   if BASEDIR == "/data/openpilot":
     with open(kegman_file, "w") as f:
@@ -126,6 +128,7 @@ def get(key_s=""):  # can get multiple keys from a list
       return conf[key_s]
     else:
       return None
+
 
 thread_counter = 0  # don't change
 thread_timeout = 5.0  # minutes to wait before stopping thread. reading or writing will reset the counter
