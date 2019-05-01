@@ -37,7 +37,7 @@ def read_phantom():
       tmp = f.read()
       return json.loads(tmp)
   except Exception,e:
-    with open("/data/test_file.txt", "a") as f:
+    with open("/data/phantom_error.txt", "a") as f:
       f.write(str(e)+"\n"+tmp+"\n")
     return {"status": False}
 
@@ -45,21 +45,16 @@ def read_phantom():
 def mod_sshd_config():  # this disables dns lookup when connecting to EON to speed up commands from phantom app, reboot required
   sshd_config_file = "/system/comma/usr/etc/ssh/sshd_config_test"
   result = subprocess.check_call(["mount", "-o", "remount,rw", "/system"])  # mount /system as rw so we can modify sshd_config file
-  print(result)
   if result == 0:
     with open(sshd_config_file, "r") as f:
       sshd_config = f.read()
-    print(sshd_config)
     if "UseDNS no" not in sshd_config:
-      print("not in")
       if sshd_config[-1:]!="\n":
-        use_dns = "\nUseDNS no"
+        use_dns = "\nUseDNS no\n"
       else:
-        use_dns = "UseDNS no"
-      print(use_dns)
+        use_dns = "UseDNS no\n"
       with open(sshd_config_file, "w") as f:
         f.write(sshd_config + use_dns)
-        print(sshd_config + use_dns)
       kegman.save({"UseDNS": True})
     subprocess.check_call(["mount", "-o", "remount,ro", "/system"])  # remount system as read only
   else:
@@ -70,11 +65,10 @@ def mod_sshd_config():  # this disables dns lookup when connecting to EON to spe
 def start(high_freq=False):
   global high_frequency
   high_frequency = high_freq  # set to true from latcontrol, false for long control
-  if not kegman.get("UseDNS") or kegman.get("UseDNS") is None:
-    mod_sshd_config()
-  with open("/data/testfff", "a") as f:
-    f.write(BASEDIR+"\n")
-  threading.Thread(target=phantom_thread).start()
+  if BASEDIR == "/data/openpilot":
+    if not kegman.get("UseDNS") or kegman.get("UseDNS") is None:
+      mod_sshd_config()
+    threading.Thread(target=phantom_thread).start()
 
 data = {"status": False}
 phantom_file = "/data/phantom.json"
