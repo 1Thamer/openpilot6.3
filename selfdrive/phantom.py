@@ -1,6 +1,7 @@
 import time
 import json
 import threading
+from common.basedir import BASEDIR
 
 def phantom_thread():
   global data
@@ -21,17 +22,26 @@ def phantom_thread():
       thread_interval = 5
     thread_interval = max(thread_interval - (time.time() - start), 0)  # rate keeper
     if (time.time() - thread_start) > (20*60):  # if car is on for more than 20 minutes without phantom activation, shut down thread
+      with open("/data/testing.txt", "a") as f:
+        f.write("thread timeout\n")
+      data = {"status": False}
       break
 
 def read_phantom():
+  tmp = None
   try:
     with open(phantom_file, "r") as f:
-      return json.load(f)
-  except:
+      f.seek(0)
+      tmp = f.read()
+      return json.loads(tmp)
+  except Exception,e:
+    with open("/data/test_file.txt", "a") as f:
+      f.write(str(e)+"\n"+tmp+"\n")
     return {"status": False}
+
+def start():
+  threading.Thread(target=phantom_thread).start()
 
 high_frequency = False  # set to true from latcontrol, false for long control
 data = {"status": False}
 phantom_file = "/data/phantom.json"
-prev_status = False
-threading.Thread(target=phantom_thread).start()

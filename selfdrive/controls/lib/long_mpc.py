@@ -37,6 +37,7 @@ class LongitudinalMpc(object):
     self.prev_phantom_time = 0
     self.frames_since_time = 0
     self.phantom_timeout = False
+    phantom.start()
 
   def save_car_data(self, self_vel):
     if len(self.dynamic_follow_dict["self_vels"]) >= 200:  # 100hz, so 200 items is 2 seconds
@@ -225,7 +226,8 @@ class LongitudinalMpc(object):
 
   def update(self, CS, lead, v_cruise_setpoint):
     v_ego = CS.carState.vEgo
-
+    with open("/data/test_file.tmp", "a") as f:
+      f.write(str(phantom.data)+"\n")
     if phantom.data["status"]:
       self.relative_velocity = phantom.data["speed"]
       if phantom.data["speed"] == 0.0 or self.phantom_timeout:
@@ -242,23 +244,22 @@ class LongitudinalMpc(object):
 
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
-
     if phantom.data["status"]:
       if not self.phantom_timeout or phantom.data["time"] != self.prev_phantom_time:
         self.phantom_timeout = False
         if phantom.data["time"] != self.prev_phantom_time:
           self.prev_phantom_time = phantom.data["time"]
           self.frames_since_time = 0
-        if self.frames_since_time <= 200:
+        if self.frames_since_time <= 300:
           self.frames_since_time += 1
         else:
           self.prev_phantom_time = phantom.data["time"]
           self.frames_since_time = 0
           self.phantom_timeout = True
         if phantom.data["speed"] == 0 and self.prev_phantom_speed != 0:
-          if self.frames_since_stopped < 200:
+          if self.frames_since_stopped < 300:
             self.frames_since_stopped += 1
-            stop_x = [0, 200]  # smooth deceleration
+            stop_x = [0, 300]  # smooth deceleration
             stop_y = [self.prev_phantom_speed, 0.0]
             v_lead = interp(self.frames_since_stopped, stop_x, stop_y)
           else:
@@ -270,9 +271,9 @@ class LongitudinalMpc(object):
           v_lead = phantom.data["speed"]
           self.prev_phantom_speed = phantom.data["speed"]
       else:
-        if self.frames_since_time <= 200:
+        if self.frames_since_time <= 300:
           self.frames_since_time += 1
-          stop_x = [0, 200]  # smooth deceleration
+          stop_x = [0, 300]  # smooth deceleration
           stop_y = [self.prev_phantom_speed, 0.0]
           v_lead = interp(self.frames_since_time, stop_x, stop_y)
         else:
@@ -316,7 +317,6 @@ class LongitudinalMpc(object):
         self.cur_state[0].v_l = v_ego + 10.0
         a_lead = 0.0
         self.a_lead_tau = _LEAD_ACCEL_TAU
-
     # Calculate mpc
     t = sec_since_boot()
     TR = self.calculate_tr(v_ego, CS.carState)

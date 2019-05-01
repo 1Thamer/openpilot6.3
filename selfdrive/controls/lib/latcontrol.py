@@ -3,8 +3,6 @@ from common.numpy_fast import interp
 from cereal import car
 import selfdrive.phantom as phantom
 
-phantom.high_frequency = True
-
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz
 
@@ -25,15 +23,18 @@ class LatControl(object):
     self.rate_ff_gain = 0.01
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
     self.previous_integral = 0.0
+    phantom.high_frequency = True
+    phantom.start()
     
   def reset(self):
     self.pid.reset()
     
   def adjust_angle_gain(self):
     if (self.pid.f > 0) == (self.pid.i > 0) and abs(self.pid.i) >= abs(self.previous_integral):
-      self.angle_ff_gain *= 1.00001
+      self.angle_ff_gain *= 1.0001
     else:
       self.angle_ff_gain *= 0.9999
+    self.angle_ff_gain = max(1.0, self.angle_ff_gain)
     self.previous_integral = self.pid.i
 
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
