@@ -270,6 +270,10 @@ class LongitudinalMpc(object):
           self.relative_distance = 9.144
           v_lead = phantom.data["speed"]  # if phantom enabled and button held
           self.prev_phantom_speed = phantom.data["speed"]
+        else:  # phantom active, but 0 vel
+          self.frames_since_stopped = 0
+          v_lead = phantom.data["speed"]  # if phantom enabled and button held
+          self.prev_phantom_speed = phantom.data["speed"]
       else:  # if timeout
         if self.frames_since_time <= change_state_time:
           self.frames_since_time += 1
