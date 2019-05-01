@@ -23,8 +23,7 @@ class LatControl(object):
     self.rate_ff_gain = 0.01
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
     self.previous_integral = 0.0
-    phantom.high_frequency = True
-    phantom.start()
+    phantom.start(high_freq=True)
     
   def reset(self):
     self.pid.reset()
