@@ -239,8 +239,7 @@ class LongitudinalMpc(object):
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
     if phantom.data["status"]:
-      change_state_time = 100  # 1 second
-      self.relative_distance = 5.7
+      change_state_time = 150  # 1.5 second
       if not self.phantom_timeout or phantom.data["time"] != self.prev_phantom_time:
         self.phantom_timeout = False
         if phantom.data["time"] != self.prev_phantom_time:
@@ -257,20 +256,20 @@ class LongitudinalMpc(object):
             self.frames_since_stopped += 1
             stop_x = [0, change_state_time]  # smooth deceleration
             stop_y = [self.prev_phantom_speed, 0.0]
-            stop_y_dist = [9.144, 5.7]
-            self.relative_distance = interp(self.frames_since_stopped, stop_x, stop_y_dist)
+            self.relative_distance = 9.144
             v_lead = interp(self.frames_since_stopped, stop_x, stop_y)
           else:
             self.relative_distance = 5.7  # keep relative distance at 16.7 until fully stop for smooth decel
             self.frames_since_stopped = 0
             self.prev_phantom_speed = 0.0
             v_lead = 0.0  # if after smooth decel for button release
-        elif phantom.data["speed"] != 0 and not self.phantom_timeout:
+        elif phantom.data["speed"] != 0 and not self.phantom_timeout:  # if phantom enabled and button held
           self.frames_since_stopped = 0
           self.relative_distance = 9.144
-          v_lead = phantom.data["speed"]  # if phantom enabled and button held
+          v_lead = phantom.data["speed"]
           self.prev_phantom_speed = phantom.data["speed"]
         else:  # phantom active, but 0 vel
+          self.relative_distance = 5.7
           self.frames_since_stopped = 0
           v_lead = 0.0
           self.prev_phantom_speed = phantom.data["speed"]
