@@ -239,20 +239,20 @@ class LongitudinalMpc(object):
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
     if phantom.data["status"]:
-      change_state_time = 200  # 2 seconds
+      change_state_time = 100  # 1 second
       self.relative_distance = 5.7
       if not self.phantom_timeout or phantom.data["time"] != self.prev_phantom_time:
         self.phantom_timeout = False
         if phantom.data["time"] != self.prev_phantom_time:
           self.prev_phantom_time = phantom.data["time"]
           self.frames_since_time = 0
-        if self.frames_since_time <= change_state_time:
+        if self.frames_since_time <= 300:  # 3 second timeout
           self.frames_since_time += 1
         else:
           self.prev_phantom_time = phantom.data["time"]
           self.frames_since_time = 0
           self.phantom_timeout = True
-        if phantom.data["speed"] == 0 and self.prev_phantom_speed != 0:
+        if phantom.data["speed"] == 0 and self.prev_phantom_speed != 0 and not self.phantom_timeout:
           if self.frames_since_stopped < change_state_time:
             self.frames_since_stopped += 1
             stop_x = [0, change_state_time]  # smooth deceleration
@@ -265,14 +265,14 @@ class LongitudinalMpc(object):
             self.frames_since_stopped = 0
             self.prev_phantom_speed = 0.0
             v_lead = 0.0  # if after smooth decel for button release
-        elif phantom.data["speed"] != 0:
+        elif phantom.data["speed"] != 0 and not self.phantom_timeout:
           self.frames_since_stopped = 0
           self.relative_distance = 9.144
           v_lead = phantom.data["speed"]  # if phantom enabled and button held
           self.prev_phantom_speed = phantom.data["speed"]
         else:  # phantom active, but 0 vel
           self.frames_since_stopped = 0
-          v_lead = phantom.data["speed"]  # if phantom enabled and button held
+          v_lead = 0.0
           self.prev_phantom_speed = phantom.data["speed"]
       else:  # if timeout
         if self.frames_since_time <= change_state_time:
