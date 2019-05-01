@@ -45,16 +45,21 @@ def read_phantom():
 def mod_sshd_config():  # this disables dns lookup when connecting to EON to speed up commands from phantom app, reboot required
   sshd_config_file = "/system/comma/usr/etc/ssh/sshd_config_test"
   result = subprocess.check_call(["mount", "-o", "remount,rw", "/system"])  # mount /system as rw so we can modify sshd_config file
+  print(result)
   if result == 0:
     with open(sshd_config_file, "r") as f:
       sshd_config = f.read()
+    print(sshd_config)
     if "UseDNS no" not in sshd_config:
+      print("not in")
       if sshd_config[-1:]!="\n":
         use_dns = "\nUseDNS no"
       else:
         use_dns = "UseDNS no"
+      print(use_dns)
       with open(sshd_config_file, "w") as f:
         f.write(sshd_config + use_dns)
+        print(sshd_config + use_dns)
       kegman.save({"UseDNS": True})
     subprocess.check_call(["mount", "-o", "remount,ro", "/system"])  # remount system as read only
   else:
