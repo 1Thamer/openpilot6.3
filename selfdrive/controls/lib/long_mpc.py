@@ -239,13 +239,13 @@ class LongitudinalMpc(object):
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
     if phantom.data["status"]:
-      change_state_time = 50  # 1 second
+      change_state_time = 40  # .4 second
       if not self.phantom_timeout or phantom.data["time"] != self.prev_phantom_time:
         self.phantom_timeout = False
         if phantom.data["time"] != self.prev_phantom_time:
           self.prev_phantom_time = phantom.data["time"]
           self.frames_since_time = 0
-        if self.frames_since_time <= 300:  # 3 second timeout
+        if self.frames_since_time <= 100:  # ~3 second timeout
           self.frames_since_time += 1
         else:
           self.prev_phantom_time = phantom.data["time"]
