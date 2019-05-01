@@ -256,6 +256,8 @@ class LongitudinalMpc(object):
             self.frames_since_stopped += 1
             stop_x = [0, 300]  # smooth deceleration
             stop_y = [self.prev_phantom_speed, 0.0]
+            stop_y_dist = [16.7, 5.7]
+            self.relative_distance = interp(self.frames_since_stopped, stop_x, stop_y_dist)
             v_lead = interp(self.frames_since_stopped, stop_x, stop_y)
           else:
             self.relative_distance = 5.7  # keep relative distance at 16.7 until fully stop for smooth decel
@@ -271,6 +273,8 @@ class LongitudinalMpc(object):
           self.frames_since_time += 1
           stop_x = [0, 300]  # smooth deceleration
           stop_y = [self.prev_phantom_speed, 0.0]
+          stop_y_dist = [16.7, 5.7]
+          self.relative_distance = interp(self.frames_since_time, stop_x, stop_y_dist)
           v_lead = interp(self.frames_since_time, stop_x, stop_y)
         else:
           self.relative_distance = 5.7  # same reason as above
