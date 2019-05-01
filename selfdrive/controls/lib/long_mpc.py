@@ -227,11 +227,7 @@ class LongitudinalMpc(object):
   def update(self, CS, lead, v_cruise_setpoint):
     v_ego = CS.carState.vEgo
     if phantom.data["status"]:
-      self.relative_velocity = min((phantom.data["speed"] - v_ego), 0)
-      if phantom.data["speed"] == 0.0 or self.phantom_timeout:
-        self.relative_distance = 5.7
-      else:
-        self.relative_distance = 16.7
+      self.relative_velocity = phantom.data["speed"] - v_ego
     else:
       try:
         self.relative_velocity = lead.vRel
@@ -243,6 +239,7 @@ class LongitudinalMpc(object):
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
     if phantom.data["status"]:
+      self.relative_distance = 16.7
       if not self.phantom_timeout or phantom.data["time"] != self.prev_phantom_time:
         self.phantom_timeout = False
         if phantom.data["time"] != self.prev_phantom_time:
@@ -258,24 +255,26 @@ class LongitudinalMpc(object):
           if self.frames_since_stopped < 300:
             self.frames_since_stopped += 1
             stop_x = [0, 300]  # smooth deceleration
-            stop_y = [self.prev_phantom_speed - v_ego, -v_ego]
+            stop_y = [self.prev_phantom_speed, 0.0]
             v_lead = interp(self.frames_since_stopped, stop_x, stop_y)
           else:
+            self.relative_distance = 5.7  # keep relative distance at 16.7 until fully stop for smooth decel
             self.frames_since_stopped = 0
             self.prev_phantom_speed = 0.0
-            v_lead = phantom.data["speed"] - v_ego
+            v_lead = 0.0  # if after smooth decel for button release
         else:
           self.frames_since_stopped = 0
-          v_lead = phantom.data["speed"] - v_ego  # if phantom enabled and button held
+          v_lead = phantom.data["speed"]  # if phantom enabled and button held
           self.prev_phantom_speed = phantom.data["speed"]
-      else:
+      else:  # if timeout
         if self.frames_since_time <= 300:
           self.frames_since_time += 1
           stop_x = [0, 300]  # smooth deceleration
-          stop_y = [self.prev_phantom_speed - v_ego, -v_ego]
+          stop_y = [self.prev_phantom_speed, 0.0]
           v_lead = interp(self.frames_since_time, stop_x, stop_y)
         else:
-          v_lead = -v_ego
+          self.relative_distance = 5.7  # same reason as above
+          v_lead = 0.0  # if after smooth decel for timeout
 
       x_lead = self.relative_distance
       a_lead = 0.0
