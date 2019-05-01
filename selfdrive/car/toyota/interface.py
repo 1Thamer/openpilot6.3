@@ -412,7 +412,7 @@ class CarInterface(object):
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
+    if ret.seatbeltUnlatched and self.CS.v_ego < 0.044704:  # only disable if car is under 0.1 mph
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.esp_disabled and self.CP.enableDsu:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
