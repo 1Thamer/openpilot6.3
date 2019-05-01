@@ -239,7 +239,7 @@ class LongitudinalMpc(object):
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
     if phantom.data["status"]:
-      change_state_time = 200  # 1 second
+      change_state_time = 50  # 1 second
       if not self.phantom_timeout or phantom.data["time"] != self.prev_phantom_time:
         self.phantom_timeout = False
         if phantom.data["time"] != self.prev_phantom_time:
@@ -256,8 +256,7 @@ class LongitudinalMpc(object):
             self.frames_since_stopped += 1
             stop_x = [0, change_state_time]  # smooth deceleration
             stop_y = [self.prev_phantom_speed, 0.0]
-            stop_y_dist = [9.144, 3.048]
-            self.relative_distance = interp(self.frames_since_stopped, stop_x, stop_y_dist)
+            self.relative_distance = 3.048
             v_lead = interp(self.frames_since_stopped, stop_x, stop_y)
           else:
             self.relative_distance = 3.048  # keep relative distance at 16.7 until fully stop for smooth decel
@@ -279,8 +278,7 @@ class LongitudinalMpc(object):
           self.frames_since_time += 1
           stop_x = [0, change_state_time]  # smooth deceleration
           stop_y = [self.prev_phantom_speed, 0.0]
-          stop_y_dist = [9.144, 3.048]
-          self.relative_distance = interp(self.frames_since_time, stop_x, stop_y_dist)
+          self.relative_distance = 3.048
           v_lead = interp(self.frames_since_time, stop_x, stop_y)
         else:
           self.relative_distance = 3.048  # same reason as above
