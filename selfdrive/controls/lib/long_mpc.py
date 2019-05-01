@@ -227,7 +227,7 @@ class LongitudinalMpc(object):
   def update(self, CS, lead, v_cruise_setpoint):
     v_ego = CS.carState.vEgo
     if phantom.data["status"]:
-      self.relative_velocity = phantom.data["speed"]
+      self.relative_velocity = min((phantom.data["speed"] - v_ego), 0)
       if phantom.data["speed"] == 0.0 or self.phantom_timeout:
         self.relative_distance = 5.7
       else:
@@ -258,24 +258,24 @@ class LongitudinalMpc(object):
           if self.frames_since_stopped < 300:
             self.frames_since_stopped += 1
             stop_x = [0, 300]  # smooth deceleration
-            stop_y = [self.prev_phantom_speed, 0.0]
+            stop_y = [self.prev_phantom_speed - v_ego, -v_ego]
             v_lead = interp(self.frames_since_stopped, stop_x, stop_y)
           else:
             self.frames_since_stopped = 0
             self.prev_phantom_speed = 0.0
-            v_lead = phantom.data["speed"]
+            v_lead = phantom.data["speed"] - v_ego
         else:
           self.frames_since_stopped = 0
-          v_lead = phantom.data["speed"]
+          v_lead = phantom.data["speed"] - v_ego  # if phantom enabled and button held
           self.prev_phantom_speed = phantom.data["speed"]
       else:
         if self.frames_since_time <= 300:
           self.frames_since_time += 1
           stop_x = [0, 300]  # smooth deceleration
-          stop_y = [self.prev_phantom_speed, 0.0]
+          stop_y = [self.prev_phantom_speed - v_ego, -v_ego]
           v_lead = interp(self.frames_since_time, stop_x, stop_y)
         else:
-          v_lead = 0.0
+          v_lead = -v_ego
 
       x_lead = self.relative_distance
       a_lead = 0.0
