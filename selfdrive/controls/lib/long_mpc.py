@@ -239,7 +239,7 @@ class LongitudinalMpc(object):
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
     if phantom.data["status"]:
-      self.relative_distance = 16.7
+      self.relative_distance = 5.7
       if not self.phantom_timeout or phantom.data["time"] != self.prev_phantom_time:
         self.phantom_timeout = False
         if phantom.data["time"] != self.prev_phantom_time:
@@ -266,6 +266,7 @@ class LongitudinalMpc(object):
             v_lead = 0.0  # if after smooth decel for button release
         else:
           self.frames_since_stopped = 0
+          self.relative_distance = 16.7
           v_lead = phantom.data["speed"]  # if phantom enabled and button held
           self.prev_phantom_speed = phantom.data["speed"]
       else:  # if timeout
