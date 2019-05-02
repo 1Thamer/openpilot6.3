@@ -245,7 +245,7 @@ class LongitudinalMpc(object):
         if phantom.data["time"] != self.prev_phantom_time:
           self.prev_phantom_time = phantom.data["time"]
           self.frames_since_time = 0
-        if self.frames_since_time <= 100:  # ~3 second timeout
+        if self.frames_since_time <= 300:  # ~3 second timeout
           self.frames_since_time += 1
         else:
           self.prev_phantom_time = phantom.data["time"]

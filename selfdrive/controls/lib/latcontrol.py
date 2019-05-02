@@ -39,7 +39,12 @@ class LatControl(object):
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
     if phantom.data["status"]:
       v_ego += 11.176  # add 10 mph to real speed, should trick the pid loop
+      self.pid._k_p = [[1.], [1.]]
+      self.pid._k_i = [[1.], [1.]]
       active = True
+    else:
+      self.pid._k_p = (CP.steerKpBP, CP.steerKpV)
+      self.pid._k_i = (CP.steerKiBP, CP.steerKiV)
     if v_ego < 0.3 or not active:
       output_steer = 0.0
       self.pid.reset()

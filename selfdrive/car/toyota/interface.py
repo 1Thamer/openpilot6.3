@@ -408,11 +408,16 @@ class CarInterface(object):
       if self.cam_can_valid_count >= 5:
         self.forwarding_camera = True
 
+    if ret.cruiseState.enabled and not self.cruise_enabled_prev:
+      disengage_event = True
+    else:
+      disengage_event = False
+
     if not ret.gearShifter == 'drive' and self.CP.enableDsu:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.doorOpen:
+    if ret.doorOpen and disengage_event:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
+    if ret.seatbeltUnlatched and disengage_event:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.esp_disabled and self.CP.enableDsu:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
@@ -424,6 +429,8 @@ class CarInterface(object):
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     if self.CS.low_speed_lockout and self.CP.enableDsu:
       events.append(create_event('lowSpeedLockout', [ET.NO_ENTRY, ET.PERMANENT]))
+    if self.CS.steer_unavailable:
+      events.append(create_event('steerTempUnavailableNoCancel', [ET.WARNING]))
     if ret.vEgo < self.CP.minEnableSpeed and self.CP.enableDsu:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
       if c.actuators.gas > 0.1:

@@ -302,7 +302,7 @@ def mapsd_thread():
         dat.liveMapData.roadCurvature = map(float, curvature)
 
     if speedLimittrafficvalid:
-      if speedLimittraffic is not 0:
+      if speedLimittraffic > 0.1:
         dat.liveMapData.speedLimitValid = True
         dat.liveMapData.speedLimit = speedLimittraffic / 3.6
         map_valid = False
@@ -322,10 +322,10 @@ def mapsd_thread():
     #print "max_speed"
     #print max_speed
     #print "speedLimittrafficvalid"
-    if speedLimittrafficvalid:
-      print "True"
-    else:
-      print "False"
+    #if speedLimittrafficvalid:
+    #  print "True"
+    #else:
+    #  print "False"
     dat.liveMapData.mapValid = map_valid
 
     map_data_sock.send(dat.to_bytes())
