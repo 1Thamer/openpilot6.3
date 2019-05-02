@@ -58,6 +58,8 @@ def mod_sshd_config():  # this disables dns lookup when connecting to EON to spe
       with open(sshd_config_file, "w") as f:
         f.write(sshd_config + use_dns)
       kegman.save({"UseDNS": True})
+    else:
+      kegman.save({"UseDNS": True})
     subprocess.check_call(["mount", "-o", "remount,ro", "/system"])  # remount system as read only
   else:
     kegman.save({"UseDNS": False})
