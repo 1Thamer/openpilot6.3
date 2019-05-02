@@ -28,7 +28,6 @@ class CarInterface(object):
     self.can_invalid_count = 0
     self.cam_can_valid_count = 0
     self.cruise_enabled_prev = False
-    self.disengage_event = False
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -409,16 +408,16 @@ class CarInterface(object):
       if self.cam_can_valid_count >= 5:
         self.forwarding_camera = True
 
-    if self.CS.v_ego < 0.44704:  # 1 mph
-      self.disengage_event = True
-    elif self.CS.v_ego > 2.2352:  # 5 mph
-      self.disengage_event = False
+    if ret.cruiseState.enabled and not self.cruise_enabled_prev:
+      disengage_event = True
+    else:
+      disengage_event = False
 
     if not ret.gearShifter == 'drive' and self.CP.enableDsu:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.doorOpen and not self.disengage_event:
+    if ret.doorOpen and disengage_event:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched and not self.disengage_event:
+    if ret.seatbeltUnlatched and disengage_event:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.esp_disabled and self.CP.enableDsu:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
