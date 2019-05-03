@@ -229,7 +229,7 @@ class CarInterface(object):
     # brake pedal
     ret.brake = self.CS.user_brake / 0xd0
     ret.brakePressed = self.CS.brake_pressed
-
+    ret.brakeLights = self.CS.frictionBrakesActive
     # steering wheel
     ret.steeringAngle = self.CS.angle_steers + self.angleSteersoffset
 
