@@ -59,7 +59,7 @@ class LatControl(object):
       # constant for 0.05s.
       #dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
       #self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
-      if phantom.data["status"]:
+      if self.pid_phantom:
         self.angle_steers_des = float(phantom.data["angle"])
       else:
         self.angle_steers_des = path_plan.angleSteers  # get from MPC/PathPlanner
@@ -75,7 +75,7 @@ class LatControl(object):
         rate_feedforward = (1.0 - self.angle_ff_ratio) * self.rate_ff_gain * path_plan.rateSteers
         steer_feedforward = v_ego**2 * (rate_feedforward + angle_feedforward)
 
-        if v_ego > 10.0 and not phantom.data["status"]::
+        if v_ego > 10.0 and not self.pid_phantom:
           if abs(angle_steers) > (self.angle_ff_bp[0][1] / 2.0):
             self.adjust_angle_gain()
           else:
