@@ -190,7 +190,7 @@ class CarState(object):
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
 
-  def update(self, pt_cp):
+  def update(self, pt_cp, ch_cp):
 
     self.can_valid = pt_cp.can_valid
     self.prev_cruise_buttons = self.cruise_buttons
