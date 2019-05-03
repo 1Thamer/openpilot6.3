@@ -163,7 +163,7 @@ typedef struct UIScene {
   float angleSteers;
   float angleSteersDes;
   //BB END CPU TEMP
-
+  bool brakeLights;
   // Used to show gps planner status
   bool gps_planner_active;
 
@@ -207,6 +207,8 @@ typedef struct UIState {
   void *livempc_sock_raw;
   zsock_t *plus_sock;
   void *plus_sock_raw;
+  zsock_t *carstate_sock;
+  void *carstate_sock_raw;
   zsock_t *map_data_sock;
   void *map_data_sock_raw;
 
@@ -1319,6 +1321,33 @@ static void ui_draw_vision_face(UIState *s) {
   nvgFill(s->vg);
 }
 
+static void ui_draw_vision_brake(UIState *s) {
+  const UIScene *scene = &s->scene;
+  const int brake_size = 96;
+  const int brake_x = (scene->ui_viz_rx + (brake_size * 5) + (bdr_is * 4));
+  const int brake_y = (footer_y + ((footer_h - brake_size) / 2));
+  const int brake_img_size = (brake_size * 1.5);
+  const int brake_img_x = (brake_x - (brake_img_size / 2));
+  const int brake_img_y = (brake_y - (brake_size / 4));
+
+  bool brake_valid = scene->brakeLights;
+  float brake_img_alpha = brake_valid ? 1.0f : 0.15f;
+  float brake_bg_alpha = brake_valid ? 0.3f : 0.1f;
+  NVGcolor brake_bg = nvgRGBA(0, 0, 0, (255 * brake_bg_alpha));
+  NVGpaint brake_img = nvgImagePattern(s->vg, brake_img_x, brake_img_y,
+    brake_img_size, brake_img_size, 0, s->img_brake, brake_img_alpha);
+
+  nvgBeginPath(s->vg);
+  nvgCircle(s->vg, brake_x, (brake_y + (bdr_is * 1.5)), brake_size);
+  nvgFillColor(s->vg, brake_bg);
+  nvgFill(s->vg);
+
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, brake_img_x, brake_img_y, brake_img_size, brake_img_size);
+  nvgFillPaint(s->vg, brake_img);
+  nvgFill(s->vg);
+}
+
 static void ui_draw_vision_header(UIState *s) {
   const UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
@@ -1349,6 +1378,7 @@ static void ui_draw_vision_footer(UIState *s) {
 
   ui_draw_vision_face(s);
   ui_draw_vision_map(s);
+  ui_draw_vision_brake(s);
 }
 
 static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
@@ -1538,6 +1568,11 @@ static void ui_update(UIState *s) {
   int err;
 
   if (s->vision_connect_firstrun) {
+    s->carstate_sock = zsock_new_sub(">tcp://127.0.0.1:8021", "");
+    assert(s->carstate_sock);
+    s->carstate_sock_raw = zsock_resolve(s->carstate_sock);
+    s->lastdriveEnd = 0;
+
     // cant run this in connector thread because opengl.
     // do this here for now in lieu of a run_on_main_thread event
 
@@ -1626,6 +1661,9 @@ static void ui_update(UIState *s) {
 
     int num_polls = 9;
     if (s->vision_connected) {
+      polls[num_polls].socket = s->carstate_sock_raw;
+      polls[num_polls].events = ZMQ_POLLIN;
+      num_polls++;
       assert(s->ipc_fd >= 0);
       polls[9].fd = s->ipc_fd;
       polls[9].events = ZMQ_POLLIN;
@@ -1657,6 +1695,7 @@ static void ui_update(UIState *s) {
         close(s->ipc_fd);
         s->ipc_fd = -1;
         s->vision_connected = false;
+        zsock_destroy(&s->carstate_sock);
         continue;
       }
       if (rp.type == VIPC_STREAM_ACQUIRE) {
@@ -1940,6 +1979,10 @@ static void ui_update(UIState *s) {
         s->scene.speedlimit = datad.speedLimit;
         s->scene.speedlimit_valid = datad.speedLimitValid;
         s->scene.map_valid = datad.mapValid;
+      } else if (eventd.which == cereal_Event_carState) {
+        struct cereal_CarState datad;
+        cereal_read_CarState(&datad, eventd.carState);
+        s->scene.brakeLights = datad.brakeLights;
       }
       capn_free(&ctx);
       zmq_msg_close(&msg);
