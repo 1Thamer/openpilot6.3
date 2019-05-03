@@ -57,6 +57,15 @@ def get_powertrain_can_parser(CP, canbus):
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, [], canbus.powertrain)
 
+def get_chassis_can_parser(CP, canbus):
+  # this function generates lists for signal, messages and initial values
+  signals = [
+      # sig_name, sig_address, default
+      ("FrictionBrakePressure", "EBCMFrictionBrakeStatus", 0),
+  ]
+
+  return CANParser(DBC[CP.carFingerprint]['chassis'], signals, [], canbus.chassis)
+
 class CarState(object):
   def __init__(self, CP, canbus):
     self.CP = CP
@@ -78,6 +87,7 @@ class CarState(object):
     self.prev_lka_button = 0
     self.lka_button = 0
     self.lkMode = True
+    self.frictionBrakesActive = False
     
     # ALCA PARAMS
     self.blind_spot_on = bool(0)
@@ -276,6 +286,8 @@ class CarState(object):
     self.brake_pressed = self.user_brake > 10 or self.regen_pressed
 
     self.gear_shifter_valid = self.gear_shifter == car.CarState.GearShifter.drive
+    # Update Friction Brakes from Chassis Canbus
+    self.frictionBrakesActive = bool(ch_cp.vl["EBCMFrictionBrakeStatus"]["FrictionBrakePressure"] != 0)
     
   def get_follow_level(self):
     return self.follow_level
