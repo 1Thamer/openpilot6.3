@@ -15,6 +15,7 @@ class PhantomReceiver():
     data.phantomData.angle = angle
     data.phantomData.time = time
     self.phantomData_sock.send(data.to_bytes())
+    print("no_error")
 
   def open_socket(self):
     self.phantomData_sock = messaging.pub_sock(zmq.Context(), service_list['phantomData'].port)
