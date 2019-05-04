@@ -15,3 +15,6 @@ class PhantomReceiver():
     data.phantomData.angle = angle
     data.phantomData.time = time
     self.phantomData_sock.send(data.to_bytes())
+
+  def close_socket(self):
+    self.phantomData_sock.close()
