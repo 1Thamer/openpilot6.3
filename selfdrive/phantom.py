@@ -15,7 +15,7 @@ class Phantom():
       self.mod_sshd_config()
 
   def update(self):
-    phantomData = messaging.recv_one(self.phantom_Data_sock)
+    phantomData = messaging.recv_one_or_none(self.phantom_Data_sock)
     if phantomData is not None:
       self.data = {"status": phantomData.status, "speed": phantomData.speed, "angle": phantomData.angle, "time": phantomData.time}
     else:
