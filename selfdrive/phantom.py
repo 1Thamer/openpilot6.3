@@ -17,7 +17,7 @@ class Phantom():
   def update(self):
     phantomData = messaging.recv_one_or_none(self.phantom_Data_sock)
     if phantomData is not None:
-      self.data = {"status": phantomData.status, "speed": phantomData.speed, "angle": phantomData.angle, "time": phantomData.time}
+      self.data = {"status": phantomData.phantomData.status, "speed": phantomData.phantomData.speed, "angle": phantomData.phantomData.angle, "time": phantomData.phantomData.time}
     else:
       self.data = {"status": False, "speed": 0.0}
 
