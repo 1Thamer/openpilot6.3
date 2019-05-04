@@ -10,18 +10,14 @@ class Phantom():
     context = zmq.Context()
     self.poller = zmq.Poller()
     self.phantom_Data_sock = messaging.sub_sock(context, service_list['phantomData'].port, conflate=True, poller=self.poller)
-    self.phantomData = None
     self.data = {"status": False, "speed": 0.0}
     if (BASEDIR == "/data/openpilot") and (not kegman.get("UseDNS") or not kegman.get("UseDNS")):
       self.mod_sshd_config()
 
   def update(self):
-    for socket, event in self.poller.poll(0):
-      if socket is self.phantom_Data_sock:
-        self.phantomData = messaging.recv_one(socket).phantomData
-
-    if self.phantomData:
-      self.data = {"status": self.phantomData.status, "speed": self.phantomData.speed, "angle": self.phantomData.angle, "time": self.phantomData.time}
+    phantomData = messaging.recv_one(self.phantom_Data_sock)
+    if phantomData is not None:
+      self.data = {"status": phantomData.status, "speed": phantomData.speed, "angle": phantomData.angle, "time": phantomData.time}
     else:
       self.data = {"status": False, "speed": 0.0}
 
