@@ -8,10 +8,10 @@ def broadcast_data(p_status, p_speed, p_angle, p_time):
   phantomData_sock = messaging.pub_sock(zmq.Context(), service_list['phantomData'].port)
   data = messaging.new_message()
   data.init('phantomData')
-  data.latControl.status = p_status
-  data.latControl.speed = p_speed
-  data.latControl.angle = p_angle
-  data.latControl.time = p_time
+  data.phantomData.status = p_status
+  data.phantomData.speed = p_speed
+  data.phantomData.angle = p_angle
+  data.phantomData.time = p_time
   phantomData_sock.send(data.to_bytes())
 
 if __name__ == "__main__":
