@@ -11,6 +11,8 @@ class Phantom():
     self.poller = zmq.Poller()
     self.phantom_Data_sock = messaging.sub_sock(context, service_list['phantomData'].port, conflate=True, poller=self.poller)
     self.data = {"status": False, "speed": 0.0}
+    self.last_receive_counter = 0
+    self.last_phantom_data = {"status": False, "speed": 0.0}
     if (BASEDIR == "/data/openpilot") and (not kegman.get("UseDNS") or not kegman.get("UseDNS")):
       self.mod_sshd_config()
 
@@ -18,8 +20,14 @@ class Phantom():
     phantomData = messaging.recv_one_or_none(self.phantom_Data_sock)
     if phantomData is not None:
       self.data = {"status": phantomData.phantomData.status, "speed": phantomData.phantomData.speed, "angle": phantomData.phantomData.angle, "time": phantomData.phantomData.time}
+      self.last_phantom_data = self.data
+      self.last_receive_counter = 0
     else:
-      self.data = {"status": False, "speed": 0.0}
+      if self.last_receive_counter > 200:
+        self.data = {"status": False, "speed": 0.0}
+      else:
+        self.data = self.last_phantom_data
+      self.last_receive_counter += 1
 
   def mod_sshd_config(self):  # this disables dns lookup when connecting to EON to speed up commands from phantom app, reboot required
     sshd_config_file = "/system/comma/usr/etc/ssh/sshd_config"
