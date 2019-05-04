@@ -1,78 +1,46 @@
-import time
-import json
-import threading
+import zmq
+import selfdrive.messaging as messaging
+from selfdrive.services import service_list
 import selfdrive.kegman_conf as kegman
 import subprocess
 from common.basedir import BASEDIR
 
+class Phantom():
+  def __init__(self):
+    context = zmq.Context()
+    self.poller = zmq.Poller()
+    self.phantom_Data_sock = messaging.sub_sock(context, service_list['phantomData'].port, conflate=True, poller=self.poller)
+    self.phantomData = None
+    self.data = {"status": False, "speed": 0.0}
+    if (BASEDIR == "/data/openpilot") and (not kegman.get("UseDNS") or not kegman.get("UseDNS")):
+      self.mod_sshd_config()
 
-def phantom_thread():
-  global data
-  global high_frequency
-  thread_interval = 5  # .2hz
-  thread_start = time.time()
-  while True:
-    time.sleep(thread_interval)
-    start = time.time()
-    data = read_phantom()
-    if data["status"]:
-      thread_start = time.time()
-      if high_frequency:
-        thread_interval = 0.02  # 50hz for steering
+  def mod_sshd_config(self):  # this disables dns lookup when connecting to EON to speed up commands from phantom app, reboot required
+    sshd_config_file = "/system/comma/usr/etc/ssh/sshd_config"
+    result = subprocess.check_call(["mount", "-o", "remount,rw", "/system"])  # mount /system as rw so we can modify sshd_config file
+    if result == 0:
+      with open(sshd_config_file, "r") as f:
+        sshd_config = f.read()
+      if "UseDNS no" not in sshd_config:
+        if sshd_config[-1:]!="\n":
+          use_dns = "\nUseDNS no\n"
+        else:
+          use_dns = "UseDNS no\n"
+        with open(sshd_config_file, "w") as f:
+          f.write(sshd_config + use_dns)
+        kegman.save({"UseDNS": True})
       else:
-        thread_interval = 0.2  # 5hz
+        kegman.save({"UseDNS": True})
+      subprocess.check_call(["mount", "-o", "remount,ro", "/system"])  # remount system as read only
     else:
-      thread_interval = 5
-    thread_interval = max(thread_interval - (time.time() - start), 0)  # rate keeper
-    if (time.time() - thread_start) > (20*60):  # if car is on for more than 20 minutes without phantom activation, shut down thread
-      with open("/data/testing.txt", "a") as f:
-        f.write("thread timeout\n")
-      data = {"status": False}
-      break
+      kegman.save({"UseDNS": False})
 
+  def update(self):
+    for socket, event in self.poller.poll(0):
+      if socket is self.phantom_Data_sock:
+        self.phantomData = messaging.recv_one(socket).phantomData
 
-def read_phantom():
-  tmp = None
-  try:
-    with open(phantom_file, "r") as f:
-      f.seek(0)
-      tmp = f.read()
-      return json.loads(tmp)
-  except Exception,e:
-    with open("/data/phantom_error.txt", "a") as f:
-      f.write(str(e)+"\n"+tmp+"\n")
-    return {"status": False}
-
-
-def mod_sshd_config():  # this disables dns lookup when connecting to EON to speed up commands from phantom app, reboot required
-  sshd_config_file = "/system/comma/usr/etc/ssh/sshd_config"
-  result = subprocess.check_call(["mount", "-o", "remount,rw", "/system"])  # mount /system as rw so we can modify sshd_config file
-  if result == 0:
-    with open(sshd_config_file, "r") as f:
-      sshd_config = f.read()
-    if "UseDNS no" not in sshd_config:
-      if sshd_config[-1:]!="\n":
-        use_dns = "\nUseDNS no\n"
-      else:
-        use_dns = "UseDNS no\n"
-      with open(sshd_config_file, "w") as f:
-        f.write(sshd_config + use_dns)
-      kegman.save({"UseDNS": True})
+    if self.phantomData:
+      self.data = {"status": self.phantomData.status, "speed": self.phantomData.speed, "angle": self.phantomData.angle, "time": self.phantomData.time}
     else:
-      kegman.save({"UseDNS": True})
-    subprocess.check_call(["mount", "-o", "remount,ro", "/system"])  # remount system as read only
-  else:
-    kegman.save({"UseDNS": False})
-
-
-def start(high_freq=False):
-  global high_frequency
-  high_frequency = high_freq  # set to true from latcontrol, false for long control
-  if BASEDIR == "/data/openpilot":
-    if not kegman.get("UseDNS") or kegman.get("UseDNS") is None:
-      mod_sshd_config()
-    threading.Thread(target=phantom_thread).start()
-
-
-data = {"status": False}
-phantom_file = "/data/phantom.json"
+      self.data = {"status": False, "speed": 0.0}
