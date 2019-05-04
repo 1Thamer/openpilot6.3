@@ -20,5 +20,4 @@ class PhantomReceiver():
     self.phantomData_sock = messaging.pub_sock(zmq.Context(), service_list['phantomData'].port)
 
   def close_socket(self):
-    self.sock_closed = True
     self.phantomData_sock.close()
