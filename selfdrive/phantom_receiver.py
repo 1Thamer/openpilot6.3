@@ -15,4 +15,4 @@ def broadcast_data(p_status, p_speed, p_angle, p_time):
   phantomData_sock.send(data.to_bytes())
 
 if __name__ == "__main__":
-  broadcast_data(str(sys.argv[1]), float(sys.argv[2]), int(sys.argv[3]), float(sys.argv[4]))
+  broadcast_data(str(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]))

@@ -15,6 +15,16 @@ class Phantom():
     if (BASEDIR == "/data/openpilot") and (not kegman.get("UseDNS") or not kegman.get("UseDNS")):
       self.mod_sshd_config()
 
+  def update(self):
+    for socket, event in self.poller.poll(0):
+      if socket is self.phantom_Data_sock:
+        self.phantomData = messaging.recv_one(socket).phantomData
+
+    if self.phantomData:
+      self.data = {"status": self.phantomData.status, "speed": self.phantomData.speed, "angle": self.phantomData.angle, "time": self.phantomData.time}
+    else:
+      self.data = {"status": False, "speed": 0.0}
+
   def mod_sshd_config(self):  # this disables dns lookup when connecting to EON to speed up commands from phantom app, reboot required
     sshd_config_file = "/system/comma/usr/etc/ssh/sshd_config"
     result = subprocess.check_call(["mount", "-o", "remount,rw", "/system"])  # mount /system as rw so we can modify sshd_config file
@@ -34,13 +44,3 @@ class Phantom():
       subprocess.check_call(["mount", "-o", "remount,ro", "/system"])  # remount system as read only
     else:
       kegman.save({"UseDNS": False})
-
-  def update(self):
-    for socket, event in self.poller.poll(0):
-      if socket is self.phantom_Data_sock:
-        self.phantomData = messaging.recv_one(socket).phantomData
-
-    if self.phantomData:
-      self.data = {"status": self.phantomData.status, "speed": self.phantomData.speed, "angle": self.phantomData.angle, "time": self.phantomData.time}
-    else:
-      self.data = {"status": False, "speed": 0.0}
