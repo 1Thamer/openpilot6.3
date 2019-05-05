@@ -27,7 +27,7 @@ class Phantom():
     if phantomData is None:
       if self.last_receive_counter > 100 and to_disable:  # if last data is from ~2 seconds ago and last command is status: False, disable phantom mode
         self.data = {"status": False, "speed": 0.0}
-      elif self.last_receive_counter > 200 and not to_disable:  # lost connection, not disable. keep phantom on but set speed to 0
+      elif self.last_receive_counter > 100 and not to_disable:  # lost connection, not disable. keep phantom on but set speed to 0
         self.data = {"status": True, "speed": 0.0, "angle": 0.0, "time": 0.0}
       else:
         self.data = self.last_phantom_data
