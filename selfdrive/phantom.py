@@ -6,13 +6,14 @@ import subprocess
 from common.basedir import BASEDIR
 
 class Phantom():
-  def __init__(self):
+  def __init__(self, rate):
     context = zmq.Context()
     self.poller = zmq.Poller()
     self.phantom_Data_sock = messaging.sub_sock(context, service_list['phantomData'].port, conflate=True, poller=self.poller)
     self.data = {"status": False, "speed": 0.0}
     self.last_receive_counter = 0
     self.last_phantom_data = {"status": False, "speed": 0.0}
+    self.rate = rate
     if (BASEDIR == "/data/openpilot") and (not kegman.get("UseDNS") or not kegman.get("UseDNS")):
       self.mod_sshd_config()
 
@@ -25,9 +26,9 @@ class Phantom():
       self.last_receive_counter = 0
       to_disable = not phantomData.phantomData.status
     if phantomData is None:
-      if self.last_receive_counter > 100 and to_disable:  # if last data is from ~2 seconds ago and last command is status: False, disable phantom mode
+      if self.last_receive_counter > (self.rate * 2) and to_disable:  # if last data is from ~2 seconds ago and last command is status: False, disable phantom mode
         self.data = {"status": False, "speed": 0.0}
-      elif self.last_receive_counter > 100 and not to_disable:  # lost connection, not disable. keep phantom on but set speed to 0
+      elif self.last_receive_counter > (self.rate * 2) and not to_disable:  # lost connection, not disable. keep phantom on but set speed to 0
         self.data = {"status": True, "speed": 0.0, "angle": 0.0, "time": 0.0}
       else:
         self.data = self.last_phantom_data

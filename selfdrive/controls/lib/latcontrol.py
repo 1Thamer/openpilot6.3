@@ -24,7 +24,7 @@ class LatControl(object):
     self.rate_ff_gain = 0.01
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
     self.previous_integral = 0.0
-    self.phantom = Phantom()
+    self.phantom = Phantom(100)  #rate of latcontrol is ~100hz
     
   def reset(self):
     self.pid.reset()
