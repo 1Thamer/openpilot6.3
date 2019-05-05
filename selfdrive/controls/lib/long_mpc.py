@@ -37,7 +37,7 @@ class LongitudinalMpc(object):
     self.prev_phantom_time = 0
     self.frames_since_time = 0
     self.phantom_timeout = False
-    self.phantom = Phantom(40)
+    self.phantom = Phantom()
 
   def save_car_data(self, self_vel):
     if len(self.dynamic_follow_dict["self_vels"]) >= 200:  # 100hz, so 200 items is 2 seconds
@@ -67,7 +67,7 @@ class LongitudinalMpc(object):
     v_ego: Vehicle speed [m/s]
     read_distance_lines: ACC setting showing how much follow distance the user has set [1|2|3]
     """
-    self.phantom.update()
+    self.phantom.update(30)
     if self.phantom.data["status"]:
       if self.last_cost != 0.1:
         self.libmpc.init(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
