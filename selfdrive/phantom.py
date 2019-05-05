@@ -14,22 +14,24 @@ class Phantom():
     self.last_receive_counter = 0
     self.last_phantom_data = {"status": False, "speed": 0.0}
     self.rate = rate
+    self.to_disable = True
     if (BASEDIR == "/data/openpilot") and (not kegman.get("UseDNS") or not kegman.get("UseDNS")):
       self.mod_sshd_config()
 
   def update(self):  # in the future, pass in the current rate of long_mpc to accurate calculate disconnect time
     phantomData = messaging.recv_one_or_none(self.phantom_Data_sock)
-    to_disable = False
     if phantomData is not None:
       self.data = {"status": phantomData.phantomData.status, "speed": phantomData.phantomData.speed, "angle": phantomData.phantomData.angle, "time": phantomData.phantomData.time}
       self.last_phantom_data = self.data
       self.last_receive_counter = 0
-      to_disable = not phantomData.phantomData.status
+      self.to_disable = not phantomData.phantomData.status
     if phantomData is None:
-      if self.last_receive_counter > (self.rate * 2) and to_disable:  # if last data is from ~2 seconds ago and last command is status: False, disable phantom mode
+      if self.last_receive_counter > (self.rate * 2) and self.to_disable:  # if last data is from ~2 seconds ago and last command is status: False, disable phantom mode
         self.data = {"status": False, "speed": 0.0}
-      elif self.last_receive_counter > (self.rate * 2) and not to_disable:  # lost connection, not disable. keep phantom on but set speed to 0
+      elif self.last_receive_counter > (self.rate * 2) and not self.to_disable:  # lost connection, not disable. keep phantom on but set speed to 0
         self.data = {"status": True, "speed": 0.0, "angle": 0.0, "time": 0.0}
+      elif self.to_disable:
+        self.data = {"status": False, "speed": 0.0}
       else:
         self.data = self.last_phantom_data
       self.last_receive_counter += 1
