@@ -1,7 +1,7 @@
 from selfdrive.controls.lib.pid import PIController
 from common.numpy_fast import interp
 from cereal import car
-import selfdrive.phantom as phantom
+from selfdrive.phantom import Phantom
 
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz
@@ -24,7 +24,7 @@ class LatControl(object):
     self.rate_ff_gain = 0.01
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
     self.previous_integral = 0.0
-    phantom.start(high_freq=True)
+    self.phantom = Phantom(timeout=False)  # no timeout for steering
     
   def reset(self):
     self.pid.reset()
@@ -38,7 +38,8 @@ class LatControl(object):
     self.previous_integral = self.pid.i
 
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
-    if phantom.data["status"]:
+    self.phantom.update()
+    if self.phantom.data["status"]:
       v_ego += 11.176  # add 10 mph to real speed, should trick the pid loop
       if not self.pid_phantom:
         self.pid._k_p = [[1.], [1.]]
@@ -60,7 +61,7 @@ class LatControl(object):
       #dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
       #self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
       if self.pid_phantom:
-        self.angle_steers_des = float(phantom.data["angle"])
+        self.angle_steers_des = float(self.phantom.data["angle"])
       else:
         self.angle_steers_des = path_plan.angleSteers  # get from MPC/PathPlanner
 

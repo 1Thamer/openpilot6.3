@@ -1,11 +1,23 @@
-import sys
-import json
-phantom_file = "/data/phantom.json"
+import zmq
+from selfdrive.services import service_list
+import selfdrive.messaging as messaging
 
-def write_file(status, speed, angle, time):
-  with open(phantom_file, "w") as phantom:
-    status = True if status == "true" else False
-    json.dump({"status": status, "speed": speed, "angle": angle, "time": time}, phantom)
+class PhantomReceiver():
+  def __init__(self):
+    self.phantomData_sock = None
 
-if __name__ == "__main__":
-  write_file(str(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]))
+  def broadcast_data(self, status, speed, angle, time):
+    status = True if status == "true" or status is True else False
+    data = messaging.new_message()
+    data.init('phantomData')
+    data.phantomData.status = status
+    data.phantomData.speed = speed
+    data.phantomData.angle = angle
+    data.phantomData.time = time
+    self.phantomData_sock.send(data.to_bytes())
+
+  def open_socket(self):
+    self.phantomData_sock = messaging.pub_sock(zmq.Context(), service_list['phantomData'].port)
+
+  def close_socket(self):
+    self.phantomData_sock.close()
