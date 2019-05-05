@@ -60,6 +60,7 @@ const int nav_w = 640;
 const int nav_ww= 760;
 const int sbr_w = 300;
 const int bdr_s = 30;
+const int bdr_is = 30;
 const int box_x = sbr_w+bdr_s;
 const int box_y = bdr_s;
 const int box_w = vwp_w-sbr_w-(bdr_s*2);
@@ -1571,7 +1572,6 @@ static void ui_update(UIState *s) {
     s->carstate_sock = zsock_new_sub(">tcp://127.0.0.1:8021", "");
     assert(s->carstate_sock);
     s->carstate_sock_raw = zsock_resolve(s->carstate_sock);
-    s->lastdriveEnd = 0;
 
     // cant run this in connector thread because opengl.
     // do this here for now in lieu of a run_on_main_thread event
