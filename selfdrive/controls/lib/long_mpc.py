@@ -272,7 +272,7 @@ class LongitudinalMpc(object):
         else:  # phantom active, but 0 vel
           self.relative_distance = 3.048
           self.frames_since_stopped = 0
-          v_lead = 0.0
+          v_lead = max(v_ego - 1.34112 / 40, 0)  # smoothly decelerate to 0 at ~3mph per second
           self.prev_phantom_speed = self.phantom.data["speed"]
       else:  # if timeout
         if self.frames_since_time <= change_state_time:
