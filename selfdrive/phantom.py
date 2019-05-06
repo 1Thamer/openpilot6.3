@@ -26,16 +26,13 @@ class Phantom():
       self.last_receive_counter = 0
       self.to_disable = not phantomData.phantomData.status
     if phantomData is None:
-      if self.last_receive_counter > int(rate * 3.0) and self.to_disable and self.timeout:  # if last data is from ~2 seconds ago and last command is status: False, disable phantom mode
+      if self.to_disable:  # if last command is status: False, disable phantom mode, also disable by default
         self.data = {"status": False, "speed": 0.0}
       elif self.last_receive_counter > int(rate * 3.0) and not self.to_disable and self.timeout:  # lost connection, not disable. keep phantom on but set speed to 0
         self.data = {"status": True, "speed": 0.0, "angle": 0.0, "time": 0.0}
-      elif self.to_disable:
-        self.data = {"status": False, "speed": 0.0}
-      else:
+      else:  # if waiting between messages from app, message becomes none, this uses the data from last message
         self.data = self.last_phantom_data
-      self.last_receive_counter += 1
-      self.last_receive_counter = min(self.last_receive_counter, 900)
+      self.last_receive_counter = min(self.last_receive_counter + 1, 900)  # don't infinitely increment
 
   def mod_sshd_config(self):  # this disables dns lookup when connecting to EON to speed up commands from phantom app, reboot required
     sshd_config_file = "/system/comma/usr/etc/ssh/sshd_config"
