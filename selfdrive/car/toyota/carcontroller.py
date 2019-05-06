@@ -189,11 +189,11 @@ class CarController(object):
     self.phantom.update()
     if self.phantom.data["status"]:
       if not self.pid_phantom:
-        #SteerLimitParams.STEER_MAX = 2500
+        SteerLimitParams.STEER_MAX = 2500
         self.pid_phantom = True
     else:
       if self.pid_phantom:
-        #SteerLimitParams.STEER_MAX = 1500
+        SteerLimitParams.STEER_MAX = 1500
         self.pid_phantom = False
     # steer torque
     apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
