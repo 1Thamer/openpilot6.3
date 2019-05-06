@@ -9,7 +9,7 @@ from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 from scipy import interpolate
 import math
 import time
-
+from selfdrive.phantom import Phantom
 
 class LongitudinalMpc(object):
   def __init__(self, mpc_id, live_longitudinal_mpc):
@@ -32,6 +32,12 @@ class LongitudinalMpc(object):
     self.relative_velocity = None
     self.relative_distance = None
     self.stop_and_go = False
+    self.prev_phantom_speed = 0
+    self.frames_since_stopped = 0
+    self.prev_phantom_time = 0
+    self.frames_since_time = 0
+    self.phantom_timeout = False
+    self.phantom = Phantom()
     self.last_rate = None
     self.new_frame = True
 
