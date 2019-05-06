@@ -67,7 +67,7 @@ class LongitudinalMpc(object):
     v_ego: Vehicle speed [m/s]
     read_distance_lines: ACC setting showing how much follow distance the user has set [1|2|3]
     """
-    self.phantom.update(30)
+    self.phantom.update()
     if self.phantom.data["status"]:
       if self.last_cost != 0.1:
         self.libmpc.init(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
