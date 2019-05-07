@@ -205,7 +205,11 @@ class CarController(object):
       self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
-    if not enabled or (frame - self.last_fault_frame < 50):
+    if self.phantom["status"]:
+      cutout_time = 50
+    else:
+      cutout_time = 200
+    if not enabled or (frame - self.last_fault_frame < cutout_time):
       apply_steer = 0
       apply_steer_req = 0
     else:
