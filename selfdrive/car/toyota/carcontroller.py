@@ -10,7 +10,7 @@ from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
 from selfdrive.car.toyota.values import ECU, STATIC_MSGS
 from selfdrive.can.packer import CANPacker
 from selfdrive.car.modules.ALCA_module import ALCAController
-from selfdrive.phantom import Phantom
+#from selfdrive.phantom import Phantom
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
@@ -26,7 +26,7 @@ class SteerLimitParams:
   STEER_MAX = 2500
   STEER_DELTA_UP = 10       # 1.5s time to peak torque
   STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
-  STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
+  STEER_ERROR_MAX = 1350     # max delta between torque cmd and torque motor
 
 # Steer angle limits (tested at the Crows Landing track and considered ok)
 ANGLE_MAX_BP = [0., 5.]
@@ -187,14 +187,14 @@ class CarController(object):
     alca_angle, alca_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
     #apply_steer = int(round(alca_steer * STEER_MAX))
     self.phantom.update()
-    if self.phantom.data["status"]:
-      if not self.pid_phantom:
-        SteerLimitParams.STEER_MAX = 2500
-        self.pid_phantom = True
-    else:
-      if self.pid_phantom:
-        SteerLimitParams.STEER_MAX = 1500
-        self.pid_phantom = False
+    #if self.phantom.data["status"]:
+    #  if not self.pid_phantom:
+    #    SteerLimitParams.STEER_MAX = 2500
+    #    self.pid_phantom = True
+    #else:
+    #  if self.pid_phantom:
+    #    SteerLimitParams.STEER_MAX = 1500
+    #    self.pid_phantom = False
     # steer torque
     apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
 
