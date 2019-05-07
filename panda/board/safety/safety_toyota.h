@@ -2,13 +2,13 @@ int toyota_giraffe_switch_1 = 0;          // is giraffe switch 1 high?
 int toyota_camera_forwarded = 0;          // should we forward the camera bus?
 
 // global torque limit
-const int TOYOTA_MAX_TORQUE = 2500;       // max torque cmd allowed ever
+const int TOYOTA_MAX_TORQUE = 4500;       // max torque cmd allowed ever
 
 // rate based torque limit + stay within actually applied
 // packet is sent at 100hz, so this limit is 1000/sec
-const int TOYOTA_MAX_RATE_UP = 10;        // ramp up slow
-const int TOYOTA_MAX_RATE_DOWN = 25;      // ramp down fast
-const int TOYOTA_MAX_TORQUE_ERROR = 350;  // max torque cmd in excess of torque motor
+const int TOYOTA_MAX_RATE_UP = 30;        // ramp up slow
+const int TOYOTA_MAX_RATE_DOWN = 44;      // ramp down fast
+const int TOYOTA_MAX_TORQUE_ERROR = 500;  // max torque cmd in excess of torque motor
 
 // real time torque limit to prevent controls spamming
 // the real time limit is 1500/sec
