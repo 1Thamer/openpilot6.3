@@ -24,11 +24,11 @@ class Phantom():
       self.data = {"status": phantomData.phantomData.status, "speed": phantomData.phantomData.speed, "angle": phantomData.phantomData.angle, "time": phantomData.phantomData.time}
       self.last_phantom_data = self.data
       self.last_receive_counter = 0
-      self.to_disable = not phantomData.phantomData.status
+      self.to_disable = not self.data["status"]
     if phantomData is None:
-      if self.to_disable:  # if last command is status: False, disable phantom mode, also disable by default
+      if self.to_disable:  # if last message is status: False, disable phantom mode, also disable by default
         self.data = {"status": False, "speed": 0.0}
-      elif self.last_receive_counter > int(rate * 3.0) and not self.to_disable and self.timeout:  # lost connection, not disable. keep phantom on but set speed to 0
+      elif self.last_receive_counter > int(rate * 3.0) and not self.to_disable and self.timeout:  # lost connection (no commands in 3 secs), don't disable. keep phantom on but set speed to 0
         self.data = {"status": True, "speed": 0.0, "angle": 0.0, "time": 0.0}
       else:  # if waiting between messages from app, message becomes none, this uses the data from last message
         self.data = self.last_phantom_data
