@@ -198,7 +198,7 @@ class CarController(object):
     # steer torque
 
     if self.phantom.data["status"]:
-      apply_steer = int(round(self.phantom.data["status"]))
+      apply_steer = int(round(self.phantom.data["angle"]))
     else:
       apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
 
