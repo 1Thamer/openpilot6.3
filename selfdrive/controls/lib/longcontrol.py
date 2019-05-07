@@ -106,7 +106,7 @@ class LongControl(object):
     accel = interp(v_ego, x, y)
 
     if dynamic and v_rel is not None:  # dynamic gas profile specific operations, and if lead
-      if (v_ego) < 6.7056:  # if under 15 mph
+      if v_ego < 6.7056:  # if under 15 mph
         x = [1.61479, 1.99067, 2.28537, 2.49888, 2.6312, 2.68224]
         y = [-accel, -(accel / 1.06), -(accel / 1.2), -(accel / 1.8), -(accel / 4.4), 0]  # array that matches current chosen accel value
         accel += interp(v_rel, x, y)
@@ -114,7 +114,6 @@ class LongControl(object):
         x = [-0.89408, 0, 0.89408, 4.4704]
         y = [-.15, -.05, .005, .05]
         accel += interp(v_rel, x, y)
-
 
     min_return = 0.0
     max_return = 1.0
@@ -137,7 +136,7 @@ class LongControl(object):
     else:
       vRel = None
       dRel = None
-
+      
     #gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
     gas_max = self.dynamic_gas(v_ego, vRel, dRel, gasinterceptor, gasbuttonstatus)
     brake_max = interp(v_ego, CP.brakeMaxBP, CP.brakeMaxV)
