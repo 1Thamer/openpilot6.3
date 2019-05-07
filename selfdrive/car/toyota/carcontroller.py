@@ -204,24 +204,27 @@ class CarController(object):
     if CS.steer_state in [9, 25]:
       self.last_fault_frame = frame
 
-    # Cut steering for 2s after fault
-    if not enabled or (frame - self.last_fault_frame < 200):
-      apply_steer = 0
-      apply_steer_req = 0
+    if not self.pid_phantom:
+      # Cut steering for 2s after fault
+      if not enabled or (frame - self.last_fault_frame < 200):
+        apply_steer = 0
+        apply_steer_req = 0
+      else:
+        apply_steer_req = 1
+      if not enabled and rightLane_Depart and CS.v_ego > 12.5 and not CS.right_blinker_on:
+        apply_steer = self.last_steer + 3
+        apply_steer = min(apply_steer , 800)
+        #print "right"
+        #print apply_steer
+        apply_steer_req = 1
+
+      if not enabled and leftLane_Depart and CS.v_ego > 12.5 and not CS.left_blinker_on:
+        apply_steer = self.last_steer - 3
+        apply_steer = max(apply_steer , -800)
+        #print "left"
+        #print apply_steer
+        apply_steer_req = 1
     else:
-      apply_steer_req = 1
-    if not enabled and rightLane_Depart and CS.v_ego > 12.5 and not CS.right_blinker_on:
-      apply_steer = self.last_steer + 3
-      apply_steer = min(apply_steer , 800)
-      #print "right"
-      #print apply_steer
-      apply_steer_req = 1
-      
-    if not enabled and leftLane_Depart and CS.v_ego > 12.5 and not CS.left_blinker_on:
-      apply_steer = self.last_steer - 3
-      apply_steer = max(apply_steer , -800)
-      #print "left"
-      #print apply_steer
       apply_steer_req = 1
 
     self.steer_angle_enabled, self.ipas_reset_counter = \
@@ -263,6 +266,10 @@ class CarController(object):
     self.last_standstill = CS.standstill
 
     can_sends = []
+
+    if self.pid_phantom:
+      apply_steer_req = 1
+      pcm_cancel_cmd = 0
 
 # Enable blindspot debug mode once
     if BLINDSPOTDEBUG:
