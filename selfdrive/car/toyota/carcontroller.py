@@ -23,7 +23,7 @@ ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
 # Steer torque limits
 class SteerLimitParams:
-  STEER_MAX = 1500
+  STEER_MAX = 1800
   STEER_DELTA_UP = 10       # 1.5s time to peak torque
   STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
   STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
@@ -201,8 +201,8 @@ class CarController(object):
     apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
 
     # only cut torque when steer state is a known fault
-    if CS.steer_state in [9, 25]:
-      self.last_fault_frame = frame
+    #if CS.steer_state in [9, 25]:
+    #  self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
     if not enabled or (frame - self.last_fault_frame < 200):
