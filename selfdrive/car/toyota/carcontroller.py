@@ -187,14 +187,14 @@ class CarController(object):
     alca_angle, alca_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
     #apply_steer = int(round(alca_steer * STEER_MAX))
     self.phantom.update()
-    #if self.phantom.data["status"]:
-    #  if not self.pid_phantom:
-    #    SteerLimitParams.STEER_MAX = 2500
-    #    self.pid_phantom = True
-    #else:
-    #  if self.pid_phantom:
-    #    SteerLimitParams.STEER_MAX = 1500
-    #    self.pid_phantom = False
+    if self.phantom.data["status"]:
+      if not self.pid_phantom:
+        #SteerLimitParams.STEER_MAX = 2500
+        self.pid_phantom = True
+    else:
+      if self.pid_phantom:
+        #SteerLimitParams.STEER_MAX = 1500
+        self.pid_phantom = False
     # steer torque
     apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
 
@@ -202,7 +202,8 @@ class CarController(object):
 
     # only cut torque when steer state is a known fault
     if CS.steer_state in [9, 25]:
-      self.last_fault_frame = frame
+      if not self.pid_phantom:
+        self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
     if not enabled or (frame - self.last_fault_frame < 200):
