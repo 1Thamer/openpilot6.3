@@ -201,8 +201,8 @@ class CarController(object):
     apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
 
     # only cut torque when steer state is a known fault
-    #if CS.steer_state in [9, 25]:
-    #  self.last_fault_frame = frame
+    if CS.steer_state in [9, 25]:
+      self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
     if not enabled or (frame - self.last_fault_frame < 200):
