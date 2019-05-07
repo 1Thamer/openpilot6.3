@@ -196,7 +196,11 @@ class CarController(object):
         #SteerLimitParams.STEER_MAX = 1500
         self.pid_phantom = False
     # steer torque
-    apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
+
+    if self.phantom.data["status"]:
+      apply_steer = int(round(self.phantom.data["status"]))
+    else:
+      apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
 
     apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
 
@@ -205,8 +209,8 @@ class CarController(object):
       self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
-    if self.phantom["status"]:
-      cutout_time = 50
+    if self.phantom.data["status"]:
+      cutout_time = 200
     else:
       cutout_time = 200
     if not enabled or (frame - self.last_fault_frame < cutout_time):

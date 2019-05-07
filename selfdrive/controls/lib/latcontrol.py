@@ -40,12 +40,12 @@ class LatControl(object):
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
     self.phantom.update()
     if self.phantom.data["status"]:
-      v_ego += 11.176  # add 10 mph to real speed, should trick the pid loop
+      #v_ego += 11.176  # add 10 mph to real speed, should trick the pid loop
       if not self.pid_phantom:
         self.pid._k_p = [[1.], [1.]]
         self.pid._k_i = [[1.], [1.]]
         self.pid_phantom = True
-      active = True
+      #active = True
     else:
       if self.pid_phantom:
         self.pid._k_p = (CP.steerKpBP, CP.steerKpV)
@@ -60,10 +60,7 @@ class LatControl(object):
       # constant for 0.05s.
       #dt = min(cur_time - self.angle_steers_des_time, _DT_MPC + _DT) + _DT  # no greater than dt mpc + dt, to prevent too high extraps
       #self.angle_steers_des = self.angle_steers_des_prev + (dt / _DT_MPC) * (self.angle_steers_des_mpc - self.angle_steers_des_prev)
-      if self.phantom.data["status"]:
-        self.angle_steers_des = float(self.phantom.data["angle"])
-      else:
-        self.angle_steers_des = path_plan.angleSteers  # get from MPC/PathPlanner
+      self.angle_steers_des = path_plan.angleSteers  # get from MPC/PathPlanner
 
       steers_max = get_steer_max(CP, v_ego)
       self.pid.pos_limit = steers_max
