@@ -210,7 +210,7 @@ class CarController(object):
 
     # Cut steering for 2s after fault
     if self.phantom.data["status"]:
-      cutout_time = 200
+      cutout_time = 100
     else:
       cutout_time = 200
     if not enabled or (frame - self.last_fault_frame < cutout_time):
