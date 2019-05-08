@@ -187,16 +187,20 @@ class CarController(object):
     alca_angle, alca_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
     #apply_steer = int(round(alca_steer * STEER_MAX))
     self.phantom.update()
-    #if self.phantom.data["status"]:
-    #  if not self.pid_phantom:
-    #    SteerLimitParams.STEER_MAX = 2500
-    #    self.pid_phantom = True
-    #else:
-    #  if self.pid_phantom:
-    #    SteerLimitParams.STEER_MAX = 1500
-    #    self.pid_phantom = False
+    if self.phantom.data["status"]:
+      if not self.pid_phantom:
+        #SteerLimitParams.STEER_MAX = 2500
+        self.pid_phantom = True
+    else:
+      if self.pid_phantom:
+        #SteerLimitParams.STEER_MAX = 1500
+        self.pid_phantom = False
     # steer torque
-    apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
+
+    if self.phantom.data["status"]:
+      apply_steer = int(round(self.phantom.data["angle"]))
+    else:
+      apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
 
     apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
 
@@ -205,7 +209,11 @@ class CarController(object):
       self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
-    if not enabled or (frame - self.last_fault_frame < 200):
+    if self.phantom.data["status"]:
+      cutout_time = 100
+    else:
+      cutout_time = 200
+    if not enabled or (frame - self.last_fault_frame < cutout_time):
       apply_steer = 0
       apply_steer_req = 0
     else:

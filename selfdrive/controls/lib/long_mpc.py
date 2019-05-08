@@ -32,11 +32,7 @@ class LongitudinalMpc(object):
     self.relative_velocity = None
     self.relative_distance = None
     self.stop_and_go = False
-    self.prev_phantom_speed = 0
-    self.frames_since_stopped = 0
-    self.prev_phantom_time = 0
     self.frames_since_time = 0
-    self.phantom_timeout = False
     self.phantom = Phantom()
     self.last_rate = None
     self.new_frame = True
@@ -248,26 +244,18 @@ class LongitudinalMpc(object):
 
   def update(self, CS, lead, v_cruise_setpoint):
     v_ego = CS.carState.vEgo
-    if self.phantom.data["status"]:
-      self.relative_velocity = self.phantom.data["speed"] - v_ego
-    else:
-      try:
-        self.relative_velocity = lead.vRel
-        self.relative_distance = lead.dRel
-      except: #if no lead car
-        self.relative_velocity = None
-        self.relative_distance = None
 
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
     self.phantom.update(self.calc_rate())  # send long_mpc's current rate to accurate calculate how long last message has been for disconnection detection
     if self.phantom.data["status"]:
-      if self.phantom.data["speed"] != 0:
+      self.relative_velocity = self.phantom.data["speed"] - v_ego
+      if self.phantom.data["speed"] != 0.0:
         self.relative_distance = 9.144
         v_lead = self.phantom.data["speed"]
       else:
-        self.relative_distance = 3.5
-        v_lead = max(v_ego - 1.78816 / self.calc_rate(), 0)  # smoothly decelerate to 0 at ~4mph per second
+        self.relative_distance = 3.75
+        v_lead = max(v_ego - (.5 / v_ego**.5), 0.0)  # smoothly decelerate to 0
 
       x_lead = self.relative_distance
       a_lead = 0.0
@@ -282,6 +270,13 @@ class LongitudinalMpc(object):
       self.cur_state[0].x_l = x_lead
       self.cur_state[0].v_l = v_lead
     else:
+      try:
+        self.relative_velocity = lead.vRel
+        self.relative_distance = lead.dRel
+      except: #if no lead car
+        self.relative_velocity = None
+        self.relative_distance = None
+
       if lead is not None and lead.status:
         x_lead = max(0, lead.dRel - 1)
         v_lead = max(0.0, lead.vLead)
