@@ -193,6 +193,7 @@ typedef struct UIState {
   int img_turn;
   int img_face;
   int img_map;
+  int img_brake;
 
   zsock_t *thermal_sock;
   void *thermal_sock_raw;
