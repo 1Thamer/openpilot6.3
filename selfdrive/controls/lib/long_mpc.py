@@ -32,11 +32,7 @@ class LongitudinalMpc(object):
     self.relative_velocity = None
     self.relative_distance = None
     self.stop_and_go = False
-    self.prev_phantom_speed = 0
-    self.frames_since_stopped = 0
-    self.prev_phantom_time = 0
     self.frames_since_time = 0
-    self.phantom_timeout = False
     self.phantom = Phantom()
     self.last_rate = None
     self.new_frame = True
@@ -259,7 +255,7 @@ class LongitudinalMpc(object):
         v_lead = self.phantom.data["speed"]
       else:
         self.relative_distance = 3.75
-        v_lead = max(v_ego - 1.78816 / self.calc_rate(), 0)  # smoothly decelerate to 0 at ~4mph per second
+        v_lead = max(v_ego - (.5 / v_ego**.5), 0.0)  # smoothly decelerate to 0
 
       x_lead = self.relative_distance
       a_lead = 0.0
