@@ -1669,8 +1669,8 @@ static void ui_update(UIState *s) {
       polls[num_polls].events = ZMQ_POLLIN;
       num_polls++;
       assert(s->ipc_fd >= 0);
-      polls[9].fd = s->ipc_fd;
-      polls[9].events = ZMQ_POLLIN;
+      polls[num_polls].fd = s->ipc_fd;
+      polls[num_polls].events = ZMQ_POLLIN;
       num_polls++;
     }
 
@@ -1685,12 +1685,12 @@ static void ui_update(UIState *s) {
 
     if (polls[0].revents || polls[1].revents || polls[2].revents ||
         polls[3].revents || polls[4].revents || polls[6].revents ||
-        polls[7].revents || polls[8].revents) {
+        polls[7].revents || polls[8].revents){
       // awake on any (old) activity
       set_awake(s, true);
     }
 
-    if (s->vision_connected && polls[9].revents) {
+    if (s->vision_connected && polls[10].revents) {
       // vision ipc event
       VisionPacket rp;
       err = vipc_recv(s->ipc_fd, &rp);
