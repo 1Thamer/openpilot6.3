@@ -255,10 +255,7 @@ class LongitudinalMpc(object):
         v_lead = self.phantom.data["speed"]
       else:
         self.relative_distance = 3.75
-        if v_ego < 0.63:
-          v_lead = 0.0
-        else:
-          v_lead = max(v_ego - (.5 / v_ego**.5), 0.0)  # smoothly decelerate to 0
+        v_lead = max(v_ego - (.5 / max(v_ego**.5, .01)), 0.0)  # smoothly decelerate to 0
 
       x_lead = self.relative_distance
       a_lead = 0.0
