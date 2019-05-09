@@ -149,4 +149,69 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       }
 
       // no torque if controls is not allowed
-      //if (!c
+      //if (!controls_allowed && (desired_torque != 0)) {
+      //  violation = 1;
+      //}
+
+      // reset to 0 if either controls is not allowed or there's a violation
+      if (violation) {
+        toyota_desired_torque_last = 0;
+        toyota_rt_torque_last = 0;
+        toyota_ts_last = ts;
+      }
+
+      if (violation) {
+        return false;
+      }
+    }
+  }
+
+  // 1 allows the message through
+  return true;
+}
+
+static void toyota_init(int16_t param) {
+  controls_allowed = 0;
+  toyota_actuation_limits = 1;
+  toyota_giraffe_switch_1 = 0;
+  toyota_camera_forwarded = 0;
+  toyota_dbc_eps_torque_factor = param;
+}
+
+static int toyota_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+
+  // forward cam to radar and viceversa if car, except lkas cmd and hud
+  // don't forward when switch 1 is high
+  if ((bus_num == 0 || bus_num == 2) && toyota_camera_forwarded && !toyota_giraffe_switch_1) {
+    int addr = to_fwd->RIR>>21;
+    bool is_lkas_msg = (addr == 0x2E4 || addr == 0x412 || addr == 0x343) && bus_num == 2;
+    return is_lkas_msg? -1 : (uint8_t)(~bus_num & 0x2);
+  }
+  return -1;
+}
+
+const safety_hooks toyota_hooks = {
+  .init = toyota_init,
+  .rx = toyota_rx_hook,
+  .tx = toyota_tx_hook,
+  .tx_lin = nooutput_tx_lin_hook,
+  .ignition = default_ign_hook,
+  .fwd = toyota_fwd_hook,
+};
+
+static void toyota_nolimits_init(int16_t param) {
+  controls_allowed = 0;
+  toyota_actuation_limits = 0;
+  toyota_giraffe_switch_1 = 0;
+  toyota_camera_forwarded = 0;
+  toyota_dbc_eps_torque_factor = param;
+}
+
+const safety_hooks toyota_nolimits_hooks = {
+  .init = toyota_nolimits_init,
+  .rx = toyota_rx_hook,
+  .tx = toyota_tx_hook,
+  .tx_lin = nooutput_tx_lin_hook,
+  .ignition = default_ign_hook,
+  .fwd = toyota_fwd_hook,
+};
