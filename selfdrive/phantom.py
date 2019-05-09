@@ -36,7 +36,10 @@ class Phantom():
 
   def mod_sshd_config(self):  # this disables dns lookup when connecting to EON to speed up commands from phantom app, reboot required
     sshd_config_file = "/system/comma/usr/etc/ssh/sshd_config"
-    result = subprocess.check_call(["mount", "-o", "remount,rw", "/system"])  # mount /system as rw so we can modify sshd_config file
+    try:
+      result = subprocess.check_call(["mount", "-o", "remount,rw", "/system"])  # mount /system as rw so we can modify sshd_config file
+    except:
+      result = 1
     if result == 0:
       with open(sshd_config_file, "r") as f:
         sshd_config = f.read()
@@ -50,6 +53,9 @@ class Phantom():
         kegman.save({"UseDNS": True})
       else:
         kegman.save({"UseDNS": True})
-      subprocess.check_call(["mount", "-o", "remount,ro", "/system"])  # remount system as read only
+      try:
+        subprocess.call(["mount", "-o", "remount,ro", "/system"])  # remount system as read only
+      except:
+        pass
     else:
       kegman.save({"UseDNS": False})
