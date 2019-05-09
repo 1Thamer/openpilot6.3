@@ -1267,10 +1267,10 @@ static void ui_draw_vision_event(UIState *s) {
       img_wheel_alpha = 1.0f;
     }
     nvgSave(s->vg);
-    nvgTranslate(s->vg,img_wheel_x,img_wheel_y);
+    nvgTranslate(s->vg,bg_wheel_x,(bg_wheel_y + (bdr_s*1.5)));
     nvgRotate(s->vg,img_rotation);
     nvgBeginPath(s->vg);
-    NVGpaint imgPaint = nvgImagePattern(s->vg, 0.f, 0.f,
+    NVGpaint imgPaint = nvgImagePattern(s->vg, img_wheel_x-bg_wheel_x, img_wheel_y-(bg_wheel_y + (bdr_s*1.5)),
       img_wheel_size, img_wheel_size, 0, s->img_wheel, img_wheel_alpha);
     nvgRect(s->vg, 0.f, 0.f, img_wheel_size, img_wheel_size);
     nvgFillPaint(s->vg, imgPaint);
