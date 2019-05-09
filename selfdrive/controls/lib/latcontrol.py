@@ -1,7 +1,6 @@
 from selfdrive.controls.lib.pid import PIController
 from common.numpy_fast import interp
 from cereal import car
-from selfdrive.phantom import Phantom
 
 _DT = 0.01    # 100Hz
 _DT_MPC = 0.05  # 20Hz
@@ -17,14 +16,12 @@ class LatControl(object):
                             (CP.steerKiBP, CP.steerKiV),
                             k_f=CP.steerKf, pos_limit=1.0)
     self.last_cloudlog_t = 0.0
-    self.pid_phantom = False
     self.angle_steers_des = 0.
     self.angle_ff_ratio = 0.0
     self.angle_ff_gain = 1.0
     self.rate_ff_gain = 0.01
     self.angle_ff_bp = [[0.5, 5.0],[0.0, 1.0]]
     self.previous_integral = 0.0
-    self.phantom = Phantom(timeout=False)  # no timeout for steering
     
   def reset(self):
     self.pid.reset()
@@ -38,19 +35,6 @@ class LatControl(object):
     self.previous_integral = self.pid.i
 
   def update(self, active, v_ego, angle_steers, steer_override, CP, VM, path_plan):
-    self.phantom.update()
-    if self.phantom.data["status"]:
-      #v_ego += 11.176  # add 10 mph to real speed, should trick the pid loop
-      if not self.pid_phantom:
-        self.pid._k_p = [[1.], [1.]]
-        self.pid._k_i = [[1.], [1.]]
-        self.pid_phantom = True
-      #active = True
-    else:
-      if self.pid_phantom:
-        self.pid._k_p = (CP.steerKpBP, CP.steerKpV)
-        self.pid._k_i = (CP.steerKiBP, CP.steerKiV)
-        self.pid_phantom = False
     if v_ego < 0.3 or not active:
       output_steer = 0.0
       self.pid.reset()
@@ -73,7 +57,7 @@ class LatControl(object):
         rate_feedforward = (1.0 - self.angle_ff_ratio) * self.rate_ff_gain * path_plan.rateSteers
         steer_feedforward = v_ego**2 * (rate_feedforward + angle_feedforward)
 
-        if v_ego > 10.0 and not self.pid_phantom:
+        if v_ego > 10.0:
           if abs(angle_steers) > (self.angle_ff_bp[0][1] / 2.0):
             self.adjust_angle_gain()
           else:
