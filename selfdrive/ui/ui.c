@@ -1251,7 +1251,7 @@ static void ui_draw_vision_event(UIState *s) {
     const int img_wheel_y = bg_wheel_y-25;
     const float img_rotation = s->scene.angleSteers/180*3.141592;
     nvgTranslate(s->vg,img_wheel_x,img_wheel_y);
-    nvgRotate(s->vg,img_rotation)
+    nvgRotate(s->vg,img_rotation);
     float img_wheel_alpha = 0.1f;
     bool is_engaged = (s->status == STATUS_ENGAGED);
     bool is_warning = (s->status == STATUS_WARNING);
