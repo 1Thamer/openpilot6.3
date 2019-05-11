@@ -75,8 +75,14 @@ def get_camera_parser(CP):
     ("LKAS_STATUS_OK", "LKAS_HEARTBIT", -1)
   ]
   checks = []
+<<<<<<< HEAD
   
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+=======
+
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+
+>>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
 
 class CarState(object):
   def __init__(self, CP):
@@ -157,6 +163,7 @@ class CarState(object):
                          C=np.matrix([1.0, 0.0]),
                          K=np.matrix([[0.12287673], [0.29666309]]))
     self.v_ego = 0.0
+<<<<<<< HEAD
     
    #BB init ui buttons
   def init_ui_buttons(self):
@@ -201,6 +208,10 @@ class CarState(object):
           self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
           self.cstm_btns.hasChanges = True
     
+=======
+
+
+>>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
   def update(self, cp, cp_cam):
     # copy can_valid
     self.can_valid = cp.can_valid
@@ -258,6 +269,7 @@ class CarState(object):
     self.pcm_acc_status = self.main_on
 
     self.generic_toggle = bool(cp.vl["STEERING_LEVERS"]['HIGH_BEAM_FLASH'])
+<<<<<<< HEAD
     
     self.lkas_counter = cp_cam.vl["LKAS_COMMAND"]['COUNTER']
     self.lkas_car_model = cp_cam.vl["LKAS_HUD"]['CAR_MODEL']
@@ -270,3 +282,9 @@ class CarState(object):
         self.lane_departure_toggle_on = False
       else:
         self.lane_departure_toggle_on = True
+=======
+
+    self.lkas_counter = cp_cam.vl["LKAS_COMMAND"]['COUNTER']
+    self.lkas_car_model = cp_cam.vl["LKAS_HUD"]['CAR_MODEL']
+    self.lkas_status_ok = cp_cam.vl["LKAS_HEARTBIT"]['LKAS_STATUS_OK']
+>>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b

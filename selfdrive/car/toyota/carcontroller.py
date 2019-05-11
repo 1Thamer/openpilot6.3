@@ -149,12 +149,18 @@ class CarController(object):
     self.packer = CANPacker(dbc_name)
 
   def update(self, sendcan, enabled, CS, frame, actuators,
+<<<<<<< HEAD
              pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera, left_line, right_line, lead, leftLane_Depart, rightLane_Depart):
     #update custom UI buttons and alerts
     CS.UE.update_custom_ui()
     if (frame % 1000 == 0):
       CS.cstm_btns.send_button_info()
       CS.UE.uiSetCarEvent(CS.cstm_btns.car_folder,CS.cstm_btns.car_name)
+=======
+             pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera,
+             left_line, right_line, lead, left_lane_depart, right_lane_depart):
+
+>>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
     # *** compute control surfaces ***
 
     # gas and brake
@@ -215,7 +221,7 @@ class CarController(object):
 
     self.steer_angle_enabled, self.ipas_reset_counter = \
       ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_active, self.ipas_reset_counter)
-    #print self.steer_angle_enabled, self.ipas_reset_counter, CS.ipas_active
+    #print("{0} {1} {2}".format(self.steer_angle_enabled, self.ipas_reset_counter, CS.ipas_active))
 
     # steer angle
     if self.steer_angle_enabled and CS.ipas_active:
@@ -291,7 +297,7 @@ class CarController(object):
         can_sends.append(poll_blindspot_status(RIGHT_BLINDSPOT))
 
     #*** control msgs ***
-    #print "steer", apply_steer, min_lim, max_lim, CS.steer_torque_motor
+    #print("steer {0} {1} {2} {3}".format(apply_steer, min_lim, max_lim, CS.steer_torque_motor)
 
     # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
@@ -333,11 +339,11 @@ class CarController(object):
     if (frame % 2 == 0) and (CS.CP.enableGasInterceptor):
         # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
         # This prevents unexpected pedal range rescaling
-        can_sends.append(create_gas_command(self.packer, apply_gas, frame/2))
+        can_sends.append(create_gas_command(self.packer, apply_gas, frame//2))
 
     if frame % 10 == 0 and ECU.CAM in self.fake_ecus and not forwarding_camera:
       for addr in TARGET_IDS:
-        can_sends.append(create_video_target(frame/10, addr))
+        can_sends.append(create_video_target(frame//10, addr))
 
     # ui mesg is at 100Hz but we send asap if:
     # - there is something to display
@@ -361,7 +367,11 @@ class CarController(object):
       self.barriers = 2
       self.right_line_values = 3
     if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
+<<<<<<< HEAD
       can_sends.append(create_ui_command(self.packer, steer, sound1, sound2, self.barriers, self.left_line_values, self.right_line_values))
+=======
+      can_sends.append(create_ui_command(self.packer, steer, sound1, sound2, left_line, right_line, left_lane_depart, right_lane_depart))
+>>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
 
     if frame % 100 == 0 and ECU.DSU in self.fake_ecus:
       can_sends.append(create_fcw_command(self.packer, fcw))
@@ -372,11 +382,11 @@ class CarController(object):
       if frame % fr_step == 0 and ecu in self.fake_ecus and self.car_fingerprint in cars and not (ecu == ECU.CAM and forwarding_camera):
         # special cases
         if fr_step == 5 and ecu == ECU.CAM and bus == 1:
-          cnt = (((frame / 5) % 7) + 1) << 5
+          cnt = (((frame // 5) % 7) + 1) << 5
           vl = chr(cnt) + vl
         elif addr in (0x489, 0x48a) and bus == 0:
           # add counter for those 2 messages (last 4 bits)
-          cnt = ((frame/100)%0xf) + 1
+          cnt = ((frame // 100) % 0xf) + 1
           if addr == 0x48a:
             # 0x48a has a 8 preceding the counter
             cnt += 1 << 7
