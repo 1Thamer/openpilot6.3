@@ -65,13 +65,8 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, idx):
       'CRUISE_SPEED': hud.v_cruise,
       'ENABLE_MINI_CAR': hud.mini_car,
       'HUD_LEAD': hud.car,
-<<<<<<< HEAD
-      'SET_ME_X03': hud.dist_lines,
-      'SET_ME_X03_2': 0x03,
-=======
-      'SET_ME_X03': 0x01 if car_fingerprint == CAR.ODYSSEY_CHN else 0x03,
+      'SET_ME_X03': 0x01 if car_fingerprint == CAR.ODYSSEY_CHN else hud.dist_lines,
       'SET_ME_X03_2': 0x02 if car_fingerprint == CAR.ODYSSEY_CHN else 0x03,
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
       'SET_ME_X01': 0x01,
       'HUD_DISTANCE_3': 1,
     }
