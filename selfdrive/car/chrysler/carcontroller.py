@@ -5,10 +5,9 @@ from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, \
                                                create_wheel_buttons, \
                                                create_chimes
-<<<<<<< HEAD
+
 from selfdrive.car.modules.ALCA_module import ALCAController
-=======
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
+
 from selfdrive.car.chrysler.values import ECU, CAR
 from selfdrive.can.packer import CANPacker
 
@@ -35,13 +34,10 @@ class CarController(object):
     self.alert_active = False
     self.send_chime = False
     self.gone_fast_yet = False
-<<<<<<< HEAD
     
     self.ALCA = ALCAController(self,True,False)  # Enabled  True and SteerByAngle only False
     
-=======
 
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
     self.fake_ecus = set()
     if enable_camera:
       self.fake_ecus.add(ECU.CAM)
@@ -51,7 +47,6 @@ class CarController(object):
 
   def update(self, sendcan, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert):
-<<<<<<< HEAD
     #update custom UI buttons and alerts
     CS.UE.update_custom_ui()
     if (frame % 1000 == 0):
@@ -71,8 +66,6 @@ class CarController(object):
     # steer torque
     alca_angle, alca_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
     
-=======
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
     # this seems needed to avoid steering faults and to force the sync with the EPS counter
     frame = CS.lkas_counter
     if self.prev_frame == frame:
@@ -120,13 +113,11 @@ class CarController(object):
 
     # LKAS_HEARTBIT is forwarded by Panda so no need to send it here.
     # frame is 100Hz (0.01s period)
-<<<<<<< HEAD
+
     if (self.ccframe % 10 == 0):  # 0.1s period
       new_msg = create_lkas_heartbit(self.packer, CS.lkas_status_ok)
       can_sends.append(new_msg)
 
-=======
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
     if (self.ccframe % 25 == 0):  # 0.25s period
       if (CS.lkas_car_model != -1):
         new_msg = create_lkas_hud(
