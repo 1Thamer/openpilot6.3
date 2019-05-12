@@ -26,7 +26,7 @@ TR=1.8 # CS.readdistancelines
 
 # lookup tables VS speed to determine min and max accels in cruise
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MIN_V  = [-0.72, -0.63, -0.54, -0.45, -0.27]
+_A_CRUISE_MIN_V  = [-0.8, -0.7, -0.6, -0.5, -0.3]
 _A_CRUISE_MIN_BP = [0.0, 5.0, 10.0, 20.0, 55.0]
 
 # need fast accel at very low speed for stop and go

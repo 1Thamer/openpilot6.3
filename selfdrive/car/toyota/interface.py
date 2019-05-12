@@ -177,12 +177,12 @@ class CarInterface(object):
       ret.steerKf = 0.00007   # full torque for 10 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
         ret.gasMaxV = [0.2, 0.5, 0.7]
-        ret.longitudinalKpV = [1.2, 0.8, 0.5]
-        ret.longitudinalKiV = [0.18, 0.12]
+        ret.longitudinalKpV = [0.333, 0.364, 0.15]  # tuned braking for higher brake limit
+        ret.longitudinalKiV = [0.07, 0.05]
       else:
         ret.gasMaxV = [0.2, 0.5, 0.7]
-        ret.longitudinalKpV = [3.6, 1.1, 1.0]
-        ret.longitudinalKiV = [0.5, 0.24]
+        ret.longitudinalKpV = [1.0, 0.5, 0.3]  # tuned braking for higher brake limit
+        ret.longitudinalKiV = [0.2, 0.1]
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
       stop_and_go = True
