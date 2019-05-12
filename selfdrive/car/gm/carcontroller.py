@@ -124,13 +124,10 @@ class CarController(object):
         apply_steer = 0
 
       self.apply_steer_last = apply_steer
-<<<<<<< HEAD
-      idx = (frame / P.STEER_STEP) % 4
+
+      idx = (frame // P.STEER_STEP) % 4
       if not CS.lane_departure_toggle_on:
         apply_steer = 0
-=======
-      idx = (frame // P.STEER_STEP) % 4
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
 
       if self.car_fingerprint in SUPERCRUISE_CARS:
         can_sends += gmcan.create_steering_control_ct6(self.packer_pt,
