@@ -13,7 +13,6 @@ steeringAngleoffset = float(kegman.conf['angle_steers_offset'])  # deg offset
    
 try:
   from selfdrive.car.toyota.carcontroller import CarController
-except ImportError:
   CarController = None
 
 
@@ -469,14 +468,10 @@ class CarInterface(object):
 
     self.CC.update(self.sendcan, c.enabled, self.CS, self.frame,
                    c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert,
-<<<<<<< HEAD
-                   c.hudControl.audibleAlert, self.forwarding_camera, c.hudControl.leftLaneVisible, 
-                   c.hudControl.rightLaneVisible, c.hudControl.leadVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
-=======
                    c.hudControl.audibleAlert, self.forwarding_camera,
                    c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible, c.hudControl.leadVisible, 
                    c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
+
 
     self.frame += 1
     return False
