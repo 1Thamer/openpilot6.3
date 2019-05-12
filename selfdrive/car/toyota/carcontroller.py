@@ -149,18 +149,15 @@ class CarController(object):
     self.packer = CANPacker(dbc_name)
 
   def update(self, sendcan, enabled, CS, frame, actuators,
-<<<<<<< HEAD
-             pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera, left_line, right_line, lead, leftLane_Depart, rightLane_Depart):
+             pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera,
+             left_line, right_line, lead, left_lane_depart, right_lane_depart):
+
     #update custom UI buttons and alerts
     CS.UE.update_custom_ui()
     if (frame % 1000 == 0):
       CS.cstm_btns.send_button_info()
       CS.UE.uiSetCarEvent(CS.cstm_btns.car_folder,CS.cstm_btns.car_name)
-=======
-             pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera,
-             left_line, right_line, lead, left_lane_depart, right_lane_depart):
-
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
+      
     # *** compute control surfaces ***
 
     # gas and brake
@@ -367,11 +364,7 @@ class CarController(object):
       self.barriers = 2
       self.right_line_values = 3
     if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
-<<<<<<< HEAD
-      can_sends.append(create_ui_command(self.packer, steer, sound1, sound2, self.barriers, self.left_line_values, self.right_line_values))
-=======
       can_sends.append(create_ui_command(self.packer, steer, sound1, sound2, left_line, right_line, left_lane_depart, right_lane_depart))
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
 
     if frame % 100 == 0 and ECU.DSU in self.fake_ecus:
       can_sends.append(create_fcw_command(self.packer, fcw))
