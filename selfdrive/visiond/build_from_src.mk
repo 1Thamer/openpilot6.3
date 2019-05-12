@@ -234,10 +234,7 @@ $(MODEL_OBJS): %.o: %.dlc
 
 .PHONY: clean
 clean:
-<<<<<<< HEAD
-	rm -f visiond-normal $(OBJS) $(DEPS)
-=======
-	rm -f visiond rgb_to_yuv_test rgb_to_yuv_test.o $(OBJS) $(DEPS)
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
+
+	rm -f visiond-normal rgb_to_yuv_test rgb_to_yuv_test.o $(OBJS) $(DEPS)
 
 -include $(DEPS)
