@@ -2391,32 +2391,7 @@ int main() {
 
     int dc_touch_x = -1, dc_touch_y = -1;
     s->b.touch_timeout = max(s->b.touch_timeout -1,0);
-HEAD=====
-    if (touched == 1) {
-      // touch event will still happen :(
-      set_awake(s, true);
-      s->b.touch_last = true;
-      s->b.touch_last_x = touch_x;
-      s->b.touch_last_y = touch_y;
-      s->b.touch_timeout = touch_timeout;
-      s->b.touch_last_width = s->scene.ui_viz_rw;
-    } 
-      //BB check touch
-      if ((s->b.touch_last) && (s->b.touch_last_width != s->scene.ui_viz_rw)) {
-        bb_handle_ui_touch(s,s->b.touch_last_x,s->b.touch_last_y);
-        dc_touch_x = s->b.touch_last_x;
-        dc_touch_y = s->b.touch_last_y;
-        s->b.touch_last = false;
-        s->b.touch_last_x = 0;
-        s->b.touch_last_y = 0;
-        s->b.touch_last_width=s->scene.ui_viz_rw;
-      }
-    
-    //s->b.touch_last_width = s->scene.ui_viz_rw;
-    //BB Update our cereal polls
-    bb_ui_poll_update(s);
 
-=======
     if (!s->vision_connected) {
       // Car is not started, keep in idle state and awake on touch events
       zmq_pollitem_t polls[1] = {{0}};
@@ -2431,7 +2406,25 @@ HEAD=====
         int touched = touch_read(&touch, &touch_x, &touch_y);
         if (touched == 1) {
           set_awake(s, true);
+          s->b.touch_last = true;
+          s->b.touch_last_x = touch_x;
+          s->b.touch_last_y = touch_y;
+          s->b.touch_timeout = touch_timeout;
+          s->b.touch_last_width = s->scene.ui_viz_rw;
         }
+      //BB check touch
+        if ((s->b.touch_last) && (s->b.touch_last_width != s->scene.ui_viz_rw)) {
+          bb_handle_ui_touch(s,s->b.touch_last_x,s->b.touch_last_y);
+          dc_touch_x = s->b.touch_last_x;
+          dc_touch_y = s->b.touch_last_y;
+          s->b.touch_last = false;
+          s->b.touch_last_x = 0;
+          s->b.touch_last_y = 0;
+          s->b.touch_last_width=s->scene.ui_viz_rw;
+        }
+      //s->b.touch_last_width = s->scene.ui_viz_rw;
+      //BB Update our cereal polls
+      bb_ui_poll_update(s);
       }
     } else {
       // Car started, fetch a new rgb image from ipc and peek for zmq events.
@@ -2443,21 +2436,17 @@ HEAD=====
         should_swap = true;
       }
     }
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
     // manage wakefulness
     if (s->awake_timeout > 0) {
       s->awake_timeout--;
     } else {
       set_awake(s, false);
     }
-<<<<<<< HEAD
-
     if (s->awake) {
       dashcam(s, touch_x, touch_y);
-=======
+
     // Don't waste resources on drawing in case screen is off or car is not started.
     if (s->awake && s->vision_connected) {
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
       ui_draw(s);
       glFinish();
       should_swap = true;
