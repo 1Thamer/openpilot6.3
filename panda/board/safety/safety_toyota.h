@@ -8,7 +8,7 @@ const int TOYOTA_MAX_TORQUE = 1500;       // max torque cmd allowed ever rav4 st
 // packet is sent at 100hz, so this limit is 1000/sec
 const int TOYOTA_MAX_RATE_UP = 10;        // ramp up slow
 const int TOYOTA_MAX_RATE_DOWN = 25;      // ramp down fast
-const int TOYOTA_MAX_TORQUE_ERROR = 1350;  // max torque cmd in excess of torque motor
+const int TOYOTA_MAX_TORQUE_ERROR = 8350;  // max torque cmd in excess of torque motor
 
 // real time torque limit to prevent controls spamming
 // the real time limit is 1500/sec
@@ -131,8 +131,10 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
           violation |= max_limit_check(desired_torque, TOYOTA_MAX_TORQUE, -TOYOTA_MAX_TORQUE);
         }
         // *** torque rate limit check ***
-        violation |= dist_to_meas_check(desired_torque, toyota_desired_torque_last,
-          &toyota_torque_meas, TOYOTA_MAX_RATE_UP, TOYOTA_MAX_RATE_DOWN, TOYOTA_MAX_TORQUE_ERROR);
+        if (ego_speed_toyota < 4500){
+          violation |= dist_to_meas_check(desired_torque, toyota_desired_torque_last,
+            &toyota_torque_meas, TOYOTA_MAX_RATE_UP, TOYOTA_MAX_RATE_DOWN, TOYOTA_MAX_TORQUE_ERROR);
+        }
 
         // used next time
         toyota_desired_torque_last = desired_torque;
