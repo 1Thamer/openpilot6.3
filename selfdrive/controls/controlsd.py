@@ -311,12 +311,6 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     CC.hudControl.speedVisible = isEnabled(state)
     CC.hudControl.lanesVisible = isEnabled(state)
     CC.hudControl.leadVisible = plan.hasLead
-<<<<<<< HEAD
-    CC.hudControl.rightLaneDepart = plan.hasrightLaneDepart
-    CC.hudControl.leftLaneDepart = plan.hasleftLaneDepart
-    CC.hudControl.rightLaneVisible = bool(path_plan.pathPlan.rProb > 0.5)
-    CC.hudControl.leftLaneVisible = bool(path_plan.pathPlan.lProb > 0.5)
-=======
 
     right_lane_visible = path_plan.pathPlan.rProb > 0.5
     left_lane_visible = path_plan.pathPlan.lProb > 0.5
@@ -328,11 +322,10 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     ldw_allowed = CS.vEgo > 12.5 and not blinker
 
     if len(list(path_plan.pathPlan.rPoly)) == 4:
-      CC.hudControl.rightLaneDepart = bool(ldw_allowed and path_plan.pathPlan.rPoly[3] > -(1 + CAMERA_OFFSET) and right_lane_visible)
+      CC.hudControl.rightLaneDepart = bool(ldw_allowed and path_plan.pathPlan.rPoly[3] > -(1.08 + CAMERA_OFFSET) and right_lane_visible)
     if len(list(path_plan.pathPlan.lPoly)) == 4:
-      CC.hudControl.leftLaneDepart = bool(ldw_allowed and path_plan.pathPlan.lPoly[3] < (1 - CAMERA_OFFSET) and left_lane_visible)
+      CC.hudControl.leftLaneDepart = bool(ldw_allowed and path_plan.pathPlan.lPoly[3] < (1.08 - CAMERA_OFFSET) and left_lane_visible)
 
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
     CC.hudControl.visualAlert = AM.visual_alert
     CC.hudControl.audibleAlert = AM.audible_alert
 
@@ -406,12 +399,6 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
   cc_send.carControl = CC
   carcontrol.send(cc_send.to_bytes())
 
-<<<<<<< HEAD
-  if (rk.frame % 36000) == 0:    # update angle offset every 6 minutes
-    params.put("ControlsParams", json.dumps({'angle_model_bias': angle_model_bias,
-              'angle_ff_gain': LaC.angle_ff_gain, 'rate_ff_gain': LaC.rate_ff_gain}))
-=======
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
   return CC
 
 
