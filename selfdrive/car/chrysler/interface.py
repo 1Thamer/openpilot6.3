@@ -79,11 +79,7 @@ class CarInterface(object):
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.7
 
-<<<<<<< HEAD
     if candidate in (CAR.JEEP_CHEROKEE_2017, CAR.JEEP_CHEROKEE_2018, CAR.JEEP_CHEROKEE_2019):
-=======
-    if candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
       ret.wheelbase = 2.91  # in meters
       ret.steerRatio = 11.6 # 0.5.10
       ret.steerActuatorDelay = 0.2  # in seconds
@@ -98,11 +94,7 @@ class CarInterface(object):
     if candidate in (CAR.PACIFICA_2019_HYBRID, CAR.JEEP_CHEROKEE_2019):
       ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged.
       # TODO allow 2019 cars to steer down to 13 m/s if already engaged.
-<<<<<<< HEAD
-      
-=======
 
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
     centerToRear = ret.wheelbase - ret.centerToFront
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
