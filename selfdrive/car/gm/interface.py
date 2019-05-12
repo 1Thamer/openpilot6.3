@@ -88,13 +88,8 @@ class CarInterface(object):
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
-<<<<<<< HEAD
       ret.minEnableSpeed = 7 * CV.MPH_TO_MS
       ret.mass = 1496 + std_cargo
-=======
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
-      ret.mass = 1496. + std_cargo
->>>>>>> d1866845df423c6855e2b365ff230cf7d89a420b
       ret.safetyModel = car.CarParams.SafetyModels.gm
       ret.wheelbase = 2.83
       ret.steerRatio = 15.8
