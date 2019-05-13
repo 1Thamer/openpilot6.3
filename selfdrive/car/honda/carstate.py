@@ -6,10 +6,10 @@ from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, 
 import selfdrive.kegman_conf as kegman
 from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
 from selfdrive.car.modules.UIEV_module import UIEvents
-import numpy as np
-import os
-import subprocess
-import sys
+#import numpy as np
+#import os
+#import subprocess
+#import sys
 
 def parse_gear_shifter(gear, vals):
 
