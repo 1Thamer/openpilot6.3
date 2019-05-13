@@ -3,7 +3,7 @@ from common.numpy_fast import interp
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, \
-                                               create_wheel_buttons, \
+                                               create_wheel_buttons, create_lkas_heartbit, \
                                                create_chimes
 
 from selfdrive.car.modules.ALCA_module import ALCAController
