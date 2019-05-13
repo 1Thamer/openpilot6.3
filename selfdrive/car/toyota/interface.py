@@ -13,6 +13,7 @@ steeringAngleoffset = float(kegman.conf['angle_steers_offset'])  # deg offset
    
 try:
   from selfdrive.car.toyota.carcontroller import CarController
+except ImportError:
   CarController = None
 
 
