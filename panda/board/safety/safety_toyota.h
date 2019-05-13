@@ -131,8 +131,10 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
           violation |= max_limit_check(desired_torque, TOYOTA_MAX_TORQUE, -TOYOTA_MAX_TORQUE);
         }
         // *** torque rate limit check ***
-        violation |= dist_to_meas_check(desired_torque, toyota_desired_torque_last,
-          &toyota_torque_meas, TOYOTA_MAX_RATE_UP, TOYOTA_MAX_RATE_DOWN, TOYOTA_MAX_TORQUE_ERROR);
+        if (ego_speed_toyota < 4500){
+          violation |= dist_to_meas_check(desired_torque, toyota_desired_torque_last,
+            &toyota_torque_meas, TOYOTA_MAX_RATE_UP, TOYOTA_MAX_RATE_DOWN, TOYOTA_MAX_TORQUE_ERROR);
+        }
 
         // used next time
         toyota_desired_torque_last = desired_torque;
