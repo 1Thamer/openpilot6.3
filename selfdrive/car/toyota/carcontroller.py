@@ -191,9 +191,14 @@ class CarController(object):
 
     if self.phantom.data["status"]:
       apply_steer = int(round(self.phantom.data["angle"]))
+      if abs(CS.angle_steers) > 400:
+        apply_steer = 0
     else:
       apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
-
+      if abs(CS.angle_steers) > 100:
+        apply_steer = 0
+    if CS.lane_departure_toggle_on:
+      apply_steer = 0
     apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
 
     # only cut torque when steer state is a known fault
@@ -311,19 +316,11 @@ class CarController(object):
       if self.angle_control:
         can_sends.append(create_steer_command(self.packer, 0., 0, frame))
       else:
-        if CS.lane_departure_toggle_on:
-          can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, frame))
-          #print "here"
-        else:
-          can_sends.append(create_steer_command(self.packer, 0., 0, frame))
-        # rav4h with dsu disconnected
+        can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, frame))
 
     if self.angle_control:
-      if CS.lane_departure_toggle_on:
-        can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled,
+      can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled,
                                                    ECU.APGS in self.fake_ecus))
-      else:
-        can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
     elif ECU.APGS in self.fake_ecus:
       can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
     
