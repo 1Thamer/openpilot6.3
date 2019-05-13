@@ -199,12 +199,11 @@ class CarController(object):
         apply_steer = 0
     if CS.lane_departure_toggle_on:
       apply_steer = 0
-    apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
 
     # only cut torque when steer state is a known fault
     if CS.steer_state in [9, 25]:
       self.last_fault_frame = frame
-
+      
     # Cut steering for 2s after fault
     if self.phantom.data["status"]:
       cutout_time = 100
@@ -215,6 +214,11 @@ class CarController(object):
       apply_steer_req = 0
     else:
       apply_steer_req = 1
+      
+    apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
+    if apply_steer == 0 and self.last_steer == 0:
+      apply_steer_req = 0
+
     if not enabled and rightLane_Depart and CS.v_ego > 12.5 and not CS.right_blinker_on:
       apply_steer = self.last_steer + 3
       apply_steer = min(apply_steer , 800)
