@@ -79,7 +79,7 @@ class LongControl(object):
     self.pid.reset()
     self.v_pid = v_pid
 
-  def dynamic_gas(self, v_ego, v_rel, d_rel, gasinterceptor, gasbuttonstatus):
+  def dynamic_gas(self, v_ego, v_rel, gasinterceptor, gasbuttonstatus):
     dynamic = False
     if gasinterceptor:
       if gasbuttonstatus == 0:
@@ -132,13 +132,11 @@ class LongControl(object):
     if l20 is not None:
       self.lead_1 = l20.live20.leadOne
       vRel = self.lead_1.vRel
-      dRel = self.lead_1.dRel
     else:
       vRel = None
-      dRel = None
       
     #gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
-    gas_max = self.dynamic_gas(v_ego, vRel, dRel, gasinterceptor, gasbuttonstatus)
+    gas_max = self.dynamic_gas(v_ego, vRel, gasinterceptor, gasbuttonstatus)
     brake_max = interp(v_ego, CP.brakeMaxBP, CP.brakeMaxV)
 
     # Update state machine
