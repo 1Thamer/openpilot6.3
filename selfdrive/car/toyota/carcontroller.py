@@ -133,9 +133,6 @@ class CarController(object):
     self.blindspot_blink_counter_right = 0
     self.steer_angle_enabled = False
     self.ipas_reset_counter = 0
-    self.barriers = 0
-    self.left_line_values = 1
-    self.right_line_values = 1
     self.last_fault_frame = -200
     self.blindspot_debug_enabled_left = False
     self.blindspot_debug_enabled_right = False
@@ -202,14 +199,14 @@ class CarController(object):
       apply_steer_req = 0
     else:
       apply_steer_req = 1
-    if not enabled and rightLane_Depart and CS.v_ego > 12.5 and not CS.right_blinker_on:
+    if not enabled and right_lane_depart and CS.v_ego > 12.5 and not CS.right_blinker_on:
       apply_steer = self.last_steer + 3
       apply_steer = min(apply_steer , 800)
       #print "right"
       #print apply_steer
       apply_steer_req = 1
       
-    if not enabled and leftLane_Depart and CS.v_ego > 12.5 and not CS.left_blinker_on:
+    if not enabled and left_lane_depart and CS.v_ego > 12.5 and not CS.left_blinker_on:
       apply_steer = self.last_steer - 3
       apply_steer = max(apply_steer , -800)
       #print "left"
@@ -354,15 +351,6 @@ class CarController(object):
       self.alert_active = not self.alert_active
     else:
       send_ui = False
-    self.left_line_values = 2 - left_line
-    self.right_line_values = 2 - right_line
-    self.barriers = 0
-    if leftLane_Depart and CS.v_ego > 12.5:
-      self.barriers = 3
-      self.left_line_values = 3
-    elif rightLane_Depart and CS.v_ego > 12.5:
-      self.barriers = 2
-      self.right_line_values = 3
     if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
       can_sends.append(create_ui_command(self.packer, steer, sound1, sound2, left_line, right_line, left_lane_depart, right_lane_depart))
 
