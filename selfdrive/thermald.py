@@ -177,7 +177,7 @@ def thermald_thread():
   off_ts = None
   started_ts = None
   ignition_seen = False
-  started_seen = False
+  #started_seen = False
   passive_starter = LocationStarter()
   thermal_status = ThermalStatus.green
   health_sock.RCVTIMEO = 1500
@@ -290,7 +290,7 @@ def thermald_thread():
       if started_ts is None:
         params.car_start()
         started_ts = sec_since_boot()
-        started_seen = True
+        #started_seen = True
     else:
       started_ts = None
       if off_ts is None:
