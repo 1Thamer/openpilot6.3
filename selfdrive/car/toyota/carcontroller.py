@@ -197,7 +197,7 @@ class CarController(object):
       apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
       if abs(CS.angle_steers) > 100:
         apply_steer = 0
-    if CS.lane_departure_toggle_on:
+    if not CS.lane_departure_toggle_on:
       apply_steer = 0
 
     # only cut torque when steer state is a known fault
