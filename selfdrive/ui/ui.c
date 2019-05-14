@@ -230,8 +230,8 @@ typedef struct UIState {
   void *livempc_sock_raw;
   zsock_t *plus_sock;
   void *plus_sock_raw;
-  zsock_t *carstate_sock;
-  void *carstate_sock_raw;
+  
+  
   zsock_t *map_data_sock;
   void *map_data_sock_raw;
 
@@ -1774,7 +1774,7 @@ static void ui_update(UIState *s) {
     s->alert_blinked = false;
   }
 
-  zmq_pollitem_t polls[10] = {{0}};
+  zmq_pollitem_t polls[9] = {{0}};
   // Wait for next rgb image from visiond
   while(true) {
     assert(s->ipc_fd >= 0);
@@ -1797,7 +1797,7 @@ static void ui_update(UIState *s) {
       close(s->ipc_fd);
       s->ipc_fd = -1;
       s->vision_connected = false;
-      zsock_destroy(&s->carstate_sock);
+      
       return;
     }
     if (rp.type == VIPC_STREAM_ACQUIRE) {
@@ -1855,11 +1855,8 @@ static void ui_update(UIState *s) {
     polls[8].socket = s->plus_sock_raw; // plus_sock should be last
     polls[8].events = ZMQ_POLLIN;
     int num_polls = 9;
-    if (s->vision_connected) {
-      polls[num_polls].socket = s->carstate_sock_raw;
-      polls[num_polls].events = ZMQ_POLLIN;
-      num_polls++;
-    }
+    
+    
 
     int ret = zmq_poll(polls, num_polls, 0);
     if (ret < 0) {
@@ -1921,7 +1918,7 @@ static void ui_update(UIState *s) {
       if (eventd.which == cereal_Event_live100) {
         struct cereal_Live100Data datad;
         cereal_read_Live100Data(&datad, eventd.live100);
-
+        s->scene.brakeLights = datad.brakeLights;
         if (datad.vCruise != s->scene.v_cruise) {
           s->scene.v_cruise_update_ts = eventd.logMonoTime;
         }
@@ -2129,11 +2126,7 @@ static void ui_update(UIState *s) {
         s->scene.speedlimit = datad.speedLimit;
         s->scene.speedlimit_valid = datad.speedLimitValid;
         s->scene.map_valid = datad.mapValid;
-      } else if (eventd.which == cereal_Event_carState) {
-        struct cereal_CarState datad;
-        cereal_read_CarState(&datad, eventd.carState);
-        s->scene.brakeLights = datad.brakeLights;
-      }
+      } 
       capn_free(&ctx);
       zmq_msg_close(&msg);
     }
