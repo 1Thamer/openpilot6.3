@@ -822,7 +822,10 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
 
 static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color) {
   const UIScene *scene = &s->scene;
-
+  //BB added to make the line blue
+  if (s->b.tri_state_switch == 2) {
+    color = nvgRGBA(66, 220, 244,250);
+  }
   nvgSave(s->vg);
   nvgTranslate(s->vg, 240.0f, 0.0); // rgb-box space
   nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2); // zoom 2x
@@ -847,19 +850,6 @@ static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, N
   nvgFillColor(s->vg, color);
   nvgFill(s->vg);
   nvgRestore(s->vg);
-}
-
-static void ui_draw_lane(UIState *s, const PathData path, NVGcolor color) {
-  //BB added to make the line blue
-  if (s->b.tri_state_switch == 2) {
-    color = nvgRGBA(66, 220, 244,250);
-  }
-  //BB end  
-  ui_draw_lane_line(s, path.points, 0.025*path.prob, color, false);
-  float var = min(path.std, 0.7);
-  color.a /= 4;
-  ui_draw_lane_line(s, path.points, -var, color, true);
-  ui_draw_lane_line(s, path.points, var, color, true);
 }
 
 static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd) {
