@@ -383,6 +383,7 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "startMonoTime": start_time,
     "mapValid": plan.mapValid,
     "forceDecel": bool(force_decel),
+    "brakeLights": bool(CS.brakeLights),
   }
   live100.send(dat.to_bytes())
 
