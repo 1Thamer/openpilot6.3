@@ -2435,8 +2435,6 @@ int main() {
     } else {
       set_awake(s, false);
     }
-    if (s->awake) {
-
     // Don't waste resources on drawing in case screen is off or car is not started.
     if (s->awake && s->vision_connected) {
       ui_draw(s);
