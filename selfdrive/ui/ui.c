@@ -2381,6 +2381,8 @@ int main() {
       set_brightness(s, NEO_BRIGHTNESS);
     }
 
+    int touched = 0;
+    int touch_x = -1, touch_y = -1;
     int dc_touch_x = -1, dc_touch_y = -1;
     s->b.touch_timeout = max(s->b.touch_timeout -1,0);
 
@@ -2394,33 +2396,12 @@ int main() {
         LOGW("poll failed (%d)", ret);
       else if (ret > 0) {
         // awake on any touch
-        int touch_x = -1, touch_y = -1;
-        int touched = touch_read(&touch, &touch_x, &touch_y);
-        dashcam(s, touch_x, touch_y);
-        if (touched == 1) {
-          set_awake(s, true);
-          s->b.touch_last = true;
-          s->b.touch_last_x = touch_x;
-          s->b.touch_last_y = touch_y;
-          s->b.touch_timeout = touch_timeout;
-          s->b.touch_last_width = s->scene.ui_viz_rw;
-        }
-      //BB check touch
-        if ((s->b.touch_last) && (s->b.touch_last_width != s->scene.ui_viz_rw)) {
-          bb_handle_ui_touch(s,s->b.touch_last_x,s->b.touch_last_y);
-          dc_touch_x = s->b.touch_last_x;
-          dc_touch_y = s->b.touch_last_y;
-          s->b.touch_last = false;
-          s->b.touch_last_x = 0;
-          s->b.touch_last_y = 0;
-          s->b.touch_last_width=s->scene.ui_viz_rw;
-        }
-      //s->b.touch_last_width = s->scene.ui_viz_rw;
-      //BB Update our cereal polls
-      bb_ui_poll_update(s);
+        touched = touch_read(&touch, &touch_x, &touch_y);
       }
     } else {
       // Car started, fetch a new rgb image from ipc and peek for zmq events.
+      touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 2 : 500);
+      //touched = touch_read(&touch, &touch_x, &touch_y);
       ui_update(s);
       if(!s->vision_connected) {
         // Visiond process is just stopped, force a redraw to make screen blank again.
@@ -2429,6 +2410,29 @@ int main() {
         should_swap = true;
       }
     }
+    if (touched == 1) {
+      set_awake(s, true);
+      s->b.touch_last = true;
+      s->b.touch_last_x = touch_x;
+      s->b.touch_last_y = touch_y;
+      s->b.touch_timeout = touch_timeout;
+      s->b.touch_last_width = s->scene.ui_viz_rw;
+    }
+    //BB check touch
+    if ((s->b.touch_last) && (s->b.touch_last_width != s->scene.ui_viz_rw)) {
+      bb_handle_ui_touch(s,s->b.touch_last_x,s->b.touch_last_y);
+      dc_touch_x = s->b.touch_last_x;
+      dc_touch_y = s->b.touch_last_y;
+      s->b.touch_last = false;
+      s->b.touch_last_x = 0;
+      s->b.touch_last_y = 0;
+      s->b.touch_last_width=s->scene.ui_viz_rw;
+    }
+    
+    //s->b.touch_last_width = s->scene.ui_viz_rw;
+    //BB Update our cereal polls
+    bb_ui_poll_update(s);
+    
     // manage wakefulness
     if (s->awake_timeout > 0) {
       s->awake_timeout--;
@@ -2437,6 +2441,7 @@ int main() {
     }
     // Don't waste resources on drawing in case screen is off or car is not started.
     if (s->awake && s->vision_connected) {
+      dashcam(s, dc_touch_x, dc_touch_y);
       ui_draw(s);
       glFinish();
       should_swap = true;
