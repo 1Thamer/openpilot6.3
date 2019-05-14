@@ -822,10 +822,6 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
 
 static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color) {
   const UIScene *scene = &s->scene;
-  //BB added to make the line blue
-  if (s->b.tri_state_switch == 2) {
-    color = nvgRGBA(66, 220, 244,250);
-  }
   nvgSave(s->vg);
   nvgTranslate(s->vg, 240.0f, 0.0); // rgb-box space
   nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2); // zoom 2x
@@ -1055,6 +1051,11 @@ static void update_all_lane_lines_data(UIState *s, const PathData path, model_pa
 }
 
 static void ui_draw_lane(UIState *s, const PathData *path, model_path_vertices_data *pstart, NVGcolor color) {
+  //BB added to make the line blue
+  if (s->b.tri_state_switch == 2) {
+    color = nvgRGBA(66, 220, 244,250);
+  }
+  //BB end
   ui_draw_lane_line(s, pstart, color);
   float var = min(path->std, 0.7);
   color.a /= 4;
