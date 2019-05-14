@@ -1700,9 +1700,7 @@ static void ui_update(UIState *s) {
   int err;
 
   if (s->vision_connect_firstrun) {
-    s->carstate_sock = zsock_new_sub(">tcp://127.0.0.1:8021", "");
-    assert(s->carstate_sock);
-    s->carstate_sock_raw = zsock_resolve(s->carstate_sock);
+    
 
     // cant run this in connector thread because opengl.
     // do this here for now in lieu of a run_on_main_thread event
