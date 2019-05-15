@@ -1,11 +1,13 @@
 import os
 import time
+import json
 from common.basedir import BASEDIR
 from common.realtime import sec_since_boot
 from common.fingerprints import eliminate_incompatible_cars, all_known_cars
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
 import selfdrive.crash as crash
+from common.params import Params
 import selfdrive.kegman_conf as kegman
 
 def load_interfaces(x):
@@ -49,9 +51,12 @@ def fingerprint(logcan, timeout):
   elif os.getenv("SIMULATOR") is not None:
     return ("simulator", None)
 
-  cached_car = kegman.get('fingerprint')
-  if cached_car is not None:  # if we previously identified a car and fingerprint
-    return (cached_car[0], {long(key): value for key, value in cached_car[1].items()})
+  params = Params()
+
+  cached_fingerprint = params.get('CachedFingerprint')
+  if cached_fingerprint is not None and kegman.get("useCarCaching", True):  # if we previously identified a car and fingerprint and user hasn't disabled caching
+    cached_fingerprint = json.loads(cached_fingerprint)
+    return (cached_fingerprint[0], {long(key): value for key, value in cached_fingerprint[1].items()})  # not sure if dict of longs is required
 
   cloudlog.warning("waiting for fingerprint...")
   candidate_cars = all_known_cars()
@@ -104,7 +109,7 @@ def fingerprint(logcan, timeout):
   
   cloudlog.warning("fingerprinted %s", candidate_cars[0])
 
-  kegman.save({'fingerprint': [candidate_cars[0], {int(key): value for key, value in finger.items()}]})
+  params.put("CachedFingerprint", [candidate_cars[0], {int(key): value for key, value in finger.items()}])
   return (candidate_cars[0], finger)
 
 
