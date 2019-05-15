@@ -109,7 +109,7 @@ def fingerprint(logcan, timeout):
   
   cloudlog.warning("fingerprinted %s", candidate_cars[0])
 
-  params.put(json.dumps("CachedFingerprint", [candidate_cars[0], {int(key): value for key, value in finger.items()}]))
+  params.put("CachedFingerprint", json.dumps([candidate_cars[0], {int(key): value for key, value in finger.items()}]))  # probably can remove long to int conversion
   return (candidate_cars[0], finger)
 
 
