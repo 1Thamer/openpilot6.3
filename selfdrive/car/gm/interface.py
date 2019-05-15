@@ -187,9 +187,9 @@ class CarInterface(object):
     ret.longPidDeadzoneV = [0.]
 
     ret.longitudinalKpBP = [0., 5., 35.]
-    ret.longitudinalKpV = [1.8, 2.425, 2.2]
+    ret.longitudinalKpV = [0.5, 1.102, 0.66]  # tuned braking for higher brake limit
     ret.longitudinalKiBP = [0., 35.]
-    ret.longitudinalKiV = [0.26, 0.36]
+    ret.longitudinalKiV = [0.1, 0.15]
 
     ret.steerLimitAlert = True
 
