@@ -1649,13 +1649,6 @@ struct LatControl {
   anglelater @0 :Float32;
 }
 
-struct PhantomData {
-  status @0 :Bool;
-  speed @1 :Float32;
-  angle @2 :Float32;
-  time @3 :Float32;
-}
-
 struct CameraOdometry {
   trans @0 :List(Float32); # m/s in device frame
   rot @1 :List(Float32); # rad/s in device frame
@@ -1742,6 +1735,5 @@ struct Event {
     pathPlan @65 :PathPlan;
     kalmanOdometry @66 :KalmanOdometry;
     liveTrafficData @67 :LiveTrafficData;
-    phantomData @68 :PhantomData;
   }
 }
