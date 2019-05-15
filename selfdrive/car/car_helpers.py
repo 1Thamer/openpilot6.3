@@ -49,8 +49,9 @@ def fingerprint(logcan, timeout):
   elif os.getenv("SIMULATOR") is not None:
     return ("simulator", None)
 
-  if kegman.get('fingerprint') is not None:
-    return kegman.get('fingerprint')
+  cached_car = kegman.get('fingerprint')
+  if cached_car is not None:  # if we previously identified a car and fingerprint
+    return (cached_car[0], {long(key): value for key, value in cached_car[1].items()})
 
   cloudlog.warning("waiting for fingerprint...")
   candidate_cars = all_known_cars()
@@ -103,10 +104,7 @@ def fingerprint(logcan, timeout):
   
   cloudlog.warning("fingerprinted %s", candidate_cars[0])
 
-  with open("/data/fp_test", "w") as f:
-    f.write(str((candidate_cars[0], finger)))
-
-  kegman.save({'fingerprint': (candidate_cars[0], finger)})
+  kegman.save({'fingerprint': [candidate_cars[0], {int(key): value for key, value in finger.items()}]})
   return (candidate_cars[0], finger)
 
 
