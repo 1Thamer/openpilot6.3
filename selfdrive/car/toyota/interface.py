@@ -148,6 +148,18 @@ class CarInterface(object):
       ret.longitudinalKpV = [2.0, 1.0, 0.8]
       ret.longitudinalKiV = [0.25, 0.14]
       ret.gasMaxV = [0.2, 0.5, 0.7]
+ elif candidate == CAR.COROLLA_HATCH:
+      stop_and_go = True
+      ret.safetyParam = 100
+      ret.wheelbase = 2.63906
+      ret.steerRatio = 13.9
+      tire_stiffness_factor = 0.444
+      ret.mass = 3060. * CV.LB_TO_KG + std_cargo
+      ret.steerKpV, ret.steerKiV = [[0.3], [0.05]]
+      ret.steerKf = 0.00007818594
+      ret.longitudinalKpV = [2.0, 1.0, 0.8]
+      ret.longitudinalKiV = [0.25, 0.14]
+      ret.gasMaxV = [0.2, 0.5, 0.7]
     elif candidate == CAR.COROLLA:
       stop_and_go = False
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
