@@ -151,7 +151,7 @@ class CarInterface(object):
       ret.longitudinalKpV = [2.0, 1.0, 0.8]
       ret.longitudinalKiV = [0.25, 0.14]
       ret.gasMaxV = [0.2, 0.5, 0.7]
-   elif candidate == CAR.COROLLA_HATCH:
+    elif candidate == CAR.COROLLA_HATCH:
       stop_and_go = True
       ret.safetyParam = 100
       ret.wheelbase = 2.63906
