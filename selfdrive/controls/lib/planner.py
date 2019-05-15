@@ -148,9 +148,6 @@ class Planner(object):
       if socket is self.lat_Control:
         self.lastlat_Control = messaging.recv_one(socket).latControl
 
-    self.lead_1 = live20.live20.leadOne
-    self.lead_2 = live20.live20.leadTwo
-
 
     lead_1 = live20.live20.leadOne
     lead_2 = live20.live20.leadTwo
