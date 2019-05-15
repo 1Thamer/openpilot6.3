@@ -59,6 +59,8 @@ def fingerprint(logcan, timeout):
     with open("/data/fp_test", "a") as f:
       f.write("using cache\n")
     return (str(cached_fingerprint[0]), {long(key): value for key, value in cached_fingerprint[1].items()})  # not sure if dict of longs is required
+  with open("/data/fp_test", "a") as f:
+    f.write("not using cache\n")
 
   cloudlog.warning("waiting for fingerprint...")
   candidate_cars = all_known_cars()
