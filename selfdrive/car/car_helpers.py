@@ -6,6 +6,7 @@ from common.fingerprints import eliminate_incompatible_cars, all_known_cars
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
 import selfdrive.crash as crash
+import selfdrive.kegman_conf as kegman
 
 def load_interfaces(x):
   ret = {}
@@ -47,6 +48,9 @@ def fingerprint(logcan, timeout):
     return ("simulator2", None)
   elif os.getenv("SIMULATOR") is not None:
     return ("simulator", None)
+
+  if kegman.get('fingerprint') is not None:
+    return kegman.get('fingerprint')
 
   cloudlog.warning("waiting for fingerprint...")
   candidate_cars = all_known_cars()
@@ -98,7 +102,11 @@ def fingerprint(logcan, timeout):
     pass
   
   cloudlog.warning("fingerprinted %s", candidate_cars[0])
-  
+
+  with open("/data/fp_test", "w") as f:
+    f.write(str((candidate_cars[0], finger)))
+
+  kegman.save({'fingerprint': (candidate_cars[0], finger)})
   return (candidate_cars[0], finger)
 
 
