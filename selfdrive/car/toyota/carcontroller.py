@@ -10,6 +10,7 @@ from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
 from selfdrive.car.toyota.values import ECU, STATIC_MSGS
 from selfdrive.can.packer import CANPacker
 from selfdrive.car.modules.ALCA_module import ALCAController
+from selfdrive.phantom import Phantom
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
@@ -25,7 +26,7 @@ class SteerLimitParams:
   STEER_MAX = 1500
   STEER_DELTA_UP = 10       # 1.5s time to peak torque
   STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
-  STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
+  STEER_ERROR_MAX = 1350     # max delta between torque cmd and torque motor
 
 # Steer angle limits (tested at the Crows Landing track and considered ok)
 ANGLE_MAX_BP = [0., 5.]
@@ -136,6 +137,7 @@ class CarController(object):
     self.last_fault_frame = -200
     self.blindspot_debug_enabled_left = False
     self.blindspot_debug_enabled_right = False
+    self.phantom = Phantom(timeout=False)  # no timeout for steering
 
     self.fake_ecus = set()
     if enable_camera: self.fake_ecus.add(ECU.CAM)
@@ -184,21 +186,36 @@ class CarController(object):
     alca_angle, alca_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
     #apply_steer = int(round(alca_steer * STEER_MAX))
 
+    self.phantom.update()
     # steer torque
-    apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
-
-    apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
+    if self.phantom.data["status"]:
+      apply_steer = int(round(self.phantom.data["angle"]))
+      if abs(CS.angle_steers) > 400:
+        apply_steer = 0
+    else:
+      apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
+      if abs(CS.angle_steers) > 100:
+        apply_steer = 0
+    if not CS.lane_departure_toggle_on:
+      apply_steer = 0
 
     # only cut torque when steer state is a known fault
     if CS.steer_state in [9, 25]:
       self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
-    if not enabled or (frame - self.last_fault_frame < 200):
+    cutout_time = 100 if self.phantom.data["status"] else 200
+
+    if not enabled or (frame - self.last_fault_frame < cutout_time):
       apply_steer = 0
       apply_steer_req = 0
     else:
       apply_steer_req = 1
+
+    apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
+    if apply_steer == 0 and self.last_steer == 0:
+      apply_steer_req = 0
+
     if not enabled and right_lane_depart and CS.v_ego > 12.5 and not CS.right_blinker_on:
       apply_steer = self.last_steer + 3
       apply_steer = min(apply_steer , 800)
@@ -300,19 +317,11 @@ class CarController(object):
       if self.angle_control:
         can_sends.append(create_steer_command(self.packer, 0., 0, frame))
       else:
-        if CS.lane_departure_toggle_on:
-          can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, frame))
-          #print "here"
-        else:
-          can_sends.append(create_steer_command(self.packer, 0., 0, frame))
-        # rav4h with dsu disconnected
+        can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, frame))
 
     if self.angle_control:
-      if CS.lane_departure_toggle_on:
-        can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled,
+      can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled,
                                                    ECU.APGS in self.fake_ecus))
-      else:
-        can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
     elif ECU.APGS in self.fake_ecus:
       can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
     
