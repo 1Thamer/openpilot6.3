@@ -137,7 +137,7 @@ class CarController(object):
     self.last_fault_frame = -200
     self.blindspot_debug_enabled_left = False
     self.blindspot_debug_enabled_right = False
-    self.phantom = Phantom(timeout=False)  # no timeout for steering
+    self.phantom = Phantom()
 
     self.fake_ecus = set()
     if enable_camera: self.fake_ecus.add(ECU.CAM)
