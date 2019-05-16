@@ -222,6 +222,9 @@ class CarInterface(object):
     else:
       self.can_invalid_count = 0
 
+    if self.CS.steer_not_allowed:
+      events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
+      
     if ret.seatbeltUnlatched and (self.CS.acc_active and not self.acc_active_prev):
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
