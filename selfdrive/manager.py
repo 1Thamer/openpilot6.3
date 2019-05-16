@@ -356,7 +356,6 @@ def manager_thread():
     gps = messaging.recv_one(gps_sock)
     if 47.3024876979 < gps.gpsLocation.latitude and 54.983104153 > gps.gpsLocation.latitude and gps.gpsLocation.longitude > 5.98865807458 and gps.gpsLocation.longitude < 15.0169958839: 
       logger_dead = True
-      print "Germany"
     else:
       logger_dead = False
     # uploader is gated based on the phone temperature
