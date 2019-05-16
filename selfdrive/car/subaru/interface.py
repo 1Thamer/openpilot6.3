@@ -59,7 +59,7 @@ class CarInterface(object):
     std_cargo = 136
     ret.steerRateCost = 0.7
 
-    if candidate in [CAR.IMPREZA]:
+    if candidate in [CAR.IMPREZA, CAR.XV]:
       ret.mass = 1568 + std_cargo
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
@@ -69,6 +69,32 @@ class CarInterface(object):
       ret.steerKf = 0.00005
       ret.steerKiBP, ret.steerKpBP = [[0., 20.], [0., 20.]]
       ret.steerKpV, ret.steerKiV = [[0.2, 0.3], [0.02, 0.03]]
+      ret.steerMaxBP = [0.] # m/s
+      ret.steerMaxV = [1.]
+
+    if candidate in [CAR.OUTBACK]:
+      ret.mass = 1568 + std_cargo
+      ret.wheelbase = 2.67
+      ret.centerToFront = ret.wheelbase * 0.5
+      ret.steerRatio = 20            # learned, 14 stock
+      tire_stiffness_factor = 0.78
+      ret.steerActuatorDelay = 0.4
+      ret.steerKf = 0.00003
+      ret.steerKiBP, ret.steerKpBP = [[0.,10.], [0.,10.]]
+      ret.steerKpV, ret.steerKiV = [[0.07,0.15], [0.02,0.02]]
+      ret.steerMaxBP = [0.] # m/s
+      ret.steerMaxV = [1.]
+
+    if candidate in [CAR.LEGACY]:
+      ret.mass = 1568 + std_cargo
+      ret.wheelbase = 2.67
+      ret.centerToFront = ret.wheelbase * 0.5
+      ret.steerRatio = 14.5
+      tire_stiffness_factor = 1.0
+      ret.steerActuatorDelay = 0.4
+      ret.steerKf = 0.00005
+      ret.steerKiBP, ret.steerKpBP = [[0., 20.], [0., 20.]]
+      ret.steerKpV, ret.steerKiV = [[0.1, 0.2], [0.01, 0.02]]
       ret.steerMaxBP = [0.] # m/s
       ret.steerMaxV = [1.]
 
