@@ -159,7 +159,16 @@ class CarInterface(object):
     ret.rightBlinker = self.CS.right_blinker_on
     ret.seatbeltUnlatched = self.CS.seatbelt_unlatched
     ret.doorOpen = self.CS.door_open
-
+    
+    ret.gasbuttonstatus = self.CS.gasMode
+    ret.readdistancelines = 1
+    ret.genericToggle = False
+    ret.laneDepartureToggle = False
+    ret.distanceToggle = 1
+    ret.accSlowToggle = False
+    ret.blindspot = False
+    ret.brakeLights = False
+    
     buttonEvents = []
 
     # blinkers
