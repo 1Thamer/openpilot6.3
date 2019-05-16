@@ -1033,15 +1033,18 @@ void  bb_ui_poll_update( UIState *s) {
               s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.toyota.png", 1);
               s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.toyota2.png", 1);
               LOGW("Spinning logo set for Toyota");
-	    } else if (strcmp(s->b.car_folder,"gm")==0) {
+	          } else if (strcmp(s->b.car_folder,"gm")==0) {
               s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.gm.png", 1);
               s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.gm2.png", 1);
               LOGW("Spinning logo set for GM");
-	    } else if (strcmp(s->b.car_folder,"chrysler")==0) {
+	          } else if (strcmp(s->b.car_folder,"chrysler")==0) {
               s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.chrysler.png", 1);
               s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.chrysler2.png", 1);
               LOGW("Spinning logo set for Chrysler");
-            };
+            }else if (strcmp(s->b.car_folder,"subaru")==0) {
+              s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.subaru.png", 1);
+              s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.subaru2.png", 1);
+              LOGW("Spinning logo set for Subaru");;
           }
           capn_free(&ctx);
           zmq_msg_close(&msg);
