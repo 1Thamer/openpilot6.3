@@ -5,6 +5,7 @@ from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
 from selfdrive.car.modules.UIEV_module import UIEvents
 from selfdrive.config import Conversions as CV
 from selfdrive.can.parser import CANParser
+import selfdrive.kegman_conf as kegman
 from selfdrive.car.subaru.values import CAR, DBC, STEER_THRESHOLD
 
 def get_powertrain_can_parser(CP):
