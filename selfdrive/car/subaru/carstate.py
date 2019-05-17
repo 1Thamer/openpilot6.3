@@ -49,9 +49,9 @@ def get_powertrain_can_parser(CP):
     signals += [
       ("LKA_Lockout", "Steering_Torque", 0),
     ]
-    checks += [
-      ("CruiseControl", 50),
-    ]
+    #checks += [
+    #  ("CruiseControl", 50),
+    #]
 
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
