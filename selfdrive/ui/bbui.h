@@ -1045,7 +1045,8 @@ void  bb_ui_poll_update( UIState *s) {
               s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.subaru.png", 1);
               s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.subaru2.png", 1);
               LOGW("Spinning logo set for Subaru");
-          };
+            };
+	  }
           capn_free(&ctx);
           zmq_msg_close(&msg);
         }
