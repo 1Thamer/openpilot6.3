@@ -53,10 +53,10 @@ def fingerprint(logcan, timeout):
 
   params = Params()
 
-  cached_fingerprint = params.get('CachedFingerprint')
+  '''cached_fingerprint = params.get('CachedFingerprint')
   if cached_fingerprint is not None and kegman.get("useCarCaching", True):  # if we previously identified a car and fingerprint and user hasn't disabled caching
     cached_fingerprint = json.loads(cached_fingerprint)
-    return (str(cached_fingerprint[0]), {long(key): value for key, value in cached_fingerprint[1].items()})  # not sure if dict of longs is required
+    return (str(cached_fingerprint[0]), {long(key): value for key, value in cached_fingerprint[1].items()})  # not sure if dict of longs is required'''
 
   cloudlog.warning("waiting for fingerprint...")
   candidate_cars = all_known_cars()
@@ -109,7 +109,7 @@ def fingerprint(logcan, timeout):
   
   cloudlog.warning("fingerprinted %s", candidate_cars[0])
 
-  params.put("CachedFingerprint", json.dumps([candidate_cars[0], {int(key): value for key, value in finger.items()}]))  # probably can remove long to int conversion
+  #params.put("CachedFingerprint", json.dumps([candidate_cars[0], {int(key): value for key, value in finger.items()}]))  # probably can remove long to int conversion
   return (candidate_cars[0], finger)
 
 
