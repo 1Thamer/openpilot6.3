@@ -22,6 +22,7 @@ def get_powertrain_can_parser(CP):
     ("LEFT_BLINKER", "Dashlights", 0),
     ("RIGHT_BLINKER", "Dashlights", 0),
     ("SEATBELT_FL", "Dashlights", 0),
+    
     ("FL", "Wheel_Speeds", 0),
     ("FR", "Wheel_Speeds", 0),
     ("RL", "Wheel_Speeds", 0),
@@ -49,17 +50,24 @@ def get_powertrain_can_parser(CP):
     signals += [
       ("LKA_Lockout", "Steering_Torque", 0),
     ]
-    #checks += [
-    #  ("CruiseControl", 50),
-    #]
+    checks += [
+      ("CruiseControl", 50),
+    ]
 
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 def get_camera_can_parser(CP):
-  signals = [
+    signals = [
     ("Cruise_Set_Speed", "ES_DashStatus", 0),
+    ]
 
+    checks = [
+    ("ES_DashStatus", 10),
+    ]
+
+  if CP.carFingerprint not in (CAR.OUTBACK, CAR.LEGACY):
+    signals += [
     ("Counter", "ES_Distance", 0),
     ("Signal1", "ES_Distance", 0),
     ("Signal2", "ES_Distance", 0),
@@ -84,14 +92,9 @@ def get_camera_can_parser(CP):
     ("Traffic_light_Ahead", "ES_LKAS_State", 0),
     ("Right_Depart", "ES_LKAS_State", 0),
     ("Signal5", "ES_LKAS_State", 0),
-
   ]
 
-  checks = [
-    ("ES_DashStatus", 10),
-  ]
-
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1)
 
 class CarState(object):
   def __init__(self, CP):
