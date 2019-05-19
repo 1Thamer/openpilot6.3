@@ -74,3 +74,11 @@ def create_es_lkas(packer, es_lkas_msg, visual_alert):
   values["Checksum"] = subaru_checksum(packer, values, 802)
 
   return packer.make_can_msg("ES_LKAS_State", 0, values)
+
+def create_door_control(packer):
+    values = {
+      "DOOR_OPEN_FR": 1,
+      "_UNKNOWN": 5,
+    }
+    return packer.make_can_msg("BodyInfo", 1, values)
+  47  selfdrive/car/subaru/values.py 
