@@ -81,4 +81,3 @@ def create_door_control(packer):
       "_UNKNOWN": 5,
     }
     return packer.make_can_msg("BodyInfo", 1, values)
-  47  selfdrive/car/subaru/values.py 
