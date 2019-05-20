@@ -868,8 +868,8 @@ void bb_ui_init(UIState *s) {
     //BB INIT
     s->b.shouldDrawFrame = true;
     s->status = STATUS_DISENGAGED;
-    strcpy(s->b.car_model,"Tesla");
-    strcpy(s->b.car_folder,"tesla");
+    strcpy(s->b.car_model,"Arne");
+    strcpy(s->b.car_folder,"arne");
     s->b.tri_state_switch = -1;
     s->b.tri_state_switch_last_read = 0;
     s->b.touch_last = false;
@@ -1021,7 +1021,11 @@ void  bb_ui_poll_update( UIState *s) {
             strcpy(s->b.car_folder, (char *) datad.icCarFolder.str);
             LOGW("Car folder set (%s)", s->b.car_folder);
 
-            if (strcmp(s->b.car_folder,"tesla")==0) {
+            if (strcmp(s->b.car_folder,"arne")==0) {
+              s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.arne.png", 1);
+              s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.arne2.png", 1);
+              LOGW("Spinning logo set for Arne");
+	    } else if (strcmp(s->b.car_folder,"tesla")==0) {
               s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
               s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma2.png", 1);
               LOGW("Spinning logo set for Tesla");
