@@ -2410,7 +2410,7 @@ int main() {
       s->b.touch_last_width = s->scene.ui_viz_rw;
     }
     //BB check touch
-    if (s->b.touch_last) {
+    if ((s->b.touch_last) && (s->b.touch_last_width != s->scene.ui_viz_rw)) {
       bb_handle_ui_touch(s,s->b.touch_last_x,s->b.touch_last_y);
       dc_touch_x = s->b.touch_last_x;
       dc_touch_y = s->b.touch_last_y;
