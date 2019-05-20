@@ -217,7 +217,6 @@ BO_ 940 BodyInfo: 8 XXX
  SG_ FOG_LIGHTS2 : 60|1@1+ (1,0) [0|1] "" XXX
  SG_ Highbeam : 58|1@1+ (1,0) [0|1] "" XXX
  SG_ Lowbeam : 57|1@1+ (1,0) [0|3] "" XXX
- SG_ FOG_LIGHTS2 : 60|1@0+ (1,0) [0|1] "" XXX
  SG_ Wiper : 62|1@0+ (1,0) [0|3] "" XXX
  SG_ Brake_Pedal_On : 54|1@0+ (1,0) [0|7] "" XXX
 
