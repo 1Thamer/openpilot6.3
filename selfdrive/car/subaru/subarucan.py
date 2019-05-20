@@ -11,7 +11,7 @@ def subaru_checksum(packer, values, addr):
 
 def create_steering_control(packer, car_fingerprint, apply_steer, frame, steer_step):
 
-  if car_fingerprint == CAR.IMPREZA:
+  if car_fingerprint == (CAR.IMPREZA, CAR.XV):
     #counts from 0 to 15 then back to 0 + 16 for enable bit
     idx = ((frame // steer_step) % 16)
 
@@ -49,7 +49,7 @@ def create_steering_control(packer, car_fingerprint, apply_steer, frame, steer_s
 
 def create_steering_status(packer, car_fingerprint, apply_steer, frame, steer_step):
 
-  if car_fingerprint == CAR.IMPREZA:
+  if car_fingerprint == (CAR.IMPREZA, CAR.XV):
     values = {}
     values["Checksum"] = subaru_checksum(packer, {}, 0x322)
 
