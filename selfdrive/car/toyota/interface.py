@@ -254,7 +254,25 @@ class CarInterface(object):
         ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [3.6, 1.1, 1.0]
         ret.longitudinalKiV = [0.5, 0.24]
-
+    
+    elif candidate == CAR.AVALON:
+      stop_and_go = False
+      ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.wheelbase = 2.82
+      ret.steerRatio = 14.8 #Found at https://pressroom.toyota.com/releases/2016+avalon+product+specs.download
+      tire_stiffness_factor = 0.7983
+      ret.mass = 3505 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
+      ret.steerKpV, ret.steerKiV = [[0.17], [0.03]]
+      ret.steerKf = 0.00006   # full torque for 20 deg at 80mph means 0.00007818594
+      if ret.enableGasInterceptor:
+        ret.gasMaxV = [0.2, 0.5, 0.7]
+        ret.longitudinalKpV = [1.2, 0.8, 0.5]
+        ret.longitudinalKiV = [0.18, 0.12]
+      else:
+        ret.gasMaxV = [0.2, 0.5, 0.7]
+        ret.longitudinalKpV = [3.6, 1.1, 1.0]
+        ret.longitudinalKiV = [0.5, 0.24]
+      
     if not new_braking_tuned:
       conversion_KpV = [0.278, 0.455, 0.3]  # conversion factors for new higher braking limit
       conversion_KiV = [0.4, 0.417]
