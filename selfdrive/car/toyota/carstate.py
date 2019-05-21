@@ -380,7 +380,11 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     self.standstill = not v_wheel > 0.001
 
-    self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
+    if self.CP.carFingerprint == CAR.OLD_CAR:
+      self.angle_steers = -(cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']/3)
+    else:  
+      self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
+      
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
     try:
