@@ -317,11 +317,7 @@ class CarState(object):
 
   def update(self, cp, cp_cam):
     # copy can_valid
-    if self.CP.carFingerprint == CAR.OLD_CAR:
-      self.can_valid = True
-    else:
-      self.can_valid = cp.can_valid
-
+    self.can_valid = cp.can_valid
     self.cam_can_valid = cp_cam.can_valid
     msg = None
     #lastspeedlimit = None
