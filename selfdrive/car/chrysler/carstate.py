@@ -1,13 +1,10 @@
 from selfdrive.can.parser import CANParser
 from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
 from common.kalman.simple_kalman import KF1D
-<<<<<<< HEAD
 from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
 from selfdrive.car.modules.UIEV_module import UIEvents
 import numpy as np
 import selfdrive.kegman_conf as kegman
-=======
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
 
 
 def parse_gear_shifter(can_gear):
