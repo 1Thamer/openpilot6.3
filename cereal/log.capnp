@@ -388,18 +388,13 @@ struct Live100Data {
   ufAccelCmd @33 :Float32;
   yActualDEPRECATED @6 :Float32;
   yDesDEPRECATED @7 :Float32;
-<<<<<<< HEAD
-  upSteer @8 :Float32;
-  uiSteer @9 :Float32;
-  ufSteer @34 :Float32;
-  angleFFRatio @52 :Float32;
-  rateFFGain @53 :Float32;
-  angleFFGain @54 :Float32;
-=======
   upSteerDEPRECATED @8 :Float32;
   uiSteerDEPRECATED @9 :Float32;
   ufSteerDEPRECATED @34 :Float32;
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
+  angleFFRatio @52 :Float32;
+  rateFFGain @53 :Float32;
+  angleFFGain @54 :Float32;
+
   aTargetMinDEPRECATED @10 :Float32;
   aTargetMaxDEPRECATED @11 :Float32;
   aTarget @35 :Float32;
@@ -622,16 +617,14 @@ struct Plan {
   # maps
   vCurvature @21 :Float32;
   decelForTurn @22 :Bool;
-<<<<<<< HEAD
+
   mapValid @27 :Bool;
   radarValid @30 :Bool;
 
   processingDelay @31 :Float32;
-=======
-  mapValid @25 :Bool;
-  radarValid @28 :Bool;
-  radarCommIssue @30 :Bool;
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
+
+  radarCommIssue @32 :Bool;
+
 
 
 
