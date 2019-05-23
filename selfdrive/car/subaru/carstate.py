@@ -60,39 +60,6 @@ def get_powertrain_can_parser(CP):
 def get_camera_can_parser(CP):
   signals = [
     ("Cruise_Set_Speed", "ES_DashStatus", 0),
-<<<<<<< HEAD
-=======
-
-    ("Counter", "ES_Distance", 0),
-    ("Signal1", "ES_Distance", 0),
-    ("Signal2", "ES_Distance", 0),
-    ("Main", "ES_Distance", 0),
-    ("Signal3", "ES_Distance", 0),
-
-    ("Checksum", "ES_LKAS_State", 0),
-    ("Counter", "ES_LKAS_State", 0),
-    ("Keep_Hands_On_Wheel", "ES_LKAS_State", 0),
-    ("Empty_Box", "ES_LKAS_State", 0),
-    ("Signal1", "ES_LKAS_State", 0),
-    ("LKAS_ACTIVE", "ES_LKAS_State", 0),
-    ("Signal2", "ES_LKAS_State", 0),
-    ("Backward_Speed_Limit_Menu", "ES_LKAS_State", 0),
-    ("LKAS_ENABLE_3", "ES_LKAS_State", 0),
-    ("Signal3", "ES_LKAS_State", 0),
-    ("LKAS_ENABLE_2", "ES_LKAS_State", 0),
-    ("Signal4", "ES_LKAS_State", 0),
-    ("LKAS_Left_Line_Visible", "ES_LKAS_State", 0),
-    ("Signal6", "ES_LKAS_State", 0),
-    ("LKAS_Right_Line_Visible", "ES_LKAS_State", 0),
-    ("Signal7", "ES_LKAS_State", 0),
-    ("FCW_Cont_Beep", "ES_LKAS_State", 0),
-    ("FCW_Repeated_Beep", "ES_LKAS_State", 0),
-    ("Throttle_Management_Activated", "ES_LKAS_State", 0),
-    ("Traffic_light_Ahead", "ES_LKAS_State", 0),
-    ("Right_Depart", "ES_LKAS_State", 0),
-    ("Signal5", "ES_LKAS_State", 0),
-
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
   ]
 
   checks = [
