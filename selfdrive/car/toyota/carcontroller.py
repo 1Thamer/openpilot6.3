@@ -200,7 +200,7 @@ class CarController(object):
       apply_steer = 0
 
     # only cut torque when steer state is a known fault
-    if CS.steer_state in [9, 25]:
+    if CS.steer_state in [3, 7, 9, 11, 25]:
       self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
