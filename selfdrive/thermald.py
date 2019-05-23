@@ -290,11 +290,17 @@ def thermald_thread():
       if started_ts is None:
         params.car_start()
         started_ts = sec_since_boot()
+<<<<<<< HEAD
         #started_seen = True
+=======
+        started_seen = True
+        os.system('echo performance > /sys/class/devfreq/soc:qcom,cpubw/governor')
+>>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
     else:
       started_ts = None
       if off_ts is None:
         off_ts = sec_since_boot()
+        os.system('echo powersave > /sys/class/devfreq/soc:qcom,cpubw/governor')
 
       # shutdown if the battery gets lower than 3%, it's discharging, we aren't running for
       # more than a minute but we were running

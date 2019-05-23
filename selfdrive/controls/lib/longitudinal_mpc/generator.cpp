@@ -41,7 +41,11 @@ int main( )
 
   // Running cost
   Function h;
+<<<<<<< HEAD
   h << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - exp(0.3 * NORM_RW_ERROR(v_ego, v_l, desired));
+=======
+  h << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - 1;
+>>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
   h << (d_l - desired) / (0.05 * v_ego + 0.5);
   h << a_ego * (0.1 * v_ego + 1.0);
   h << j_ego * (0.1 * v_ego + 1.0);
@@ -51,7 +55,11 @@ int main( )
 
   // Terminal cost
   Function hN;
+<<<<<<< HEAD
   hN << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - exp(0.3 * NORM_RW_ERROR(v_ego, v_l, desired));
+=======
+  hN << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - 1;
+>>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
   hN << (d_l - desired) / (0.05 * v_ego + 0.5);
   hN << a_ego * (0.1 * v_ego + 1.0);
 

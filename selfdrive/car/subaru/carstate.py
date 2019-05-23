@@ -1,5 +1,4 @@
 import copy
-import numpy as np
 from common.kalman.simple_kalman import KF1D
 from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
 from selfdrive.car.modules.UIEV_module import UIEvents
@@ -31,6 +30,7 @@ def get_powertrain_can_parser(CP):
     ("DOOR_OPEN_FL", "BodyInfo", 1),
     ("DOOR_OPEN_RR", "BodyInfo", 1),
     ("DOOR_OPEN_RL", "BodyInfo", 1),
+    ("Units", "Dash_State", 1),
   ]
 
   checks = [
@@ -60,6 +60,39 @@ def get_powertrain_can_parser(CP):
 def get_camera_can_parser(CP):
   signals = [
     ("Cruise_Set_Speed", "ES_DashStatus", 0),
+<<<<<<< HEAD
+=======
+
+    ("Counter", "ES_Distance", 0),
+    ("Signal1", "ES_Distance", 0),
+    ("Signal2", "ES_Distance", 0),
+    ("Main", "ES_Distance", 0),
+    ("Signal3", "ES_Distance", 0),
+
+    ("Checksum", "ES_LKAS_State", 0),
+    ("Counter", "ES_LKAS_State", 0),
+    ("Keep_Hands_On_Wheel", "ES_LKAS_State", 0),
+    ("Empty_Box", "ES_LKAS_State", 0),
+    ("Signal1", "ES_LKAS_State", 0),
+    ("LKAS_ACTIVE", "ES_LKAS_State", 0),
+    ("Signal2", "ES_LKAS_State", 0),
+    ("Backward_Speed_Limit_Menu", "ES_LKAS_State", 0),
+    ("LKAS_ENABLE_3", "ES_LKAS_State", 0),
+    ("Signal3", "ES_LKAS_State", 0),
+    ("LKAS_ENABLE_2", "ES_LKAS_State", 0),
+    ("Signal4", "ES_LKAS_State", 0),
+    ("LKAS_Left_Line_Visible", "ES_LKAS_State", 0),
+    ("Signal6", "ES_LKAS_State", 0),
+    ("LKAS_Right_Line_Visible", "ES_LKAS_State", 0),
+    ("Signal7", "ES_LKAS_State", 0),
+    ("FCW_Cont_Beep", "ES_LKAS_State", 0),
+    ("FCW_Repeated_Beep", "ES_LKAS_State", 0),
+    ("Throttle_Management_Activated", "ES_LKAS_State", 0),
+    ("Traffic_light_Ahead", "ES_LKAS_State", 0),
+    ("Right_Depart", "ES_LKAS_State", 0),
+    ("Signal5", "ES_LKAS_State", 0),
+
+>>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
   ]
 
   checks = [
@@ -172,10 +205,10 @@ class CarState(object):
 
     # vEgo kalman filter
     dt = 0.01
-    self.v_ego_kf = KF1D(x0=np.matrix([[0.], [0.]]),
-                         A=np.matrix([[1., dt], [0., 1.]]),
-                         C=np.matrix([1., 0.]),
-                         K=np.matrix([[0.12287673], [0.29666309]]))
+    self.v_ego_kf = KF1D(x0=[[0.], [0.]],
+                         A=[[1., dt], [0., 1.]],
+                         C=[1., 0.],
+                         K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.
    #BB init ui buttons
   def init_ui_buttons(self):
@@ -236,12 +269,15 @@ class CarState(object):
     self.v_wheel_rl = cp.vl["Wheel_Speeds"]['RL'] * CV.KPH_TO_MS
     self.v_wheel_rr = cp.vl["Wheel_Speeds"]['RR'] * CV.KPH_TO_MS
 
-    self.v_cruise_pcm = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.MPH_TO_KPH
+    self.v_cruise_pcm = cp_cam.vl["ES_DashStatus"]['Cruise_Set_Speed']
+    # 1 = imperial, 6 = metric
+    if cp.vl["Dash_State"]['Units'] == 1:
+      self.v_cruise_pcm *= CV.MPH_TO_KPH
 
     v_wheel = (self.v_wheel_fl + self.v_wheel_fr + self.v_wheel_rl + self.v_wheel_rr) / 4.
     # Kalman filter, even though Subaru raw wheel speed is heaviliy filtered by default
     if abs(v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
-      self.v_ego_kf.x = np.matrix([[v_wheel], [0.0]])
+      self.v_ego_kf.x = [[v_wheel], [0.0]]
 
     self.v_ego_raw = v_wheel
     v_ego_x = self.v_ego_kf.update(v_wheel)

@@ -184,8 +184,13 @@ real_t evGx[ 720 ];
 /** Column vector of size: 120 */
 real_t evGu[ 120 ];
 
+<<<<<<< HEAD
 /** Column vector of size: 30 */
 real_t objAuxVar[ 30 ];
+=======
+/** Column vector of size: 13 */
+real_t objAuxVar[ 13 ];
+>>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
 
 /** Row vector of size: 9 */
 real_t objValueIn[ 9 ];

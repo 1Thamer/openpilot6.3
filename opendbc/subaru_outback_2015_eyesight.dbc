@@ -76,10 +76,17 @@ BO_ 211 Brake_Type: 8 XXX
  SG_ Brake_Pedal_On : 46|1@0+ (1,0) [0|3] "" XXX
 
 BO_ 212 Wheel_Speeds: 8 XXX
+<<<<<<< HEAD
  SG_ FL : 0|16@1+ (0.057,0) [2|255] "KPH" XXX
  SG_ FR : 16|16@1+ (0.057,0) [0|255] "KPH" XXX
  SG_ RL : 32|16@1+ (0.057,0) [0|255] "KPH" XXX
  SG_ RR : 48|16@1+ (0.057,0) [0|127] "KPH" XXX
+=======
+ SG_ FL : 0|16@1+ (0.0592,0) [2|255] "KPH" XXX
+ SG_ FR : 16|16@1+ (0.0592,0) [0|255] "KPH" XXX
+ SG_ RL : 32|16@1+ (0.0592,0) [0|255] "" XXX
+ SG_ RR : 48|16@1+ (0.0592,0) [0|127] "KPH" XXX
+>>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
 
 BO_ 320 Throttle: 8 XXX
  SG_ Off_Throttle_2 : 56|1@1+ (1,0) [0|3] "" XXX
@@ -106,7 +113,10 @@ BO_ 321 undefined: 8 XXX
  SG_ Engine_Stop : 15|1@0+ (1,0) [0|3] "" XXX
 
 BO_ 324 CruiseControl: 8 XXX
+<<<<<<< HEAD
  SG_ Standard_Cruise : 6|2@1+ (1,0) [0|3] "" XXX
+=======
+>>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
  SG_ Cruise_On : 48|1@0+ (1,0) [0|3] "" XXX
  SG_ OnOffButton : 2|1@1+ (1,0) [0|3] "" XXX
  SG_ SET_BUTTON : 3|1@0+ (1,0) [0|3] "" XXX
@@ -201,7 +211,10 @@ BO_ 356 ES_LKAS: 8 XXX
  SG_ LKAS_Command : 8|13@1- (-1,0) [-4096|4096] "" XXX
 
 BO_ 358 ES_DashStatus: 8 XXX
+<<<<<<< HEAD
  SG_ Set_Distance : 7|3@0+ (1,0) [1|4] "" XXX
+=======
+>>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
  SG_ Counter : 39|3@0+ (1,0) [0|7] "" XXX
  SG_ Obstacle_Distance : 48|4@1+ (1,0) [0|15] "" XXX
  SG_ Cruise_Off : 22|1@0+ (1,0) [0|3] "" XXX
