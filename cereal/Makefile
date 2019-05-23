@@ -6,7 +6,7 @@ GENS := gen/cpp/car.capnp.c++ gen/cpp/log.capnp.c++ gen/cpp/ui.capnp.c++
 JS := gen/js/car.capnp.js gen/js/log.capnp.js gen/js/ui.capnp.js
 
 UNAME_M ?= $(shell uname -m)
-<<<<<<< HEAD
+
 # only generate C++ for docker tests
 ifneq ($(OPTEST),1)
 	GENS += gen/c/car.capnp.c gen/c/log.capnp.c gen/c/ui.capnp.c gen/c/include/c++.capnp.h gen/c/include/java.capnp.h
@@ -18,8 +18,7 @@ ifneq ($(OPTEST),1)
       $(warning capnpc-java not found, skipping java build)
 		endif
 	endif
-=======
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
+
 
 GENS += gen/c/car.capnp.c gen/c/log.capnp.c gen/c/include/c++.capnp.h gen/c/include/java.capnp.h
 
