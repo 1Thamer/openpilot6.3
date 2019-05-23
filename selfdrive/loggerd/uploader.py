@@ -125,12 +125,7 @@ class Uploader(object):
       try:
         names = os.listdir(path)
       except OSError:
-<<<<<<< HEAD
-        names = []
-        pass
-=======
         continue
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
       if any(name.endswith(".lock") for name in names):
         continue
 
@@ -209,29 +204,6 @@ class Uploader(object):
 
     return self.last_resp
 
-<<<<<<< HEAD
-  def killable_upload(self, key, fn):
-    self.last_resp = None
-    self.last_exc = None
-
-    self.upload_thread = threading.Thread(target=lambda: self.do_upload(key, fn))
-    self.upload_thread.start()
-    self.upload_thread.join()
-    self.upload_thread = None
-
-    return self.last_resp
-
-  def abort_upload(self):
-    thread = self.upload_thread
-    if thread is None:
-      return
-    if not thread.is_alive():
-      return
-    raise_on_thread(thread, SystemExit)
-    thread.join()
-
-=======
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
   def compress(self, key, fn):
     # write out the bz2 compress
     if fn.endswith("log"):
