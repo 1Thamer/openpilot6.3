@@ -2,13 +2,10 @@ from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from common.kalman.simple_kalman import KF1D
-<<<<<<< HEAD
 import numpy as np
 #from common.numpy_fast import interp
 from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
 from selfdrive.car.modules.UIEV_module import UIEvents
-=======
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
 
 
 def get_can_parser(CP):
