@@ -14,12 +14,12 @@ def read_config():
                     "leadDistance": 5, "useCarCaching": True}
 
   if os.path.isfile(kegman_file):
-    with open(kegman_file, "r") as f:
-      try:
+    try:
+      with open(kegman_file, "r") as f:
         config = json.load(f)
-      except:
-        cloudlog.exception("reading kegman.json error")
-        config = default_config
+    except:
+      cloudlog.exception("reading kegman.json error")
+      config = default_config
     if "battPercOff" not in config:
       config.update({"battPercOff": 25})
     if "carVoltageMinEonShutdown" not in config:
