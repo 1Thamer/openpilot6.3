@@ -56,6 +56,21 @@ def fingerprint(logcan, timeout):
   cached_fingerprint = params.get('CachedFingerprint')
   if cached_fingerprint is not None and kegman.get("useCarCaching", True):  # if we previously identified a car and fingerprint and user hasn't disabled caching
     cached_fingerprint = json.loads(cached_fingerprint)
+    try:
+      with open("/data/kegman.json", "r") as f:
+        cloudlog.warning(str(f.read()))
+    except:
+      pass
+    try:
+      with open("/data/params/d/ControlsParams", "r") as f:
+        cloudlog.warning(f.read())
+    except:
+      pass
+    try:
+      with open("/data/params/d/LiveParameters", "r") as f:
+        cloudlog.warning(f.read())
+    except:
+      pass
     return (str(cached_fingerprint[0]), {long(key): value for key, value in cached_fingerprint[1].items()})  # not sure if dict of longs is required
 
   cloudlog.warning("waiting for fingerprint...")
