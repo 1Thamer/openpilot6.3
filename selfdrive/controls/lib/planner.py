@@ -132,12 +132,8 @@ class Planner(object):
 
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
-<<<<<<< HEAD
-  def update(self, CS, CP, VM, PP, live20, live100, md, live_map_data):
-    
-=======
+
   def update(self, rcv_times, CS, CP, VM, PP, live20, live100, md, live_map_data):
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
     """Gets called when new live20 is available"""
     cur_time = sec_since_boot()
     v_ego = CS.carState.vEgo
