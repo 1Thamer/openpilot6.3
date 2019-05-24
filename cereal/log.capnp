@@ -433,8 +433,8 @@ struct Live100Data {
   decelForTurn @47 :Bool;
 
   lateralControlState :union {
-    indiState @52 :LateralINDIState;
-    pidState @53 :LateralPIDState;
+    indiState @56 :LateralINDIState;
+    pidState @57 :LateralPIDState;
   }
 
   enum ControlState {
