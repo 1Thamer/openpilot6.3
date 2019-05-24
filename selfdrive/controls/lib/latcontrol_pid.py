@@ -3,18 +3,10 @@ from selfdrive.controls.lib.drive_helpers import get_steer_max
 from cereal import car
 from cereal import log
 
-<<<<<<< HEAD:selfdrive/controls/lib/latcontrol.py
-from common.realtime import sec_since_boot
-
 def get_steer_max(CP, v_ego):
   return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
 
-
-class LatControl(object):
-=======
-
 class LatControlPID(object):
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97:selfdrive/controls/lib/latcontrol_pid.py
   def __init__(self, CP):
     self.pid = PIController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
@@ -69,17 +61,6 @@ class LatControlPID(object):
       deadzone = 0.0
       output_steer = self.pid.update(self.angle_steers_des, angle_steers, check_saturation=(v_ego > 10), override=steer_override,
                                      feedforward=steer_feedforward, speed=v_ego, deadzone=deadzone)
-<<<<<<< HEAD:selfdrive/controls/lib/latcontrol.py
-    
-    self.sat_flag = self.pid.saturated
-    return output_steer, float(self.angle_steers_des)    
-    
-    # ALCA works better with the non-interpolated angle
-    #if CP.steerControlType == car.CarParams.SteerControlType.torque:
-    #  return output_steer, float(self.angle_steers_des_mpc)
-    #else:
-    #  return float(self.angle_steers_des_mpc), float(self.angle_steers_des)
-=======
       pid_log.active = True
       pid_log.p = self.pid.p
       pid_log.i = self.pid.i
@@ -89,4 +70,3 @@ class LatControlPID(object):
 
     self.sat_flag = self.pid.saturated
     return output_steer, float(self.angle_steers_des), pid_log
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97:selfdrive/controls/lib/latcontrol_pid.py
