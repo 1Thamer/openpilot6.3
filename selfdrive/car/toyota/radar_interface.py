@@ -11,16 +11,6 @@ from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSSP2_CAR
 
 def _create_radard_can_parser(car_fingerprint):
   dbc_f = DBC[car_fingerprint]['radar']
-<<<<<<< HEAD
-  
-  if car_fingerprint in TSSP2_CAR:
-    RADAR_A_MSGS = list(range(0x180, 0x190))
-    RADAR_B_MSGS = list(range(0x190, 0x1a0))
-  else:
-    RADAR_A_MSGS = list(range(0x210, 0x220))
-    RADAR_B_MSGS = list(range(0x220, 0x230))
-
-=======
 
   if car_fingerprint in TSSP2_CAR:
     RADAR_A_MSGS = list(range(0x180, 0x190))
@@ -28,7 +18,6 @@ def _create_radard_can_parser(car_fingerprint):
   else:
     RADAR_A_MSGS = list(range(0x210, 0x220))
     RADAR_B_MSGS = list(range(0x220, 0x230))
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
 
   msg_a_n = len(RADAR_A_MSGS)
   msg_b_n = len(RADAR_B_MSGS)
@@ -58,18 +47,6 @@ class RadarInterface(object):
 
     self.valid_cnt = {key: 0 for key in self.RADAR_A_MSGS}
 
-<<<<<<< HEAD
-=======
-    if CP.carFingerprint in TSSP2_CAR:
-      self.RADAR_A_MSGS = list(range(0x180, 0x190))
-      self.RADAR_B_MSGS = list(range(0x190, 0x1a0))
-    else:
-      self.RADAR_A_MSGS = list(range(0x210, 0x220))
-      self.RADAR_B_MSGS = list(range(0x220, 0x230))
-
-    self.valid_cnt = {key: 0 for key in self.RADAR_A_MSGS}
-
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
     self.rcp = _create_radard_can_parser(CP.carFingerprint)
     self.no_dsu_car = CP.carFingerprint in NO_DSU_CAR
 
