@@ -380,7 +380,11 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     self.standstill = not v_wheel > 0.001
 
-    self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
+    if self.CP.carFingerprint == CAR.OLD_CAR:
+      self.angle_steers = -(cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']/3)
+    else:  
+      self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
+      
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
     try:
@@ -421,7 +425,7 @@ class CarState(object):
     if self.CP.enableGasInterceptor:
       self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 3, 5, 9, 17, 25]
     else:
-      self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5, 9, 17, 25]
+      self.steer_error = cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 3, 5, 9, 17, 25]
     self.steer_unavailable = cp.vl["EPS_STATUS"]['LKA_STATE'] in [3, 17]  # don't disengage, just warning
     self.ipas_active = cp.vl['EPS_STATUS']['IPAS_STATE'] == 3
     self.brake_error = 0
