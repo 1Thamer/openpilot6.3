@@ -268,16 +268,9 @@ def state_control(rcv_times, plan, path_plan, CS, CP, state, events, v_cruise_kp
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
                                               v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP, gasinterceptor, CS.gasbuttonstatus)
   # Steering PID loop and lateral MPC
-<<<<<<< HEAD
-  actuators.steer, actuators.steerAngle = LaC.update(active, CS.vEgo, CS.steeringAngle, 
-                                                     CS.steeringPressed, CP, VM, path_plan)
- #BB added for ALCA support
-  #CS.pid = LaC.pid
-=======
+
   actuators.steer, actuators.steerAngle, lac_log = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate,
                                                               CS.steeringPressed, CP, VM, path_plan)
-
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
   # Send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert:
     AM.add("steerSaturated", enabled)
@@ -378,13 +371,7 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "uiAccelCmd": float(LoC.pid.i),
     "ufAccelCmd": float(LoC.pid.f),
     "angleSteersDes": float(LaC.angle_steers_des),
-<<<<<<< HEAD
-    "upSteer": float(LaC.pid.p),
-    "uiSteer": float(LaC.pid.i),
-    "ufSteer": float(LaC.pid.f),
     "angleFFRatio": float(LaC.angle_ff_ratio),
-=======
->>>>>>> f6e8ef27546e9a406724841e75f8df71cc4c2c97
     "vTargetLead": float(v_acc),
     "aTarget": float(a_acc),
     "jerkFactor": float(plan.jerkFactor),
