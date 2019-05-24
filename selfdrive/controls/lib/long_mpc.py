@@ -162,7 +162,7 @@ class LongitudinalMpc(object):
     x = [0, len(lead_vels)]
     y = [1.35, 1.0]  # min and max values to modify TR by
     traffic = interp(sum(lead_vel_diffs), x, y)
-    return traffic
+    return float(traffic)
 
   def get_acceleration(self, velocity_list, is_self):  # calculate acceleration to generate more accurate following distances
     a = 0.0
@@ -201,7 +201,7 @@ class LongitudinalMpc(object):
 
     if self.stop_and_go:  # this allows a smooth deceleration to a stop, while being able to have smooth stop and go
       x = [stop_and_go_magic_number / 2.0, stop_and_go_magic_number]  # from 10 to 20 mph, ramp 1.8 sng distance to regular dynamic follow value
-      y = [1.8, interp(x[1], x_vel, y_mod)]
+      y = [1.8, interp(stop_and_go_magic_number, x_vel, y_mod)]
       TR = interp(velocity, x, y)
     else:
       TR = interpolate.interp1d(x_vel, y_mod, fill_value='extrapolate')(velocity)[()]  # extrapolate above 90 mph
@@ -223,12 +223,12 @@ class LongitudinalMpc(object):
       y = [0.95, 1.06, 1.1215, 1.1845, 1.2568, 1.313, 1.34]
       TR_mod *= interp(self.relative_distance, x, y)  # factor in distance from lead car to try and brake quicker
 
-      x = [0, 2.2352, 22.352, 33.528]  # 0, 5, 50, 75 mph
-      y = [.25, 1.0, 1.0, .90]  # multiply sum of all TR modifications by this
-      TR += (float(TR_mod) * interp(velocity, x, y))  # lower TR modification for stop and go, and at higher speeds
+      x = [0, 2.68224, 22.352, 33.528]  # 0, 5, 50, 75 mph
+      y = [.2, 1.0, 1.0, .90]  # multiply sum of all TR modifications by this
+      TR_mod *= float(interp(velocity, x, y))  # lower TR modification for stop and go, and at higher speeds
 
-      TR = float(TR) * self.get_traffic_level(self.dynamic_follow_dict["traffic_vels"])  # modify TR based on last minute of traffic data
-
+      TR += TR_mod
+      TR *= self.get_traffic_level(self.dynamic_follow_dict["traffic_vels"])  # modify TR based on last minute of traffic data
     if TR < 0.65:
       return 0.65
     else:
