@@ -101,7 +101,6 @@ def write_config(conf):  # never to be called outside kegman_conf
       json.dump(conf, f, indent=2, sort_keys=True)
       os.chmod(kegman_file, 0o764)
 
-
 def save(data):  # allows for writing multiple key/value pairs
   global conf
   global thread_counter
