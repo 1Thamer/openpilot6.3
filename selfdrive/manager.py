@@ -354,7 +354,7 @@ def manager_thread():
     # get health of board, log this in "thermal"
     msg = messaging.recv_sock(thermal_sock, wait=True)
     gps = messaging.recv_one(gps_sock)
-    if gps:
+    if gps and gps.gpsLocation.latitude and gps.gpsLocation.longitude:
       if 47.3024876979 < gps.gpsLocation.latitude < 54.983104153 and 5.98865807458 < gps.gpsLocation.longitude < 15.0169958839:
         logger_dead = True
       else:
