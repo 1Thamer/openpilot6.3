@@ -111,7 +111,7 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.03]] #0.6 0.05 default
       ret.wheelbase = 2.65
       tire_stiffness_factor = 0.5533
-      ret.steerKf = 0.00001 # full torque for 10 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.kf = 0.00001 # full torque for 10 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
         new_braking_tuned = True
         stop_and_go = True
@@ -132,7 +132,7 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.03]] #0.6 0.05 default
       ret.wheelbase = 2.65
       tire_stiffness_factor = 0.5533
-      ret.steerKf = 0.0001 # full torque for 10 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.kf = 0.0001 # full torque for 10 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
         ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -149,8 +149,8 @@ class CarInterface(object):
       ret.steerRatio = 17.0
       tire_stiffness_factor = 0.7933
       ret.mass = 3370. * CV.LB_TO_KG + std_cargo
-      ret.steerKpV, ret.steerKiV = [[0.3], [0.05]]
-      ret.steerKf = 0.0001
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
+      ret.lateralTuning.pid.kf = 0.0001
       ret.longitudinalKpV = [2.0, 1.0, 0.8]
       ret.longitudinalKiV = [0.25, 0.14]
       ret.gasMaxV = [0.2, 0.5, 0.7]
@@ -232,7 +232,7 @@ class CarInterface(object):
       tire_stiffness_factor = 0.7933
       ret.mass = 3400 * CV.LB_TO_KG + std_cargo #mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.03]]
-      ret.steerKf = 0.0001
+      ret.lateralTuning.pid.kf = 0.0001
       if ret.enableGasInterceptor:
         ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
@@ -286,8 +286,8 @@ class CarInterface(object):
       ret.steerRatio = 20.
       tire_stiffness_factor = 0.444
       ret.mass = 4690 * CV.LB_TO_KG + std_cargo  # mean between normal and hybrid
-      ret.steerKpV, ret.steerKiV = [[0.15], [0.04]]
-      ret.steerKf = 0.00006   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.04]]
+      ret.lateralTuning.pid.kf = 0.00006   # full torque for 20 deg at 80mph means 0.00007818594
       if ret.enableGasInterceptor:
         ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalKpV = [1.2, 0.8, 0.5]
