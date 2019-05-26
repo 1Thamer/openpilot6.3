@@ -4,6 +4,8 @@ from common.numpy_fast import interp
 from cereal import car
 from cereal import log
 
+from common.realtime import sec_since_boot
+
 def get_steer_max(CP, v_ego):
   return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
 
