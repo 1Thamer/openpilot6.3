@@ -63,25 +63,24 @@ class LongitudinalMpc(object):
 
     if self.v_ego < 2.0:  #todo: make a ramp function to smoothly transition
       return 1.8
-
-    if self.car_state.leftBlinker or self.car_state.rightBlinker:
+    elif self.car_state.leftBlinker or self.car_state.rightBlinker:
       if self.last_cost != 1.0:
-        self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.libmpc.change_tr(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = 1.0
       return 1.2  # accelerate for lane change
-    if read_distance_lines == 1:
+    elif read_distance_lines == 1:
       if self.last_cost != 1.0:
-        self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.libmpc.change_tr(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = 1.0
       return 0.9  # 10m at 40km/hr
     elif read_distance_lines == 2:
       if self.last_cost != 0.1:
-        self.libmpc.init(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.libmpc.change_tr(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = 0.1
       return 1.8
     else:
       if self.last_cost != 0.05:
-        self.libmpc.init(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.libmpc.change_tr(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = 0.05
       return 2.7  # 30m at 40km/hr
 
