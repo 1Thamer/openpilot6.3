@@ -69,7 +69,6 @@ class LongitudinalMpc(object):
         self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = 1.0
       return 1.2  # accelerate for lane change
-
     if read_distance_lines == 1:
       if self.last_cost != 1.0:
         self.libmpc.init(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
@@ -123,7 +122,7 @@ class LongitudinalMpc(object):
     # Calculate mpc
     t = sec_since_boot()
     TR = self.get_TR()
-    n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead)
+    n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
     duration = int((sec_since_boot() - t) * 1e9)
     self.send_mpc_solution(n_its, duration)
 
