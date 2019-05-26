@@ -21,6 +21,9 @@ class LongitudinalMpc(object):
     self.prev_lead_status = False
     self.prev_lead_x = 0.0
     self.new_lead = False
+    self.v_ego = 0.0
+    self.car_state = None
+    self.last_cost = 0
 
     self.last_cloudlog_t = 0.0
 
@@ -55,8 +58,35 @@ class LongitudinalMpc(object):
     self.cur_state[0].v_ego = v
     self.cur_state[0].a_ego = a
 
+  def get_TR(self):
+    read_distance_lines = self.car_state.readdistancelines
+
+    if self.v_ego < 2.0:  #todo: make a ramp function to smoothly transition
+      return 1.8
+    elif self.car_state.leftBlinker or self.car_state.rightBlinker:
+      if self.last_cost != 1.0:
+        self.libmpc.change_tr(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.last_cost = 1.0
+      return 1.2  # accelerate for lane change
+    elif read_distance_lines == 1:
+      if self.last_cost != 1.0:
+        self.libmpc.change_tr(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.last_cost = 1.0
+      return 0.9  # 10m at 40km/hr
+    elif read_distance_lines == 2:
+      if self.last_cost != 0.1:
+        self.libmpc.change_tr(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.last_cost = 0.1
+      return 1.8
+    else:
+      if self.last_cost != 0.05:
+        self.libmpc.change_tr(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.last_cost = 0.05
+      return 2.7  # 30m at 40km/hr
+
   def update(self, CS, lead, v_cruise_setpoint):
-    v_ego = CS.carState.vEgo
+    self.car_state = CS
+    self.v_ego = CS.carState.vEgo
 
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
@@ -84,13 +114,14 @@ class LongitudinalMpc(object):
       self.prev_lead_status = False
       # Fake a fast lead car, so mpc keeps running
       self.cur_state[0].x_l = 50.0
-      self.cur_state[0].v_l = v_ego + 10.0
+      self.cur_state[0].v_l = self.v_ego + 10.0
       a_lead = 0.0
       self.a_lead_tau = _LEAD_ACCEL_TAU
 
     # Calculate mpc
     t = sec_since_boot()
-    n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead)
+    TR = self.get_TR()
+    n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
     duration = int((sec_since_boot() - t) * 1e9)
     self.send_mpc_solution(n_its, duration)
 
@@ -113,8 +144,8 @@ class LongitudinalMpc(object):
 
       self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
                        MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-      self.cur_state[0].v_ego = v_ego
+      self.cur_state[0].v_ego = self.v_ego
       self.cur_state[0].a_ego = 0.0
-      self.v_mpc = v_ego
+      self.v_mpc = self.v_ego
       self.a_mpc = CS.carState.aEgo
       self.prev_lead_status = False
