@@ -4726,7 +4726,7 @@ kkt += fabs(acadoWorkspace.ubA[index] * prd);
 return kkt;
 }
 
-real_t acado_getObjective(  )
+real_t acado_getObjective(double TR)
 {
 real_t objVal;
 
