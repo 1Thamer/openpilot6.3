@@ -266,9 +266,9 @@ def thermald_thread():
     passive = (params.get("Passive") == "1")
 
     # start on gps movement if we haven't seen ignition and are in passive mode
-    '''should_start = should_start or (not (ignition_seen and health) # seen ignition and panda is connected
+    should_start = should_start or (not (ignition_seen and health) # seen ignition and panda is connected
                                     and passive
-                                    and passive_starter.update(started_ts, location))'''
+                                    and passive_starter.update(started_ts, location))
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
     should_start = should_start and msg.thermal.freeSpace > 0.02
