@@ -53,7 +53,7 @@ def main(gctx=None):
         time.sleep(5)
         continue
 
-    time.sleep(5)
+    time.sleep(3)
 
 if __name__ == "__main__":
   main()
