@@ -44,11 +44,11 @@ def main(gctx=None):
           returncode=e.returncode)
         time.sleep(60)
         continue
+      cloudlog.info("git pull success: %s", r)
       msg = messaging.recv_one_or_none(manager_sock)
       if msg:
         if "controlsd" not in msg.managerData.runningProcesses:
           os.system('reboot')
-      cloudlog.info("git pull success: %s", r)
 
     time.sleep(60*60)
 
