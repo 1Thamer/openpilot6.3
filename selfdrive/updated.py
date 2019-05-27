@@ -56,7 +56,7 @@ def main(gctx=None):
             NEED_REBOOT = False
             os.system('reboot')
 
-    time.sleep(3)
+    time.sleep(5)
 
 if __name__ == "__main__":
   main()
