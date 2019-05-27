@@ -34,9 +34,17 @@ def main(gctx=None):
       time.sleep(60)
       continue
     cloudlog.info("git fetch success: %s", r)
-    if kegman.get("autoUpdate", True):
+    if kegman.get("autoUpdate", True) and not os.path.isfile("/data/no_ota_updates"):
       try:
-        r = subprocess.check_output(NICE_LOW_PRIORITY + ["git", "pull"], stderr=subprocess.STDOUT)
+        head_commit = subprocess.check_output(["git", "rev-parse", "HEAD"])
+        local_commit = subprocess.check_output(["git", "rev-parse", "@{u}"])
+        if head_commit != local_commit:
+          r = subprocess.check_output(NICE_LOW_PRIORITY + ["git", "pull"], stderr=subprocess.STDOUT)
+          cloudlog.info("git pull success: %s", r)
+          msg = messaging.recv_sock(manager_sock, wait=True)
+          if msg:
+            if "controlsd" not in msg.managerData.runningProcesses:
+              os.system('reboot')
       except subprocess.CalledProcessError as e:
         cloudlog.event("git pull failed",
           cmd=e.cmd,
@@ -44,11 +52,6 @@ def main(gctx=None):
           returncode=e.returncode)
         time.sleep(60)
         continue
-      cloudlog.info("git pull success: %s", r)
-      msg = messaging.recv_one_or_none(manager_sock)
-      if msg:
-        if "controlsd" not in msg.managerData.runningProcesses:
-          os.system('reboot')
 
     time.sleep(15)
 
