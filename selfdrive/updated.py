@@ -2,12 +2,20 @@
 
 # simple service that waits for network access and tries to update every hour
 
+import zmq
+import selfdrive.messaging as messaging
+from selfdrive.services import service_list
 import time
 import subprocess
 from selfdrive.swaglog import cloudlog
+import selfdrive.kegman_conf as kegman
+import os
 
 NICE_LOW_PRIORITY = ["nice", "-n", "19"]
 def main(gctx=None):
+  context = zmq.Context()
+  manager_sock = messaging.sub_sock(context, service_list['managerData'].port)
+
   while True:
     # try network
     ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
@@ -26,6 +34,21 @@ def main(gctx=None):
       time.sleep(60)
       continue
     cloudlog.info("git fetch success: %s", r)
+    if kegman.get("autoUpdate", True):
+      try:
+        r = subprocess.check_output(NICE_LOW_PRIORITY + ["git", "pull"], stderr=subprocess.STDOUT)
+      except subprocess.CalledProcessError as e:
+        cloudlog.event("git pull failed",
+          cmd=e.cmd,
+          output=e.output,
+          returncode=e.returncode)
+        time.sleep(60)
+        continue
+      msg = messaging.recv_one_or_none(manager_sock)
+      if msg:
+        if "controlsd" not in msg.managerData.runningProcesses:
+          os.system('reboot')
+      cloudlog.info("git pull success: %s", r)
 
     time.sleep(60*60)
 
