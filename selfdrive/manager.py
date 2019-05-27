@@ -205,7 +205,7 @@ def send_running_processes():
   global manager_sock
   data = messaging.new_message()
   data.init('managerData')
-  data.managerData.status = running.keys()
+  data.managerData.runningProcesses = running.keys()
   manager_sock.send(data.to_bytes())
 
 def start_managed_process(name):
