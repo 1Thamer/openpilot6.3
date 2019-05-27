@@ -368,10 +368,11 @@ def manager_thread():
     # get health of board, log this in "thermal"
     msg = messaging.recv_sock(thermal_sock, wait=True)
     gps = messaging.recv_one_or_none(gps_sock)
-    if 47.3024876979 < gps.gpsLocation.latitude and 54.983104153 > gps.gpsLocation.latitude and gps.gpsLocation.longitude > 5.98865807458 and gps.gpsLocation.longitude < 15.0169958839: 
-      logger_dead = True
-    else:
-      logger_dead = False
+    if gps:
+      if 47.3024876979 < gps.gpsLocation.latitude and 54.983104153 > gps.gpsLocation.latitude and gps.gpsLocation.longitude > 5.98865807458 and gps.gpsLocation.longitude < 15.0169958839:
+        logger_dead = True
+      else:
+        logger_dead = False
     # uploader is gated based on the phone temperature
     if msg.thermal.thermalStatus >= ThermalStatus.yellow:
       kill_managed_process("uploader")
