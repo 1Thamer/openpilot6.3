@@ -97,9 +97,7 @@ class LongitudinalMpc(object):
 
     min_return = 10
     max_return = seconds * 100
-    if self.new_frame:
-      self.last_rate = current_time
-      self.new_frame = False
+    self.last_rate = current_time
     return int(round(max(min(rate, max_return), min_return)))  # ensure we return a value between range, in hertz
 
   def update(self, CS, lead, v_cruise_setpoint):
@@ -109,7 +107,7 @@ class LongitudinalMpc(object):
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
     self.phantom.update(self.calc_rate())
-    
+
     if self.phantom.data["status"]:
       self.relative_velocity = self.phantom.data["speed"] - self.v_ego
       if self.phantom.data["speed"] != 0.0:
