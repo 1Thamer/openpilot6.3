@@ -15,7 +15,7 @@ NICE_LOW_PRIORITY = ["nice", "-n", "19"]
 def main(gctx=None):
   context = zmq.Context()
   manager_sock = messaging.sub_sock(context, service_list['managerData'].port)
-
+  NEED_REBOOT = False
   while True:
     # try network
     ping_failed = subprocess.call(["ping", "-W", "4", "-c", "1", "8.8.8.8"])
@@ -40,11 +40,7 @@ def main(gctx=None):
         local_commit = subprocess.check_output(["git", "rev-parse", "@{u}"])
         if head_commit != local_commit:
           r = subprocess.check_output(NICE_LOW_PRIORITY + ["git", "pull"], stderr=subprocess.STDOUT)
-          cloudlog.info("git pull success: %s", r)
-          msg = messaging.recv_sock(manager_sock, wait=True)
-          if msg:
-            if "controlsd" not in msg.managerData.runningProcesses:
-              os.system('reboot')
+          NEED_REBOOT = True
       except subprocess.CalledProcessError as e:
         cloudlog.event("git pull failed",
           cmd=e.cmd,
@@ -52,6 +48,13 @@ def main(gctx=None):
           returncode=e.returncode)
         time.sleep(5)
         continue
+      cloudlog.info("git pull success: %s", r)
+      if NEED_REBOOT:
+        msg = messaging.recv_sock(manager_sock, wait=True)
+        if msg:
+          if "controlsd" not in msg.managerData.runningProcesses:
+            NEED_REBOOT = False
+            os.system('reboot')
 
     time.sleep(3)
 
