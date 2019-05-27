@@ -31,7 +31,7 @@ def main(gctx=None):
         cmd=e.cmd,
         output=e.output,
         returncode=e.returncode)
-      time.sleep(60)
+      time.sleep(5)
       continue
     cloudlog.info("git fetch success: %s", r)
     if kegman.get("autoUpdate", True) and not os.path.isfile("/data/no_ota_updates"):
@@ -50,10 +50,10 @@ def main(gctx=None):
           cmd=e.cmd,
           output=e.output,
           returncode=e.returncode)
-        time.sleep(60)
+        time.sleep(5)
         continue
 
-    time.sleep(15)
+    time.sleep(5)
 
 if __name__ == "__main__":
   main()
