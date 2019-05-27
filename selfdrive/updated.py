@@ -50,7 +50,7 @@ def main(gctx=None):
         if "controlsd" not in msg.managerData.runningProcesses:
           os.system('reboot')
 
-    time.sleep(60*60)
+    time.sleep(15)
 
 if __name__ == "__main__":
   main()
