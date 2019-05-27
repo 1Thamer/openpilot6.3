@@ -85,7 +85,7 @@ class LongitudinalMpc(object):
       return 2.7  # 30m at 40km/hr
 
   def update(self, CS, lead, v_cruise_setpoint):
-    self.car_state = CS
+    self.car_state = CS.carState
     self.v_ego = CS.carState.vEgo
 
     # Setup current mpc state
