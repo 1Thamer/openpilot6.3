@@ -31,7 +31,7 @@ def main(gctx=None):
         cmd=e.cmd,
         output=e.output,
         returncode=e.returncode)
-      time.sleep(5)
+      time.sleep(60)
       continue
     cloudlog.info("git fetch success: %s", r)
     if kegman.get("autoUpdate", True) and not os.path.isfile("/data/no_ota_updates"):
@@ -46,7 +46,7 @@ def main(gctx=None):
           cmd=e.cmd,
           output=e.output,
           returncode=e.returncode)
-        time.sleep(5)
+        time.sleep(60)
         continue
       cloudlog.info("git pull success: %s", r)
       if NEED_REBOOT:
@@ -56,7 +56,7 @@ def main(gctx=None):
             NEED_REBOOT = False
             os.system('reboot')
 
-    time.sleep(5)
+    time.sleep(30*60)
 
 if __name__ == "__main__":
   main()
