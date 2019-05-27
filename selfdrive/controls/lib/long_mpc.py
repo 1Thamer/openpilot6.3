@@ -62,6 +62,9 @@ class LongitudinalMpc(object):
     self.cur_state[0].v_ego = v
     self.cur_state[0].a_ego = a
 
+  def dynamic_follow(self):
+    return 1.8
+
   def get_TR(self):
     read_distance_lines = self.car_state.readdistancelines
 
