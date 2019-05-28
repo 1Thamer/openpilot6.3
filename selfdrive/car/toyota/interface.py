@@ -101,6 +101,7 @@ class CarInterface(object):
 
       ret.steerActuatorDelay = 0.5
       ret.steerRateCost = 0.5
+      new_braking_tuned = True
 
     elif candidate in [CAR.RAV4]:
       stop_and_go = True if (candidate in CAR.RAV4H) else False
