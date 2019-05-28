@@ -106,10 +106,10 @@ class LongitudinalMpc(object):
       y = [1.8, interp(x[1], x_vel, y_mod)]
       TR = interp(self.v_ego, x, y)
 
-    if self.relative_velocity is not None:  # since the new mpc now handles braking nicely, simplify mods
+    if self.v_lead:  # since the new mpc now handles braking nicely, simplify mods
       x = [0, 0.61, 1.26, 2.1, 2.68]  # relative velocity values
       y = [0, -0.017, -0.053, -0.154, -0.272]  # modification values
-      TR_mod = interp(self.relative_velocity, x, y)  # quicker acceleration/don't brake when lead is overtaking
+      TR_mod = interp(self.v_lead + self.v_ego, x, y)  # quicker acceleration/don't brake when lead is overtaking
 
       x = [-1.49, -1.1, -0.67, 0.0, 0.67, 1.1, 1.49]
       y = [0.14, 0.08, 0.04, 0.0, -0.04, -0.08, -0.14]
@@ -183,7 +183,6 @@ class LongitudinalMpc(object):
     self.phantom.update(self.calc_rate(new_frame=True))
 
     if self.phantom.data["status"]:
-      self.relative_velocity = self.phantom.data["speed"] - self.v_ego
       if self.phantom.data["speed"] != 0.0:
         x_lead = 9.144
         v_lead = self.phantom.data["speed"]
