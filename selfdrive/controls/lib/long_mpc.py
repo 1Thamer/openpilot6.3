@@ -68,7 +68,7 @@ class LongitudinalMpc(object):
 
   def get_acceleration(self):  # calculate acceleration to generate more accurate following distances
     if len(self.car_data["lead_vels"]) > self.calc_rate() and sum(self.car_data["lead_vels"]) != 0:
-      try
+      try:
         a = (self.car_data["lead_vels"][-1] - self.car_data["lead_vels"][0]) / float(len(self.car_data["lead_vels"]) / self.calc_rate())
       except ZeroDivisionError:
         a = 0.0
@@ -154,7 +154,6 @@ class LongitudinalMpc(object):
     elif read_distance_lines == 2:
       self.save_car_data()
       TR = self.smooth_follow()
-      return 1.8
       cost = self.get_cost(TR)
       if abs(cost - self.last_cost) > .15:
         self.libmpc.init(MPC_COST_LONG.TTC, cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
