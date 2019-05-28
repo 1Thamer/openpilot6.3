@@ -306,8 +306,8 @@ class CarInterface(object):
     if not new_braking_tuned:
       conversion_KpV = [0.278, 0.455, 0.3]  # conversion factors for new higher braking limit
       conversion_KiV = [0.4, 0.417]
-      ret.lateralTuning.pid.kpV = [round(float(i[1]) * conversion_KpV[i[0]], 3) for i in enumerate(ret.longitudinalTuning.kpV)]
-      ret.lateralTuning.pid.kiV = [round(float(i[1]) * conversion_KiV[i[0]], 3) for i in enumerate(ret.longitudinalTuning.kiV)]
+      ret.longitudinalTuning.kpV = [round(float(i[1]) * conversion_KpV[i[0]], 3) for i in enumerate(ret.longitudinalTuning.kpV)]
+      ret.longitudinalTuning.kiV = [round(float(i[1]) * conversion_KiV[i[0]], 3) for i in enumerate(ret.longitudinalTuning.kiV)]
 
 
     ret.steerRateCost = 1.
