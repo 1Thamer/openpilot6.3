@@ -175,7 +175,7 @@ class CarState(object):
     self.CL_REENTRY_ANGLE = [5. , 5.]
      # a jump in angle above the CL_LANE_DETECT_FACTOR means we crossed the line
     self.CL_LANE_DETECT_BP = [10., 50.]
-    self.CL_LANE_DETECT_FACTOR = [1.3, 1.3]
+    self.CL_LANE_DETECT_FACTOR = [1.0, 0.5]
     self.CL_LANE_PASS_BP = [10., 20., 50.]
     self.CL_LANE_PASS_TIME = [40.,10., 3.]
      # change lane delta angles and other params
