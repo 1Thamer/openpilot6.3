@@ -179,7 +179,7 @@ class CarState(object):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
     self.CL_MAX_ANGLE_DELTA_BP = [10., 15., 32., 55.]#[10., 44.]
-    self.CL_MAX_ANGLE_DELTA = [1.6 * 15.5 / steerRatio, 1.1 * 15.5 / steerRatio, 0.8 * 15.5 / steerRatio, 0.4 * 15.5 / steerRatio]
+    self.CL_MAX_ANGLE_DELTA = [1.8 * 15.5 / steerRatio, 1.3 * 15.5 / steerRatio, 1.0 * 15.5 / steerRatio, 0.45 * 15.5 / steerRatio]
      # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
     self.CL_ADJUST_FACTOR_BP = [10., 50.]
     self.CL_ADJUST_FACTOR = [16. , 8.]
@@ -508,7 +508,7 @@ class CarState(object):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
       self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
 
-    if self.acc_slow_on:
+    if self.acc_slow_on and self.CP.carFingerprint != CAR.OLD_CAR:
       self.v_cruise_pcm = max(7, int(self.v_cruise_pcm) - 34.0)
       
       if not self.left_blinker_on and not self.right_blinker_on:
