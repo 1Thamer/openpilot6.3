@@ -204,6 +204,26 @@ class CarInterface(object):
         ret.gasMaxV = [0.2, 0.5, 0.7]
         ret.longitudinalTuning.kpV = [1.0, 0.5, 0.3]  # tuned braking for higher brake limit
         ret.longitudinalTuning.kiV = [0.2, 0.1]
+      
+    elif candidate == CAR.LEXUS_IS:
+      stop_and_go = False
+      ret.safetyParam = 100
+      ret.wheelbase = 2.79908
+      ret.steerRatio = 13.3 #from Q
+      tire_stiffness_factor = 0.444 #from Q
+      ret.mass = 3737 * CV.LB_TO_KG + std_cargo  # mean between min and max
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.04]] #from Q
+      ret.lateralTuning.pid.kf = 0.00006 #from Q
+      ##Below copied from RXH - unsure if necessary as IS does not have long control
+      new_braking_tuned = True
+      if ret.enableGasInterceptor:
+        ret.gasMaxV = [0.2, 0.5, 0.7]
+        ret.longitudinalTuning.kpV = [0.333, 0.364, 0.15]  # tuned braking for higher brake limit
+        ret.longitudinalTuning.kiV = [0.07, 0.05]
+      else:
+        ret.gasMaxV = [0.2, 0.5, 0.7]
+        ret.longitudinalTuning.kpV = [1.0, 0.5, 0.3]  # tuned braking for higher brake limit
+        ret.longitudinalTuning.kiV = [0.2, 0.1]
 
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
