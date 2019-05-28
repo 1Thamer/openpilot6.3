@@ -30,6 +30,7 @@ class LongitudinalMpc(object):
     self.last_time = None
     self.stop_and_go = True
     self.v_lead = None
+    self.x_lead = None
     self.phantom = Phantom(timeout=True, do_sshd_mod=True)
 
 
@@ -94,7 +95,7 @@ class LongitudinalMpc(object):
     y = [1.2, 1.19, 1.17, 1.13, 1.09, 1.04, 1.0]
     return interp(sum(lead_vel_diffs)/len(lead_vel_diffs), x, y)
 
-  def dynamic_follow(self):  # in m/s
+  def smooth_follow(self):  # in m/s
     x_vel = [0.0, 4.8, 9.0, 11.3, 13.6, 17.1, 23.1, 29.5, 35.1, 39.8, 42.2]  # velocities
     y_mod = [1.35, 1.36, 1.39, 1.43, 1.46, 1.48, 1.49, 1.53, 1.59, 1.68, 1.8]  # distances
 
@@ -116,10 +117,20 @@ class LongitudinalMpc(object):
 
       TR += TR_mod
       TR *= self.get_traffic_level()  # modify TR based on last minute of traffic data
-    if TR < 0.65:
-      return 0.65
+    if TR < 0.9:
+      return 0.9
     else:
       return round(TR, 3)
+
+  def get_cost(self, TR):
+    x = [.9, 1.8, 2.7]
+    y = [1.0, .1, .05]
+    if self.x_lead and self.v_ego and self.v_ego != 0:
+      real_TR = self.x_lead / float(self.v_ego)  # switched to cost generation using actual distance from lead car; should be safer
+      if abs(real_TR - TR) >= .25:  # use real TR if diff is greater than x safety threshold
+        TR = real_TR
+
+    return round(float(interp(TR, x, y)), 3)
 
   def get_TR(self):
     read_distance_lines = self.car_state.readdistancelines
@@ -138,10 +149,11 @@ class LongitudinalMpc(object):
       return 0.9  # 10m at 40km/hr
     elif read_distance_lines == 2:
       self.save_car_data()
-      TR = self.dynamic_follow()
-      if self.last_cost != 0.1:
-        self.libmpc.change_tr(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-        self.last_cost = 0.1
+      TR = self.smooth_follow()
+      cost = self.get_cost(TR)
+      if abs(cost - self.last_cost) > .15:
+        self.libmpc.init(MPC_COST_LONG.TTC, cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.last_cost = cost
       return TR
     else:
       if self.last_cost != 0.05:
@@ -195,6 +207,7 @@ class LongitudinalMpc(object):
         x_lead = lead.dRel
         v_lead = max(0.0, lead.vLead)
         self.v_lead = v_lead
+        self.x_lead = x_lead
         a_lead = lead.aLeadK
 
         if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
@@ -218,6 +231,7 @@ class LongitudinalMpc(object):
         self.cur_state[0].v_l = self.v_ego + 10.0
         a_lead = 0.0
         self.v_lead = None
+        self.x_lead = None
         self.a_lead_tau = _LEAD_ACCEL_TAU
 
     # Calculate mpc
