@@ -67,7 +67,10 @@ class LongitudinalMpc(object):
     self.cur_state[0].a_ego = a
 
   def get_acceleration(self):  # calculate acceleration to generate more accurate following distances
-    return ((self.car_data["lead_vels"][-1] - self.car_data["lead_vels"][0]) / (len(self.car_data["lead_vels"]) / 40)) if sum(self.car_data["lead_vels"]) != 0 else 0.0
+    if len(self.car_data["lead_vels"]) > calc_rate(2) and sum(self.car_data["lead_vels"]) != 0:
+      return (self.car_data["lead_vels"][-1] - self.car_data["lead_vels"][0]) / float(len(self.car_data["lead_vels"]) / 40.0)
+    else:
+      return 0.0
 
   def save_car_data(self):
     if self.v_lead is not None:
