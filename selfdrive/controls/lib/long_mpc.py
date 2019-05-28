@@ -28,7 +28,6 @@ class LongitudinalMpc(object):
     self.car_data = {"lead_vels": [], "traffic_vels": []}
     self.mpc_frame = 0  # idea thanks to kegman
     self.last_time = None
-    self.stop_and_go = True
     self.v_lead = None
     self.x_lead = None
     self.phantom = Phantom(timeout=True, do_sshd_mod=True)
@@ -80,7 +79,7 @@ class LongitudinalMpc(object):
         while len(self.car_data["traffic_vels"]) > 180:  # 3 minutes of traffic logging
           del self.car_data["traffic_vels"][0]
         self.car_data["traffic_vels"].append(self.v_lead)
-        self.mpc_frame = 0  # reset every half second
+        self.mpc_frame = 0  # reset every second
       self.mpc_frame += 1  # increment every frame
 
     else:  # if no car, reset lead car list; ignore for traffic
@@ -106,7 +105,7 @@ class LongitudinalMpc(object):
       y = [1.8, interp(x[1], x_vel, y_mod)]
       TR = interp(self.v_ego, x, y)
 
-    if self.v_lead:  # since the new mpc now handles braking nicely, simplify mods
+    if self.v_lead is not None:  # since the new mpc now handles braking nicely, simplify mods
       x = [0, 0.61, 1.26, 2.1, 2.68]  # relative velocity values
       y = [0, -0.017, -0.053, -0.154, -0.272]  # modification values
       TR_mod = interp(self.v_lead + self.v_ego, x, y)  # quicker acceleration/don't brake when lead is overtaking
@@ -125,7 +124,7 @@ class LongitudinalMpc(object):
   def get_cost(self, TR):
     x = [.9, 1.8, 2.7]
     y = [1.0, .1, .05]
-    if self.x_lead and self.v_ego and self.v_ego != 0:
+    if self.x_lead is not None and self.v_ego is not None and self.v_ego != 0:
       real_TR = self.x_lead / float(self.v_ego)  # switched to cost generation using actual distance from lead car; should be safer
       if abs(real_TR - TR) >= .25:  # use real TR if diff is greater than x safety threshold
         TR = real_TR
@@ -148,6 +147,7 @@ class LongitudinalMpc(object):
         self.last_cost = 1.0
       return 0.9  # 10m at 40km/hr
     elif read_distance_lines == 2:
+      return 1.8
       self.save_car_data()
       TR = self.smooth_follow()
       cost = self.get_cost(TR)
@@ -205,14 +205,14 @@ class LongitudinalMpc(object):
       if lead is not None and lead.status:
         x_lead = lead.dRel
         v_lead = max(0.0, lead.vLead)
-        self.v_lead = v_lead
-        self.x_lead = x_lead
         a_lead = lead.aLeadK
 
         if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
           v_lead = 0.0
           a_lead = 0.0
 
+        self.v_lead = v_lead
+        self.x_lead = x_lead
         self.a_lead_tau = lead.aLeadTau
         self.new_lead = False
         if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
