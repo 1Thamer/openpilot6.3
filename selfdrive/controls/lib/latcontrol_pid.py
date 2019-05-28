@@ -72,4 +72,7 @@ class LatControlPID(object):
       pid_log.saturated = bool(self.pid.saturated)
 
     self.sat_flag = self.pid.saturated
-    return output_steer, float(self.angle_steers_des), pid_log
+    if CP.steerControlType == car.CarParams.SteerControlType.torque:
+      return output_steer, path_plan.angleSteers, pid_log
+    else:
+      return self.angle_steers_des, path_plan.angleSteers
