@@ -189,7 +189,7 @@ class CarInterface(object):
         ret.longitudinalTuning.kpV = [3.6, 1.1, 1.0]
         ret.longitudinalTuning.kiV = [0.5, 0.24]
 
-    elif candidate == CAR.LEXUS_RXH:
+    elif candidate in [CAR.LEXUS_RXH, CAR.LEXUS_RX]:
       stop_and_go = True
       ret.safetyParam = 100 # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.79
