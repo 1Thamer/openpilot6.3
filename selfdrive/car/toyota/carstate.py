@@ -91,16 +91,18 @@ def get_can_parser(CP):
     ("ACC_SLOW", "JOEL_ID", 0),
     ("DISTANCE_LINES", "PCM_CRUISE_SM", 0),
   ]
-
-  checks = [
-    ("BRAKE_MODULE", 40),
-    ("GAS_PEDAL", 33),
-    ("WHEEL_SPEEDS", 80),
-    ("STEER_ANGLE_SENSOR", 80),
-    ("PCM_CRUISE", 33),
-    ("STEER_TORQUE_SENSOR", 50),
-    ("EPS_STATUS", 25),
-  ]
+  if CP.carFingerprint != CAR.LEXUS_RX:
+    checks = [
+      ("BRAKE_MODULE", 40),
+      ("GAS_PEDAL", 33),
+      ("WHEEL_SPEEDS", 80),
+      ("STEER_ANGLE_SENSOR", 80),
+      ("PCM_CRUISE", 33),
+      ("STEER_TORQUE_SENSOR", 50),
+      ("EPS_STATUS", 25),
+    ]
+  else:
+    checks = []
 
   if CP.carFingerprint == CAR.PRIUS:
     signals += [("STATE", "AUTOPARK_STATUS", 0)]
