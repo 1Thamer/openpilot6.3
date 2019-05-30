@@ -420,7 +420,7 @@ class CarState(object):
     if self.CP.carFingerprint != CAR.PRIUS:
       self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
       self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
-    else
+    else:
       self.left_blinker_on = False
       self.right_blinker_on = False
     #self.lkas_barriers = cp_cam.vl["LKAS_HUD"]['BARRIERS']
