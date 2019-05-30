@@ -417,8 +417,12 @@ class CarState(object):
       elif self.gasMode == 2:
         self.econ_on = 1
     self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
-    self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
-    self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
+    if self.CP.carFingerprint != CAR.PRIUS:
+      self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
+      self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
+    else
+      self.left_blinker_on = False
+      self.right_blinker_on = False
     #self.lkas_barriers = cp_cam.vl["LKAS_HUD"]['BARRIERS']
     #self.left_line = cp_cam.vl["LKAS_HUD"]['LEFT_LINE']
     #self.right_line = cp_cam.vl["LKAS_HUD"]['RIGHT_LINE']
