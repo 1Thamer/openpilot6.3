@@ -83,7 +83,6 @@ CL_TIMEA_T = [0.7 ,0.30, 0.20]
 from common.numpy_fast import interp
 from selfdrive.controls.lib.pid import PIController
 from common.realtime import sec_since_boot
-from selfdrive.car.toyota.values import CAR
 
 #wait time after turn complete before enabling smoother
 WAIT_TIME_AFTER_TURN = 2.0
@@ -152,14 +151,9 @@ class ALCAController(object):
 
   def set_pid(self,CS):
     self.laneChange_steerr = CS.CP.steerRatio
-    if CS.CP.carFingerprint == CAR.PRIUS:
-      self.pid = PIController(([0.], [0.4]),
-                              ([0.], [0.05]),
-                              k_f=0.0001, pos_limit=1.0)
-    else: 
-      self.pid = PIController((CS.CP.lateralTuning.pid.kpBP, CS.CP.lateralTuning.pid.kpV),
-                              (CS.CP.lateralTuning.pid.kiBP, CS.CP.lateralTuning.pid.kiV),
-                              k_f=CS.CP.lateralTuning.pid.kf, pos_limit=1.0)
+    self.pid = PIController((CS.CP.lateralTuning.pid.kpBP, CS.CP.lateralTuning.pid.kpV),
+                            (CS.CP.lateralTuning.pid.kiBP, CS.CP.lateralTuning.pid.kiV),
+                            k_f=CS.CP.lateralTuning.pid.kf, pos_limit=1.0)
 
   def update_angle(self,enabled,CS,frame,actuators):
     try:
