@@ -151,9 +151,14 @@ class ALCAController(object):
 
   def set_pid(self,CS):
     self.laneChange_steerr = CS.CP.steerRatio
-    self.pid = PIController((CS.CP.lateralTuning.pid.kpBP, CS.CP.lateralTuning.pid.kpV),
-                            (CS.CP.lateralTuning.pid.kiBP, CS.CP.lateralTuning.pid.kiV),
-                            k_f=CS.CP.lateralTuning.pid.kf, pos_limit=1.0)
+    if CS.CP.carFingerprint == CAR.PRIUS:
+      self.pid = PIController(([0.], [0.4]),
+                              ([0.], [0.05]),
+                              k_f=0.0001, pos_limit=1.0)
+    else: 
+      self.pid = PIController((CS.CP.lateralTuning.pid.kpBP, CS.CP.lateralTuning.pid.kpV),
+                              (CS.CP.lateralTuning.pid.kiBP, CS.CP.lateralTuning.pid.kiV),
+                              k_f=CS.CP.lateralTuning.pid.kf, pos_limit=1.0)
 
   def update_angle(self,enabled,CS,frame,actuators):
     try:
