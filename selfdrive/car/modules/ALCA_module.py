@@ -83,6 +83,7 @@ CL_TIMEA_T = [0.7 ,0.30, 0.20]
 from common.numpy_fast import interp
 from selfdrive.controls.lib.pid import PIController
 from common.realtime import sec_since_boot
+from selfdrive.car.toyota.values import CAR
 
 #wait time after turn complete before enabling smoother
 WAIT_TIME_AFTER_TURN = 2.0
