@@ -178,7 +178,7 @@ class CarController(object):
     alca_angle = 0.
     turn_signal_needed = 0
     # Update ALCA status and custom button every 0.1 sec.
-    if self.ALCA.pid == None:
+    if self.ALCA.pid == None and not CS.indi_toggle:
       self.ALCA.set_pid(CS)
     if (frame % 10 == 0):
       self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
