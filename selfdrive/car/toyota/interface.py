@@ -93,6 +93,7 @@ class CarInterface(object):
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3045 * CV.LB_TO_KG + std_cargo
       
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4], [0.05]]
       ret.lateralTuning.pid.kf = 0.0001 # full torque for 10 deg at 80mph means 0.00007818594
       
