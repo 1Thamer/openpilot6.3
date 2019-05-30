@@ -163,6 +163,7 @@ class CarState(object):
   def __init__(self, CP):
     self.brakefactor = float(kegman.conf['brakefactor'])
     self.trfix = False
+    self.indi_toggle = False
     steerRatio = CP.steerRatio
     self.Angles = np.zeros(250)
     self.Angles_later = np.zeros(250)
@@ -541,6 +542,7 @@ class CarState(object):
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
     if self.CP.carFingerprint == CAR.PRIUS:
+      self.indi_toggle = True
       self.generic_toggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0
     else:
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
