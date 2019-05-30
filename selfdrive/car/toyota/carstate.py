@@ -91,16 +91,18 @@ def get_can_parser(CP):
     ("ACC_SLOW", "JOEL_ID", 0),
     ("DISTANCE_LINES", "PCM_CRUISE_SM", 0),
   ]
-
-  checks = [
-    ("BRAKE_MODULE", 40),
-    ("GAS_PEDAL", 33),
-    ("WHEEL_SPEEDS", 80),
-    ("STEER_ANGLE_SENSOR", 80),
-    ("PCM_CRUISE", 33),
-    ("STEER_TORQUE_SENSOR", 50),
-    ("EPS_STATUS", 25),
-  ]
+  if CP.carFingerprint != CAR.LEXUS_RX:
+    checks = [
+      ("BRAKE_MODULE", 40),
+      ("GAS_PEDAL", 33),
+      ("WHEEL_SPEEDS", 80),
+      ("STEER_ANGLE_SENSOR", 80),
+      ("PCM_CRUISE", 33),
+      ("STEER_TORQUE_SENSOR", 50),
+      ("EPS_STATUS", 25),
+    ]
+  else:
+    checks = []
 
   if CP.carFingerprint == CAR.PRIUS:
     signals += [("STATE", "AUTOPARK_STATUS", 0)]
@@ -179,7 +181,7 @@ class CarState(object):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
     self.CL_MAX_ANGLE_DELTA_BP = [10., 15., 32., 55.]#[10., 44.]
-    self.CL_MAX_ANGLE_DELTA = [1.8 * 15.5 / steerRatio, 1.3 * 15.5 / steerRatio, 1.0 * 15.5 / steerRatio, 0.45 * 15.5 / steerRatio]
+    self.CL_MAX_ANGLE_DELTA = [2.0 * 15.5 / steerRatio, 1.75 * 15.5 / steerRatio, 1.25 * 15.5 / steerRatio, 0.5 * 15.5 / steerRatio]
      # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
     self.CL_ADJUST_FACTOR_BP = [10., 50.]
     self.CL_ADJUST_FACTOR = [16. , 8.]
