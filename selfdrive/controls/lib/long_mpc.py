@@ -152,6 +152,7 @@ class LongitudinalMpc(object):
         self.last_cost = 1.0
       return 0.9  # 10m at 40km/hr
     elif read_distance_lines == 2:
+      return 1.6
       self.save_car_data()
       return 1.6
       TR = self.smooth_follow()
