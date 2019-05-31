@@ -371,7 +371,8 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     "uiAccelCmd": float(LoC.pid.i),
     "ufAccelCmd": float(LoC.pid.f),
     "angleSteersDes": float(LaC.angle_steers_des),
-    "angleFFRatio": float(LaC.angle_ff_ratio),
+    if CP.lateralTuning.which() == 'pid':
+      "angleFFRatio": float(LaC.angle_ff_ratio),
     "vTargetLead": float(v_acc),
     "aTarget": float(a_acc),
     "jerkFactor": float(plan.jerkFactor),
