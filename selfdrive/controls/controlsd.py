@@ -422,7 +422,6 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
       "aTarget": float(a_acc),
       "jerkFactor": float(plan.jerkFactor),
       "angleModelBias": float(angle_model_bias),
-      "angleFFGain": float(LaC.angle_ff_gain),
       "rateFFGain": float(LaC.rate_ff_gain),
       "gpsPlannerActive": plan.gpsPlannerActive,
       "vCurvature": plan.vCurvature,
