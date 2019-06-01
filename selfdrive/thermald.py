@@ -15,7 +15,6 @@ from common.filter_simple import FirstOrderFilter
 import selfdrive.kegman_conf as kegman
 import subprocess
 import signal
-import time
 
 ThermalStatus = log.ThermalData.ThermalStatus
 CURRENT_TAU = 15.   # 15s time constant
@@ -191,8 +190,6 @@ def thermald_thread():
   params = Params()
 
   while 1:
-    times=[]
-    start=time.time()
     health = messaging.recv_sock(health_sock, wait=True)
     location = messaging.recv_sock(location_sock)
     location = location.gpsLocation if location else None
@@ -250,7 +247,6 @@ def thermald_thread():
       thermal_status = ThermalStatus.green
 
     # **** starting logic ****
-    times.append(time.time()-start)
 
     # start constellation of processes when the car starts
     ignition = health is not None and health.health.started
@@ -268,12 +264,12 @@ def thermald_thread():
 
     # have we seen a panda?
     passive = (params.get("Passive") == "1")
-    times.append(time.time()-start)
+
     # start on gps movement if we haven't seen ignition and are in passive mode
     should_start = should_start or (not (ignition_seen and health) # seen ignition and panda is connected
                                     and passive
                                     and passive_starter.update(started_ts, location))
-    times.append(time.time()-start)
+
     # with 2% left, we killall, otherwise the phone will take a long time to boot
     should_start = should_start and msg.thermal.freeSpace > 0.02
 
@@ -326,7 +322,6 @@ def thermald_thread():
     else:
       charging_disabled = check_car_battery_voltage(should_start, health, charging_disabled, msg)
 
-    times.append(time.time()-start)
 
     # need to force batteryStatus because after NEOS update for 0.5.7 this doesn't work properly
     if msg.thermal.batteryCurrent > 0:
@@ -342,7 +337,6 @@ def thermald_thread():
     msg.thermal.thermalStatus = thermal_status
     thermal_sock.send(msg.to_bytes())
     print(msg)
-    times.append(time.time()-start)
 
     # report to server once per minute
     if (count%60) == 0:
@@ -353,9 +347,6 @@ def thermald_thread():
         thermal=msg.to_dict())
 
     count += 1
-    times.append(time.time()-start)
-    with open("/data/t_times", "a") as f:
-      f.write(str(times)+ " " + str(ignition) + "\n")
 
 
 def main(gctx=None):
