@@ -135,7 +135,6 @@ def get_car(logcan, sendcan=None, passive=True):
   with open("/data/my_fingerprint", "w") as f:
     f.write(str(fingerprints))
 
-
   if candidate is None:
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
     if passive:
