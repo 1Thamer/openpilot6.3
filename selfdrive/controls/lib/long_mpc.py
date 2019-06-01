@@ -117,7 +117,7 @@ class LongitudinalMpc(object):
       TR_mod = interp(self.v_lead + self.v_ego, x, y)  # quicker acceleration/don't brake when lead is overtaking
 
       x = [-1.49, -1.1, -0.67, 0.0, 0.67, 1.1, 1.49]
-      y = [0.14, 0.08, 0.04, 0.0, -0.04, -0.08, -0.14]
+      y = [0.07, 0.04, 0.02, 0.0, -0.02, -0.04, -0.07]
       TR_mod += interp(self.get_acceleration(), x, y)  # when lead car has been braking over the past 3 seconds, slightly increase TR
 
       TR += TR_mod
