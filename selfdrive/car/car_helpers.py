@@ -80,8 +80,6 @@ def fingerprint(logcan, timeout):
   st_passive = sec_since_boot()  # only relevant when passive
   can_seen = False
   while 1:
-    with open("/data/my_fingerprint", "a") as f:
-      f.write(str("in loop\n"))
     for a in messaging.drain_sock(logcan):
       for can in a.can:
         can_seen = True
