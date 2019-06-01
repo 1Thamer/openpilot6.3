@@ -78,6 +78,25 @@ class CarInterface(object):
 
     #ret.steerKiBP, ret.steerKpBP = [[0.], [0.]]
     #ret.steerActuatorDelay = 0.001  # Default delay, Prius has larger delay
+
+    ret.longitudinalTuning.deadzoneBP = [0., 9.]
+    ret.longitudinalTuning.deadzoneV = [0., .15]
+    ret.longitudinalTuning.kpBP = [0., 5., 35.]
+    ret.longitudinalTuning.kiBP = [0., 35.]
+    ret.stoppingControl = False
+    ret.startAccel = 0.0
+
+    if ret.enableGasInterceptor:
+      ret.gasMaxBP = [0., 9., 35]
+      ret.gasMaxV = [0.2, 0.5, 0.7]
+      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
+      ret.longitudinalTuning.kiV = [0.18, 0.12]
+    else:
+      ret.gasMaxBP = [0.]
+      ret.gasMaxV = [0.5]
+      ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
+      ret.longitudinalTuning.kiV = [0.54, 0.36]
+
     new_braking_tuned = False
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     if candidate != CAR.PRIUS:
@@ -101,6 +120,7 @@ class CarInterface(object):
 
       ret.steerActuatorDelay = 0.5
       ret.steerRateCost = 0.5
+      new_braking_tuned = True
 
     elif candidate in [CAR.RAV4]:
       stop_and_go = True if (candidate in CAR.RAV4H) else False

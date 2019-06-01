@@ -1,5 +1,5 @@
+from common.numpy_fast import interp
 import numpy as np
-
 import selfdrive.messaging as messaging
 from selfdrive.swaglog import cloudlog
 from common.realtime import sec_since_boot
@@ -25,7 +25,11 @@ class LongitudinalMpc(object):
     self.v_ego = 0.0
     self.car_state = None
     self.last_cost = 0
-    self.last_rate = None
+    self.car_data = {"lead_vels": [], "traffic_vels": []}
+    self.mpc_frame = 0  # idea thanks to kegman
+    self.last_time = None
+    self.v_lead = None
+    self.x_lead = None
     self.phantom = Phantom(timeout=True, do_sshd_mod=True)
 
 
@@ -62,19 +66,86 @@ class LongitudinalMpc(object):
     self.cur_state[0].v_ego = v
     self.cur_state[0].a_ego = a
 
-  def dynamic_follow(self):
-    return 1.8
+  def get_acceleration(self):  # calculate acceleration to generate more accurate following distances
+    if len(self.car_data["lead_vels"]) > self.calc_rate() and sum(self.car_data["lead_vels"]) != 0:
+      try:
+        a = (self.car_data["lead_vels"][-1] - self.car_data["lead_vels"][0]) / float(len(self.car_data["lead_vels"]) / self.calc_rate())
+      except ZeroDivisionError:
+        a = 0.0
+    return a
+
+  def save_car_data(self):
+    if self.v_lead is not None:
+      while len(self.car_data["lead_vels"]) > self.calc_rate(3):  # 3 seconds
+        del self.car_data["lead_vels"][0]
+      self.car_data["lead_vels"].append(self.v_lead)
+
+      if self.mpc_frame >= self.calc_rate():  # add to traffic list every second so we're not working with a huge list
+        while len(self.car_data["traffic_vels"]) > 180:  # 3 minutes of traffic logging
+          del self.car_data["traffic_vels"][0]
+        self.car_data["traffic_vels"].append(self.v_lead)
+        self.mpc_frame = 0  # reset every second
+      self.mpc_frame += 1  # increment every frame
+
+    else:  # if no car, reset lead car list; ignore for traffic
+      self.car_data["lead_vels"] = []
+
+  def get_traffic_level(self):  # based on fluctuation of v_lead
+    lead_vels = self.car_data["traffic_vels"]
+    if len(lead_vels) < 20:  # seconds
+      return 1.0
+    lead_vel_diffs = [abs(vel - lead_vels[idx - 1]) for idx, vel in enumerate(lead_vels) if idx != 0]
+    x = [0.0, 0.21, 0.466, 0.722, 0.856, 0.96, 1.0]  # 1 is estimated to be heavy traffic
+    y = [1.2, 1.19, 1.17, 1.13, 1.09, 1.04, 1.0]
+    return interp(sum(lead_vel_diffs)/len(lead_vel_diffs), x, y)
+
+  def smooth_follow(self):  # in m/s
+    x_vel = [0.0, 4.8, 9.0, 11.3, 13.6, 17.1, 23.1, 29.5, 35.1, 39.8, 42.2]  # velocities
+    y_mod = [1.35, 1.36, 1.39, 1.43, 1.46, 1.48, 1.49, 1.53, 1.59, 1.68, 1.8]  # distances
+
+    if self.v_ego > 3.57632:  # 8 mph
+      TR = interp(self.v_ego, x_vel, y_mod)
+    else:  # this allows us to get slightly closer to the lead car when stopping, while being able to have smooth stop and go
+      x = [1.34112, 3.57632]  # smoothly ramp TR between 3 and 8 mph from 1.8s to defined TR above at 8mph
+      y = [1.8, interp(x[1], x_vel, y_mod)]
+      TR = interp(self.v_ego, x, y)
+
+    if self.v_lead is not None:  # since the new mpc now handles braking nicely, simplify mods
+      x = [0, 0.61, 1.26, 2.1, 2.68]  # relative velocity values
+      y = [0, -0.017, -0.053, -0.154, -0.272]  # modification values
+      TR_mod = interp(self.v_lead + self.v_ego, x, y)  # quicker acceleration/don't brake when lead is overtaking
+
+      x = [-1.49, -1.1, -0.67, 0.0, 0.67, 1.1, 1.49]
+      y = [0.14, 0.08, 0.04, 0.0, -0.04, -0.08, -0.14]
+      TR_mod += interp(self.get_acceleration(), x, y)  # when lead car has been braking over the past 3 seconds, slightly increase TR
+
+      TR += TR_mod
+      TR *= self.get_traffic_level()  # modify TR based on last minute of traffic data
+    if TR < 0.9:
+      return 0.9
+    else:
+      return round(TR, 3)
+
+  def get_cost(self, TR):
+    x = [.9, 1.8, 2.7]
+    y = [1.0, .1, .05]
+    if self.x_lead is not None and self.v_ego is not None and self.v_ego != 0:
+      real_TR = self.x_lead / float(self.v_ego)  # switched to cost generation using actual distance from lead car; should be safer
+      if abs(real_TR - TR) >= .25:  # use real TR if diff is greater than x safety threshold
+        TR = real_TR
+
+    return round(float(interp(TR, x, y)), 3)
 
   def get_TR(self):
     read_distance_lines = self.car_state.readdistancelines
 
-    if self.v_ego < 2.0:  #todo: make a ramp function to smoothly transition
+    if self.v_ego < 2.0 and read_distance_lines != 2:
       return 1.8
     elif self.car_state.leftBlinker or self.car_state.rightBlinker:
       if self.last_cost != 1.0:
         self.libmpc.change_tr(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = 1.0
-      return 1.2  # accelerate for lane change
+      return 0.9  # accelerate for lane change
     elif read_distance_lines == 1:
       if self.last_cost != 1.0:
         self.libmpc.change_tr(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
@@ -84,24 +155,46 @@ class LongitudinalMpc(object):
       if self.last_cost != 0.1:
         self.libmpc.change_tr(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = 0.1
-      return 1.8
+      return 1.6
+      '''self.save_car_data()
+      TR = self.smooth_follow()
+      #cost = self.get_cost(TR)
+      cost = 0.1
+      if abs(cost - self.last_cost) > .15:
+        self.libmpc.init(MPC_COST_LONG.TTC, cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+        self.last_cost = cost
+      return TR'''
     else:
       if self.last_cost != 0.05:
         self.libmpc.change_tr(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = 0.05
       return 2.7  # 30m at 40km/hr
 
-  def calc_rate(self, seconds=1.0):  # return current rate of long_mpc in fps/hertz
+  def calc_rate(self, seconds=1.0, new_frame=False):  # return current rate of long_mpc in fps/hertz
     current_time = time.time()
-    if self.last_rate is None or (current_time - self.last_rate) == 0:
-      rate = int(round(40.42 * seconds))
+    if self.last_time is None or (current_time - self.last_time) <= 0:
+      rate = int(round(40.42 * seconds))  # average of tests on long_mpc
     else:
-      rate = (1.0 / (current_time - self.last_rate)) * seconds
+      rate = (1.0 / (current_time - self.last_time)) * seconds
 
     min_return = 10
     max_return = seconds * 100
-    self.last_rate = current_time
+    if new_frame:
+      self.last_time = current_time
     return int(round(max(min(rate, max_return), min_return)))  # ensure we return a value between range, in hertz
+
+  def process_phantom(self, lead):
+    if lead is not None and lead.status:
+      v_lead = max(0.0, lead.vLead)
+      if v_lead < 0.1 or -lead.aLeadK / 2.0 > v_lead:
+        v_lead = 0.0
+
+      x_lead = min(9.144, lead.dRel)
+      v_lead = min(self.phantom.data["speed"], v_lead)
+    else:
+      x_lead = 9.144
+      v_lead = self.phantom.data["speed"]
+    return x_lead, v_lead
 
   def update(self, CS, lead, v_cruise_setpoint):
     self.car_state = CS.carState
@@ -109,13 +202,11 @@ class LongitudinalMpc(object):
 
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
-    self.phantom.update(self.calc_rate())
+    self.phantom.update(self.calc_rate(new_frame=True))
 
     if self.phantom.data["status"]:
-      self.relative_velocity = self.phantom.data["speed"] - self.v_ego
       if self.phantom.data["speed"] != 0.0:
-        x_lead = 9.144
-        v_lead = self.phantom.data["speed"]
+        x_lead, v_lead = self.process_phantom(lead)
       else:
         x_lead = 3.75
         v_lead = max(self.v_ego - (.7 / max(max(self.v_ego, 0)**.4, .01)), 0.0)  # smoothly decelerate to 0
@@ -141,6 +232,8 @@ class LongitudinalMpc(object):
           v_lead = 0.0
           a_lead = 0.0
 
+        self.v_lead = v_lead
+        self.x_lead = x_lead
         self.a_lead_tau = lead.aLeadTau
         self.new_lead = False
         if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
@@ -157,6 +250,8 @@ class LongitudinalMpc(object):
         self.cur_state[0].x_l = 50.0
         self.cur_state[0].v_l = self.v_ego + 10.0
         a_lead = 0.0
+        self.v_lead = None
+        self.x_lead = None
         self.a_lead_tau = _LEAD_ACCEL_TAU
 
     # Calculate mpc
