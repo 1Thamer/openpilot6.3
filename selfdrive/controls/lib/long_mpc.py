@@ -183,6 +183,19 @@ class LongitudinalMpc(object):
       self.last_time = current_time
     return int(round(max(min(rate, max_return), min_return)))  # ensure we return a value between range, in hertz
 
+  def process_phantom(self, lead):
+    if lead is not None and lead.status:
+      v_lead = max(0.0, lead.vLead)
+      if v_lead < 0.1 or -lead.aLeadK / 2.0 > v_lead:
+        v_lead = 0.0
+
+      x_lead = min(9.144, lead.dRel)
+      v_lead = min(self.phantom.data["speed"], v_lead)
+    else:
+      x_lead = 9.144
+      v_lead = self.phantom.data["speed"]
+    return x_lead, v_lead
+
   def update(self, CS, lead, v_cruise_setpoint):
     self.car_state = CS.carState
     self.v_ego = CS.carState.vEgo
@@ -193,8 +206,7 @@ class LongitudinalMpc(object):
 
     if self.phantom.data["status"]:
       if self.phantom.data["speed"] != 0.0:
-        x_lead = 9.144
-        v_lead = self.phantom.data["speed"]
+        x_lead, v_lead = self.process_phantom(lead)
       else:
         x_lead = 3.75
         v_lead = max(self.v_ego - (.7 / max(max(self.v_ego, 0)**.4, .01)), 0.0)  # smoothly decelerate to 0
