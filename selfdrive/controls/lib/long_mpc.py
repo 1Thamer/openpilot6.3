@@ -67,11 +67,12 @@ class LongitudinalMpc(object):
     self.cur_state[0].a_ego = a
 
   def get_acceleration(self):  # calculate acceleration to generate more accurate following distances
-    if len(self.car_data["lead_vels"]) > self.calc_rate() and sum(self.car_data["lead_vels"]) != 0:
-      try:
-        a = (self.car_data["lead_vels"][-1] - self.car_data["lead_vels"][0]) / float(len(self.car_data["lead_vels"]) / self.calc_rate())
-      except ZeroDivisionError:
-        a = 0.0
+    a = 0.0
+    if len(self.car_data["lead_vels"]) > self.calc_rate(2):
+      num = (self.car_data["lead_vels"][-1] - self.car_data["lead_vels"][0])
+      den = len(self.car_data["lead_vels"]) / self.calc_rate()
+      if den > 0:
+        a = num / float(den)
     return a
 
   def save_car_data(self):
@@ -101,7 +102,7 @@ class LongitudinalMpc(object):
 
   def smooth_follow(self):  # in m/s
     x_vel = [0.0, 4.8, 9.0, 11.3, 13.6, 17.1, 23.1, 29.5, 35.1, 39.8, 42.2]  # velocities
-    y_mod = [1.35, 1.36, 1.39, 1.43, 1.46, 1.48, 1.49, 1.53, 1.59, 1.68, 1.8]  # distances
+    y_mod = [1.402, 1.408, 1.426, 1.45, 1.468, 1.48, 1.486, 1.51, 1.546, 1.6, 1.672]  # distances
 
     if self.v_ego > 3.57632:  # 8 mph
       TR = interp(self.v_ego, x_vel, y_mod)
@@ -116,7 +117,7 @@ class LongitudinalMpc(object):
       TR_mod = interp(self.v_lead + self.v_ego, x, y)  # quicker acceleration/don't brake when lead is overtaking
 
       x = [-1.49, -1.1, -0.67, 0.0, 0.67, 1.1, 1.49]
-      y = [0.14, 0.08, 0.04, 0.0, -0.04, -0.08, -0.14]
+      y = [0.056, 0.032, 0.016, 0.0, -0.016, -0.032, -0.056]
       TR_mod += interp(self.get_acceleration(), x, y)  # when lead car has been braking over the past 3 seconds, slightly increase TR
 
       TR += TR_mod
@@ -141,7 +142,7 @@ class LongitudinalMpc(object):
 
     if self.v_ego < 2.0 and read_distance_lines != 2:
       return 1.8
-    elif self.car_state.leftBlinker or self.car_state.rightBlinker:
+    elif (self.car_state.leftBlinker or self.car_state.rightBlinker) and self.v_ego > 8.9408:  # don't get super close when signaling in a turn lane
       if self.last_cost != 1.0:
         self.libmpc.change_tr(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = 1.0
@@ -152,18 +153,13 @@ class LongitudinalMpc(object):
         self.last_cost = 1.0
       return 0.9  # 10m at 40km/hr
     elif read_distance_lines == 2:
-      if self.last_cost != 0.1:
-        self.libmpc.change_tr(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-        self.last_cost = 0.1
-      return 1.6
-      '''self.save_car_data()
+      self.save_car_data()
       TR = self.smooth_follow()
-      #cost = self.get_cost(TR)
-      cost = 0.1
+      cost = self.get_cost(TR)
       if abs(cost - self.last_cost) > .15:
         self.libmpc.init(MPC_COST_LONG.TTC, cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = cost
-      return TR'''
+      return TR
     else:
       if self.last_cost != 0.05:
         self.libmpc.change_tr(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
