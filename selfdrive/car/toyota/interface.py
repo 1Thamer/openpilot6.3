@@ -8,6 +8,7 @@ from selfdrive.car.toyota.carstate import CarState, get_can_parser, get_cam_can_
 from selfdrive.car.toyota.values import ECU, check_ecu_msgs, CAR, NO_STOP_TIMER_CAR
 from selfdrive.swaglog import cloudlog
 import selfdrive.kegman_conf as kegman
+import time
 
 steeringAngleoffset = float(kegman.conf['angle_steers_offset'])  # deg offset
    
@@ -52,6 +53,8 @@ class CarInterface(object):
 
   @staticmethod
   def get_params(candidate, fingerprint):
+    times=[]
+    start=time.time()
 
     # kg of standard extra cargo to count for drive, gas, etc...
     std_cargo = 136
@@ -85,24 +88,24 @@ class CarInterface(object):
     ret.longitudinalTuning.kiBP = [0., 35.]
     ret.stoppingControl = False
     ret.startAccel = 0.0
+    times.append(time.time()-start)
 
-    if ret.enableGasInterceptor:
-      ret.gasMaxBP = [0., 9., 35]
-      ret.gasMaxV = [0.2, 0.5, 0.7]
-      ret.longitudinalTuning.kpV = [0.333, 0.364, 0.15]  # braking tune from corolla with pedal
-      ret.longitudinalTuning.kiV = [0.07, 0.05]
-    else:
+    ret.gasMaxBP = [0., 9., 35]
+    ret.gasMaxV = [0.2, 0.5, 0.7]
+    ret.longitudinalTuning.kpV = [0.333, 0.364, 0.15]  # braking tune from corolla with pedal
+    ret.longitudinalTuning.kiV = [0.07, 0.05]
+    '''else:
       ret.gasMaxBP = [0.]
       ret.gasMaxV = [0.5]
       ret.longitudinalTuning.kpV = [1.0, 0.5, 0.3]  # braking tune from rav4h
-      ret.longitudinalTuning.kiV = [0.20, 0.10]
+      ret.longitudinalTuning.kiV = [0.20, 0.10]'''
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     if candidate != CAR.PRIUS:
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
 
-
+    times.append(time.time()-start)
     if candidate == CAR.PRIUS:
       stop_and_go = True
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
@@ -255,7 +258,7 @@ class CarInterface(object):
     else:
       ret.centerToFront = ret.wheelbase * 0.44  
 
-
+    times.append(time.time()-start)
     ret.steerRateCost = 1.
 
 
@@ -301,7 +304,7 @@ class CarInterface(object):
     cloudlog.warn("ECU DSU Simulated: %r", ret.enableDsu)
     cloudlog.warn("ECU APGS Simulated: %r", ret.enableApgs)
     cloudlog.warn("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
-
+    times.append(time.time()-start)
     ret.steerLimitAlert = False
 
     ret.longitudinalTuning.deadzoneBP = [0., 9.]
@@ -321,6 +324,9 @@ class CarInterface(object):
     #  ret.gasMaxV = [0.5]
     #  ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
     #  ret.longitudinalTuning.kiV = [0.54, 0.36]
+
+    with open("/data/i_times", "a") as f:
+      f.write(str(times)+  "\n")
 
     return ret
 
