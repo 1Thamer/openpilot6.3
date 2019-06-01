@@ -106,7 +106,6 @@ def fingerprint(logcan, timeout):
       return None, finger
 
     time.sleep(0.01)
-
   try:
     with open("/data/kegman.json", "r") as f:
       cloudlog.warning(str(f.read()))
@@ -133,8 +132,6 @@ def get_car(logcan, sendcan=None, passive=True):
   # TODO: timeout only useful for replays so controlsd can start before unlogger
   timeout = 2. if passive else None
   candidate, fingerprints = fingerprint(logcan, timeout)
-  with open("/data/my_fingerprint", "w") as f:
-    f.write(str(fingerprints))
 
   if candidate is None:
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
