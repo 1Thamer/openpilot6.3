@@ -152,18 +152,14 @@ class LongitudinalMpc(object):
         self.last_cost = 1.0
       return 0.9  # 10m at 40km/hr
     elif read_distance_lines == 2:
-      if self.last_cost != 0.1:
-        self.libmpc.change_tr(MPC_COST_LONG.TTC, 0.1, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-        self.last_cost = 0.1
-      return 1.6
-      '''self.save_car_data()
+      self.save_car_data()
       TR = self.smooth_follow()
       #cost = self.get_cost(TR)
       cost = 0.1
       if abs(cost - self.last_cost) > .15:
         self.libmpc.init(MPC_COST_LONG.TTC, cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = cost
-      return TR'''
+      return TR
     else:
       if self.last_cost != 0.05:
         self.libmpc.change_tr(MPC_COST_LONG.TTC, 0.05, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
