@@ -97,7 +97,7 @@ class CarInterface(object):
       ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
       ret.longitudinalTuning.kiV = [0.54, 0.36]
 
-    new_braking_tuned = False
+    new_braking_tuned = True
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     if candidate != CAR.PRIUS:
       ret.lateralTuning.init('pid')
