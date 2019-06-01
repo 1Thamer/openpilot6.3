@@ -116,9 +116,9 @@ class LongitudinalMpc(object):
       y = [0, -0.017, -0.053, -0.154, -0.272]  # modification values
       TR_mod = interp(self.v_lead + self.v_ego, x, y)  # quicker acceleration/don't brake when lead is overtaking
 
-      '''x = [-1.49, -1.1, -0.67, 0.0, 0.67, 1.1, 1.49]
-      y = [0.07, 0.04, 0.02, 0.0, -0.02, -0.04, -0.07]
-      TR_mod += interp(self.get_acceleration(), x, y)  # when lead car has been braking over the past 3 seconds, slightly increase TR'''
+      x = [-1.49, -1.1, -0.67, 0.0, 0.67, 1.1, 1.49]
+      y = [0.056, 0.032, 0.016, 0.0, -0.016, -0.032, -0.056]
+      TR_mod += interp(self.get_acceleration(), x, y)  # when lead car has been braking over the past 3 seconds, slightly increase TR
 
       TR += TR_mod
       TR *= self.get_traffic_level()  # modify TR based on last minute of traffic data
