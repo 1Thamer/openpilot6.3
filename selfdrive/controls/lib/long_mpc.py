@@ -142,7 +142,7 @@ class LongitudinalMpc(object):
 
     if self.v_ego < 2.0 and read_distance_lines != 2:
       return 1.8
-    elif self.car_state.leftBlinker or self.car_state.rightBlinker:
+    elif (self.car_state.leftBlinker or self.car_state.rightBlinker) and self.v_ego > 8.9408:  # don't get super close when signaling in a turn lane
       if self.last_cost != 1.0:
         self.libmpc.change_tr(MPC_COST_LONG.TTC, 1.0, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = 1.0
