@@ -101,6 +101,7 @@ class CarInterface(object):
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
 
+
     if candidate == CAR.PRIUS:
       stop_and_go = True
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
@@ -253,6 +254,7 @@ class CarInterface(object):
     else:
       ret.centerToFront = ret.wheelbase * 0.44  
 
+
     ret.steerRateCost = 1.
 
 
@@ -318,7 +320,6 @@ class CarInterface(object):
     #  ret.gasMaxV = [0.5]
     #  ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
     #  ret.longitudinalTuning.kiV = [0.54, 0.36]
-
 
     return ret
 

@@ -322,7 +322,6 @@ def thermald_thread():
     else:
       charging_disabled = check_car_battery_voltage(should_start, health, charging_disabled, msg)
 
-
     # need to force batteryStatus because after NEOS update for 0.5.7 this doesn't work properly
     if msg.thermal.batteryCurrent > 0:
       msg.thermal.batteryStatus = "Discharging"
