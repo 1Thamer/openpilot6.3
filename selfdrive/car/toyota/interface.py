@@ -192,6 +192,16 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.04]] #from Q
       ret.lateralTuning.pid.kf = 0.00006 #from Q
 
+    elif candidate == CAR.LEXUS_ISH:
+      stop_and_go = True
+      ret.safetyParam = 66
+      ret.wheelbase = 2.80 # in spec
+      ret.steerRatio = 13.3 # in spec
+      tire_stiffness_factor = 0.444 # from camry
+      ret.mass = 3736.8 * CV.LB_TO_KG + std_cargo # in spec, mean of is300 (1680 kg) / is300h (1720 kg) / is350 (1685 kg)
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.04]]
+      ret.lateralTuning.pid.kf = 0.00006 # from camry
+
     elif candidate in [CAR.CHR, CAR.CHRH]:
       stop_and_go = True
       ret.safetyParam = 100

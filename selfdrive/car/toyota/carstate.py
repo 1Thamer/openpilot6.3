@@ -91,18 +91,26 @@ def get_can_parser(CP):
     ("ACC_SLOW", "JOEL_ID", 0),
     ("DISTANCE_LINES", "PCM_CRUISE_SM", 0),
   ]
-  if CP.carFingerprint != CAR.LEXUS_RX:
+  if CP.carFingerprint == CAR.LEXUS_RX:
+    checks = []
+  else:
     checks = [
-      ("BRAKE_MODULE", 40),
-      ("GAS_PEDAL", 33),
       ("WHEEL_SPEEDS", 80),
       ("STEER_ANGLE_SENSOR", 80),
       ("PCM_CRUISE", 33),
       ("STEER_TORQUE_SENSOR", 50),
       ("EPS_STATUS", 25),
     ]
-  else:
-    checks = []
+    if CP.carFingerprint == CAR.LEXUS_ISH:
+      checks += [
+        ("BRAKE_MODULE", 50),
+        ("GAS_PEDAL", 50),
+      ]
+    else:
+      checks += [
+        ("BRAKE_MODULE", 40),
+        ("GAS_PEDAL", 33),
+      ]
 
   if CP.carFingerprint == CAR.PRIUS:
     signals += [("STATE", "AUTOPARK_STATUS", 0)]
@@ -115,6 +123,14 @@ def get_can_parser(CP):
       ("LOW_SPEED_LOCKOUT", "PCM_CRUISE_3", 0),
     ]
     checks += [("PCM_CRUISE_3", 1)]
+
+  elif CP.carFingerprint == CAR.LEXUS_ISH:
+    signals += [
+      ("MAIN_ON", "PCM_CRUISE_ISH", 0),
+      ("SET_SPEED", "PCM_CRUISE_ISH", 0),
+      ("AUTO_HIGH_BEAM", "LIGHT_STALK_ISH", 0),
+    ]
+    checks += [("PCM_CRUISE_ISH", 1)]
 
   else:
     signals += [
@@ -509,6 +525,11 @@ class CarState(object):
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_3"]['SET_SPEED']
       self.low_speed_lockout = 0
       self.main_on = cp.vl["PCM_CRUISE_3"]['MAIN_ON']
+    elif self.CP.carFingerprint == CAR.LEXUS_ISH:
+      self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE']
+      self.v_cruise_pcm = cp.vl["PCM_CRUISE_ISH"]['SET_SPEED']
+      self.low_speed_lockout = False
+      self.main_on = cp.vl["PCM_CRUISE_ISH"]['MAIN_ON']
     else:
       self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
@@ -548,6 +569,8 @@ class CarState(object):
     if self.CP.carFingerprint == CAR.PRIUS:
       self.indi_toggle = True
       self.generic_toggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0
+    elif self.CP.carFingerprint == CAR.LEXUS_ISH:
+      self.generic_toggle = bool(cp.vl["LIGHT_STALK_ISH"]['AUTO_HIGH_BEAM'])
     else:
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
     self.tsgn1 = cp_cam.vl["RSA1"]['TSGN1']
