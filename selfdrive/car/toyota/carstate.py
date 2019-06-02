@@ -105,13 +105,11 @@ def get_can_parser(CP):
       checks += [
         ("BRAKE_MODULE", 50),
         ("GAS_PEDAL", 50),
-        ("PCM_CRUISE_ISH", 1),
       ]
     else:
       checks += [
         ("BRAKE_MODULE", 40),
         ("GAS_PEDAL", 33),
-        ("PCM_CRUISE_2", 33),
       ]
 
   if CP.carFingerprint == CAR.PRIUS:
@@ -132,6 +130,7 @@ def get_can_parser(CP):
       ("SET_SPEED", "PCM_CRUISE_ISH", 0),
       ("AUTO_HIGH_BEAM", "LIGHT_STALK_ISH", 0),
     ]
+    checks += [("PCM_CRUISE_ISH", 1)]
 
   else:
     signals += [
