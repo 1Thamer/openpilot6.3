@@ -98,7 +98,11 @@ class LongitudinalMpc(object):
     lead_vel_diffs = [abs(vel - lead_vels[idx - 1]) for idx, vel in enumerate(lead_vels) if idx != 0]
     x = [0.0, 0.21, 0.466, 0.722, 0.856, 0.96, 1.0]  # 1 is estimated to be heavy traffic
     y = [1.2, 1.19, 1.17, 1.13, 1.09, 1.04, 1.0]
-    return interp(sum(lead_vel_diffs)/len(lead_vel_diffs), x, y)
+    traffic_mod = interp(sum(lead_vel_diffs)/len(lead_vel_diffs), x, y)
+    x = [20.1168, 24.5872]  # min speed is 45mph for traffic level mod
+    y = [0.2, 0.0]
+    traffic_mod = max(traffic_mod - interp(self.v_ego, x, y), 1.0)
+    return traffic_mod
 
   def smooth_follow(self):  # in m/s
     x_vel = [0.0, 4.8, 9.0, 11.3, 13.6, 17.1, 23.1, 29.5, 35.1, 39.8, 42.2]  # velocities
@@ -116,9 +120,9 @@ class LongitudinalMpc(object):
       y = [0, -0.017, -0.053, -0.154, -0.272]  # modification values
       TR_mod = interp(self.v_lead + self.v_ego, x, y)  # quicker acceleration/don't brake when lead is overtaking
 
-      x = [-1.49, -1.1, -0.67, 0.0, 0.67, 1.1, 1.49]
+      '''x = [-1.49, -1.1, -0.67, 0.0, 0.67, 1.1, 1.49]
       y = [0.056, 0.032, 0.016, 0.0, -0.016, -0.032, -0.056]
-      TR_mod += interp(self.get_acceleration(), x, y)  # when lead car has been braking over the past 3 seconds, slightly increase TR
+      TR_mod += interp(self.get_acceleration(), x, y)  # when lead car has been braking over the past 3 seconds, slightly increase TR'''
 
       TR += TR_mod
       TR *= self.get_traffic_level()  # modify TR based on last minute of traffic data
