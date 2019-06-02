@@ -6,6 +6,7 @@ GENS := gen/cpp/car.capnp.c++ gen/cpp/log.capnp.c++ gen/cpp/ui.capnp.c++
 JS := gen/js/car.capnp.js gen/js/log.capnp.js gen/js/ui.capnp.js
 
 UNAME_M ?= $(shell uname -m)
+
 # only generate C++ for docker tests
 ifneq ($(OPTEST),1)
 	GENS += gen/c/car.capnp.c gen/c/log.capnp.c gen/c/ui.capnp.c gen/c/include/c++.capnp.h gen/c/include/java.capnp.h
@@ -20,10 +21,23 @@ ifneq ($(OPTEST),1)
 
 endif
 
-ifeq ($(UNAME_M),aarch64)
-	CAPNPC=PATH=$(PWD)/../phonelibs/capnp-cpp/aarch64/bin/:$$PATH capnpc
+GENS += gen/c/car.capnp.c gen/c/log.capnp.c gen/c/include/c++.capnp.h gen/c/include/java.capnp.h
+
+ifeq ($(UNAME_M),x86_64)
+
+ifneq (, $(shell which capnpc-java))
+GENS += gen/java/Car.java gen/java/Log.java
 else
-	CAPNPC=capnpc
+$(warning capnpc-java not found, skipping java build)
+endif
+
+endif
+
+
+ifeq ($(UNAME_M),aarch64)
+CAPNPC=PATH=$(PWD)/../phonelibs/capnp-cpp/aarch64/bin/:$$PATH capnpc
+else
+CAPNPC=capnpc
 endif
 
 .PHONY: all

@@ -202,7 +202,7 @@ class CarState(object):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
     self.CL_MAX_ANGLE_DELTA_BP = [10., 32., 55.]
-    self.CL_MAX_ANGLE_DELTA = [2.0 * 15.4 / steerRatio, 1. * 15.4 / steerRatio, 0.5 * 15.4 / steerRatio]
+    self.CL_MAX_ANGLE_DELTA = [2.2 * 15.4 / steerRatio, 1.1 * 15.4 / steerRatio, 0.5 * 15.4 / steerRatio]
     # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
     self.CL_ADJUST_FACTOR_BP = [10., 44.]
     self.CL_ADJUST_FACTOR = [16. , 8.]
@@ -276,7 +276,7 @@ class CarState(object):
     # R = 1e3
     self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
                          A=[[1.0, dt], [0.0, 1.0]],
-                         C=[[1.0, 0.0]],
+                         C=[1.0, 0.0],
                          K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.0
     #BB init ui buttons
@@ -284,7 +284,7 @@ class CarState(object):
     btns = []
     btns.append(UIButton("alca", "ALC", 1, self.alcaLabels[self.alcaMode], 0))
     btns.append(UIButton("lka","LKA",1,"",1))
-    btns.append(UIButton("","",0,"",2))
+    btns.append(UIButton("mad","MAD",0,"",2))
     btns.append(UIButton("sound","SND",0,"",3))
     btns.append(UIButton("tr","TR",0,self.trLabels[self.trMode],4))
     btns.append(UIButton("gas","Gas",1,self.gasLabels[self.gasMode],5))
@@ -487,7 +487,7 @@ class CarState(object):
       if self.read_distance_lines == 1:
         self.UE.custom_alert_message(2,"Following distance set to 0.9s",200,3)
       if self.read_distance_lines == 2:
-        self.UE.custom_alert_message(2,"Dynamic Following distance",200,3)
+        self.UE.custom_alert_message(2,"Smooth following distance",200,3)
       if self.read_distance_lines == 3:
         self.UE.custom_alert_message(2,"Following distance set to 2.7s",200,3)
       self.read_distance_lines_prev = self.read_distance_lines

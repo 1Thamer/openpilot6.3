@@ -5,10 +5,12 @@ import fcntl
 import errno
 import signal
 import subprocess
+import selfdrive.messaging as messaging
 
 from common.basedir import BASEDIR
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
+manager_sock = None
 
 def unblock_stdout():
   # get a non-blocking stdout
@@ -42,7 +44,7 @@ def unblock_stdout():
 
 if __name__ == "__main__":
   neos_update_required = os.path.isfile("/init.qcom.rc") \
-    and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 8)
+    and (not os.path.isfile("/VERSION") or int(open("/VERSION").read()) < 9)
   if neos_update_required:
     # update continue.sh before updating NEOS
     if os.path.isfile(os.path.join(BASEDIR, "scripts", "continue.sh")):
@@ -88,6 +90,7 @@ from selfdrive.loggerd.config import ROOT
 managed_processes = {
   "thermald": "selfdrive.thermald",
   "uploader": "selfdrive.loggerd.uploader",
+  "deleter": "selfdrive.loggerd.deleter",
   "controlsd": "selfdrive.controls.controlsd",
   "plannerd": "selfdrive.controls.plannerd",
   "radard": "selfdrive.controls.radard",
@@ -140,6 +143,7 @@ persistent_processes = [
   'logcatd',
   'tombstoned',
   'uploader',
+  'deleter',
   'ui',
   'gpsd',
   'updated',
@@ -196,6 +200,13 @@ def nativelauncher(pargs, cwd):
   os.chmod(pargs[0], 0o700)
 
   os.execvp(pargs[0], pargs)
+
+def send_running_processes():
+  global manager_sock
+  data = messaging.new_message()
+  data.init('managerData')
+  data.managerData.runningProcesses = running.keys()
+  manager_sock.send(data.to_bytes())
 
 def start_managed_process(name):
   if name in running or name not in managed_processes:
@@ -276,6 +287,8 @@ def cleanup_all_processes(signal, frame):
 
   for name in list(running.keys()):
     kill_managed_process(name)
+
+  send_running_processes()
   cloudlog.info("everything is dead")
 
 
@@ -327,9 +340,11 @@ def system(cmd):
 
 def manager_thread():
   # now loop
+  global manager_sock
   context = zmq.Context()
   thermal_sock = messaging.sub_sock(context, service_list['thermal'].port)
   gps_sock = messaging.sub_sock(context, service_list['gpsLocation'].port, conflate=True)
+  manager_sock = messaging.pub_sock(context, service_list['managerData'].port)
 
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
@@ -349,7 +364,6 @@ def manager_thread():
 
   params = Params()
   logger_dead = False
-
   while 1:
     # get health of board, log this in "thermal"
     msg = messaging.recv_sock(thermal_sock, wait=True)
@@ -383,6 +397,7 @@ def manager_thread():
     for p in running:
       cloudlog.debug("   running %s %s" % (p, running[p]))
 
+    send_running_processes()
     # is this still needed?
     if params.get("DoUninstall") == "1":
       break

@@ -76,10 +76,10 @@ BO_ 211 Brake_Type: 8 XXX
  SG_ Brake_Pedal_On : 46|1@0+ (1,0) [0|3] "" XXX
 
 BO_ 212 Wheel_Speeds: 8 XXX
- SG_ FL : 0|16@1+ (0.057,0) [2|255] "KPH" XXX
- SG_ FR : 16|16@1+ (0.057,0) [0|255] "KPH" XXX
- SG_ RL : 32|16@1+ (0.057,0) [0|255] "KPH" XXX
- SG_ RR : 48|16@1+ (0.057,0) [0|127] "KPH" XXX
+ SG_ FL : 0|16@1+ (0.0592,0) [2|255] "KPH" XXX
+ SG_ FR : 16|16@1+ (0.0592,0) [0|255] "KPH" XXX
+ SG_ RL : 32|16@1+ (0.0592,0) [0|255] "KPH" XXX
+ SG_ RR : 48|16@1+ (0.0592,0) [0|127] "KPH" XXX
 
 BO_ 320 Throttle: 8 XXX
  SG_ Off_Throttle_2 : 56|1@1+ (1,0) [0|3] "" XXX

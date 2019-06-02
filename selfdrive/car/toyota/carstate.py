@@ -75,10 +75,6 @@ def get_can_parser(CP):
     ("STEER_RATE", "STEER_ANGLE_SENSOR", 0),
     ("GAS_RELEASED", "PCM_CRUISE", 0),
     ("CRUISE_ACTIVE", "PCM_CRUISE", 0),
-    ("CRUISE_STATE", "PCM_CRUISE", 0),
-    ("MAIN_ON", "PCM_CRUISE_2", 0),
-    ("SET_SPEED", "PCM_CRUISE_2", 0),
-    ("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0),
     ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
     ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),
     ("TURN_SIGNALS", "STEERING_LEVERS", 3),   # 3 is no blinkers
@@ -95,20 +91,55 @@ def get_can_parser(CP):
     ("ACC_SLOW", "JOEL_ID", 0),
     ("DISTANCE_LINES", "PCM_CRUISE_SM", 0),
   ]
-
-  checks = [
-    ("BRAKE_MODULE", 40),
-    ("GAS_PEDAL", 33),
-    ("WHEEL_SPEEDS", 80),
-    ("STEER_ANGLE_SENSOR", 80),
-    ("PCM_CRUISE", 33),
-    ("PCM_CRUISE_2", 33),
-    ("STEER_TORQUE_SENSOR", 50),
-    ("EPS_STATUS", 25),
-  ]
+  if CP.carFingerprint == CAR.LEXUS_RX:
+    checks = []
+  else:
+    checks = [
+      ("WHEEL_SPEEDS", 80),
+      ("STEER_ANGLE_SENSOR", 80),
+      ("PCM_CRUISE", 33),
+      ("STEER_TORQUE_SENSOR", 50),
+      ("EPS_STATUS", 25),
+    ]
+    if CP.carFingerprint == CAR.LEXUS_ISH:
+      checks += [
+        ("BRAKE_MODULE", 50),
+        ("GAS_PEDAL", 50),
+      ]
+    else:
+      checks += [
+        ("BRAKE_MODULE", 40),
+        ("GAS_PEDAL", 33),
+      ]
 
   if CP.carFingerprint == CAR.PRIUS:
     signals += [("STATE", "AUTOPARK_STATUS", 0)]
+  
+  if CP.carFingerprint == CAR.LEXUS_IS:
+    signals += [
+      ("CRUISE_STATE", "PCM_CRUISE_3", 0),
+      ("MAIN_ON", "PCM_CRUISE_3", 0),
+      ("SET_SPEED", "PCM_CRUISE_3", 0),
+      ("LOW_SPEED_LOCKOUT", "PCM_CRUISE_3", 0),
+    ]
+    checks += [("PCM_CRUISE_3", 1)]
+
+  elif CP.carFingerprint == CAR.LEXUS_ISH:
+    signals += [
+      ("MAIN_ON", "PCM_CRUISE_ISH", 0),
+      ("SET_SPEED", "PCM_CRUISE_ISH", 0),
+      ("AUTO_HIGH_BEAM", "LIGHT_STALK_ISH", 0),
+    ]
+    checks += [("PCM_CRUISE_ISH", 1)]
+
+  else:
+    signals += [
+      ("CRUISE_STATE", "PCM_CRUISE", 0),
+      ("MAIN_ON", "PCM_CRUISE_2", 0),
+      ("SET_SPEED", "PCM_CRUISE_2", 0),
+      ("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0),
+    ]
+    checks += [("PCM_CRUISE_2", 33)]
 
   # add gas interceptor reading if we are using it
   if CP.enableGasInterceptor:
@@ -148,6 +179,7 @@ class CarState(object):
   def __init__(self, CP):
     self.brakefactor = float(kegman.conf['brakefactor'])
     self.trfix = False
+    self.indi_toggle = False
     steerRatio = CP.steerRatio
     self.Angles = np.zeros(250)
     self.Angles_later = np.zeros(250)
@@ -166,7 +198,7 @@ class CarState(object):
     # ALCA PARAMS
     # max REAL delta angle for correction vs actuator
     self.CL_MAX_ANGLE_DELTA_BP = [10., 15., 32., 55.]#[10., 44.]
-    self.CL_MAX_ANGLE_DELTA = [2.0 * 15.5 / steerRatio, 1.6 * 15.5 / steerRatio, 1.1 * 15.5 / steerRatio, 0.5 * 15.5 / steerRatio]
+    self.CL_MAX_ANGLE_DELTA = [2.0 * 15.5 / steerRatio, 1.75 * 15.5 / steerRatio, 1.25 * 15.5 / steerRatio, 0.5 * 15.5 / steerRatio]
      # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
     self.CL_ADJUST_FACTOR_BP = [10., 50.]
     self.CL_ADJUST_FACTOR = [16. , 8.]
@@ -175,7 +207,7 @@ class CarState(object):
     self.CL_REENTRY_ANGLE = [5. , 5.]
      # a jump in angle above the CL_LANE_DETECT_FACTOR means we crossed the line
     self.CL_LANE_DETECT_BP = [10., 50.]
-    self.CL_LANE_DETECT_FACTOR = [1.3, 1.3]
+    self.CL_LANE_DETECT_FACTOR = [1.0, 0.5]
     self.CL_LANE_PASS_BP = [10., 20., 50.]
     self.CL_LANE_PASS_TIME = [40.,10., 3.]
      # change lane delta angles and other params
@@ -248,10 +280,10 @@ class CarState(object):
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
     # R = 1e3
-    self.v_ego_kf = KF1D(x0=np.matrix([[0.0], [0.0]]),
-                         A=np.matrix([[1.0, dt], [0.0, 1.0]]),
-                         C=np.matrix([1.0, 0.0]),
-                         K=np.matrix([[0.12287673], [0.29666309]]))
+    self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
+                         A=[[1.0, dt], [0.0, 1.0]],
+                         C=[1.0, 0.0],
+                         K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.0
 
  #BB init ui buttons
@@ -368,7 +400,7 @@ class CarState(object):
 
     # Kalman filter
     if abs(v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
-      self.v_ego_kf.x = np.matrix([[v_wheel], [0.0]])
+      self.v_ego_kf.x = [[v_wheel], [0.0]]
 
     self.v_ego_raw = v_wheel
     v_ego_x = self.v_ego_kf.update(v_wheel)
@@ -401,9 +433,12 @@ class CarState(object):
       elif self.gasMode == 2:
         self.econ_on = 1
     self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
-    self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
-    self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
-    self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
+    if self.CP.carFingerprint != CAR.PRIUS:
+      self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
+      self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
+    else:
+      self.left_blinker_on = False
+      self.right_blinker_on = False
     #self.lkas_barriers = cp_cam.vl["LKAS_HUD"]['BARRIERS']
     #self.left_line = cp_cam.vl["LKAS_HUD"]['LEFT_LINE']
     #self.right_line = cp_cam.vl["LKAS_HUD"]['RIGHT_LINE']
@@ -463,7 +498,7 @@ class CarState(object):
       if self.read_distance_lines == 1:
         self.UE.custom_alert_message(2,"Following distance set to 0.9s",200,3)
       if self.read_distance_lines == 2:
-        self.UE.custom_alert_message(2,"Dynamic Following distance",200,3)
+        self.UE.custom_alert_message(2,"Smooth following distance",200,3)
       if self.read_distance_lines == 3:
         self.UE.custom_alert_message(2,"Following distance set to 2.7s",200,3)
       self.read_distance_lines_prev = self.read_distance_lines
@@ -485,9 +520,25 @@ class CarState(object):
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
 
     self.user_brake = 0
+    if self.CP.carFingerprint == CAR.LEXUS_IS:
+      self.pcm_acc_status = cp.vl["PCM_CRUISE_3"]['CRUISE_STATE']
+      self.v_cruise_pcm = cp.vl["PCM_CRUISE_3"]['SET_SPEED']
+      self.low_speed_lockout = 0
+      self.main_on = cp.vl["PCM_CRUISE_3"]['MAIN_ON']
+    elif self.CP.carFingerprint == CAR.LEXUS_ISH:
+      self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE']
+      self.v_cruise_pcm = cp.vl["PCM_CRUISE_ISH"]['SET_SPEED']
+      self.low_speed_lockout = False
+      self.main_on = cp.vl["PCM_CRUISE_ISH"]['MAIN_ON']
+    else:
+      self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
+      self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
+      self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
+      self.main_on = cp.vl["PCM_CRUISE_2"]['MAIN_ON']
+
+    if self.acc_slow_on and self.CP.carFingerprint != CAR.OLD_CAR:
+      self.v_cruise_pcm = max(7, int(self.v_cruise_pcm) - 34.0)
     if self.acc_slow_on:
-      self.v_cruise_pcm = max(7, cp.vl["PCM_CRUISE_2"]['SET_SPEED'] - 34.0)
-      
       if not self.left_blinker_on and not self.right_blinker_on:
         self.Angles[self.Angle_counter] = abs(self.angle_steers)
         self.Angles_later[self.Angle_counter] = abs(angle_later)
@@ -497,8 +548,6 @@ class CarState(object):
         self.Angles[self.Angle_counter] = 0
         self.Angles_later[self.Angle_counter] = 0
       self.Angle_counter = (self.Angle_counter + 1 ) % 250
-    else:
-      self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
 
     #print "distane"
     #print self.distance
@@ -514,13 +563,14 @@ class CarState(object):
       if self.v_cruise_pcm > self.speedlimit:
         self.v_cruise_pcm =  self.speedlimit
     
-    self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.pcm_acc_active = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
     self.gas_pressed = not cp.vl["PCM_CRUISE"]['GAS_RELEASED']
-    self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
     if self.CP.carFingerprint == CAR.PRIUS:
+      self.indi_toggle = True
       self.generic_toggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0
+    elif self.CP.carFingerprint == CAR.LEXUS_ISH:
+      self.generic_toggle = bool(cp.vl["LIGHT_STALK_ISH"]['AUTO_HIGH_BEAM'])
     else:
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
     self.tsgn1 = cp_cam.vl["RSA1"]['TSGN1']
