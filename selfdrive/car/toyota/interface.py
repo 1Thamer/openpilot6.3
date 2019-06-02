@@ -87,9 +87,9 @@ class CarInterface(object):
     ret.startAccel = 0.0
 
     #if ret.enableGasInterceptor:
-    ret.gasMaxBP = [0., 9., 35]
+    ret.gasMaxBP = [0., 9., 55]
     ret.gasMaxV = [0.2, 0.5, 0.7]
-    ret.longitudinalTuning.kpV = [0.333, 0.364, 0.15]  # braking tune from corolla with pedal
+    ret.longitudinalTuning.kpV = [0.333, 0.364, 0.1]  # braking tune
     ret.longitudinalTuning.kiV = [0.07, 0.05]
     '''else:
       ret.gasMaxBP = [0.]
