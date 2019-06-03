@@ -44,6 +44,8 @@ def read_config():
       config.update({"useCarCaching": True})  # disable if you want to grab your car's fingerprint on every boot
     if "autoUpdate" not in config:
       config.update({"autoUpdate": True})  # this lets updated.py check and pull updates every hour and reboot
+    if "wheelTouchSeconds" not in config:
+      config.update({"wheelTouchSeconds": 1800})
 
     # force update
     if config["carVoltageMinEonShutdown"] == "11800":
