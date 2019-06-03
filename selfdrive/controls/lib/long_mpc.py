@@ -138,8 +138,11 @@ class LongitudinalMpc(object):
       real_TR = self.x_lead / float(self.v_ego)  # switched to cost generation using actual distance from lead car; should be safer
       if abs(real_TR - TR) >= .25:  # use real TR if diff is greater than x safety threshold
         TR = real_TR
-
-    return round(float(interp(TR, x, y)), 3)
+    if self.v_lead is not None:
+      factor = min(1,max(2,(self.v_lead - self.v_ego)/2 + 1.5))
+      return min(round(float(interp(TR, x, y)), 3)/factor, 0.1)
+    else:
+      return round(float(interp(TR, x, y)), 3)
 
   def get_TR(self):
     read_distance_lines = self.car_state.readdistancelines
@@ -160,11 +163,8 @@ class LongitudinalMpc(object):
       self.save_car_data()
       TR = self.smooth_follow()
       cost = self.get_cost(TR)
-      cost = 0.1
-      TR = 1.8
-      if abs(cost - self.last_cost) > .15:
-        self.libmpc.init(MPC_COST_LONG.TTC, cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
-        self.last_cost = cost
+      self.libmpc.change_tr(MPC_COST_LONG.TTC, cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+      self.last_cost = cost
       return TR
     else:
       if self.last_cost != 0.05:
