@@ -1,6 +1,8 @@
 from cereal import car
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from selfdrive.config import Conversions as CV
+
+DT = 0.01  # Controlsd runs at 100Hz
 
 # kph
 V_CRUISE_MAX = 169
@@ -17,8 +19,8 @@ class MPC_COST_LAT:
 
 
 class MPC_COST_LONG:
-  TTC = 5.0
-  DISTANCE = 0.8
+  TTC = 4.0
+  DISTANCE = 0.1
   ACCELERATION = 10.0
   JERK = 20.0
 
@@ -53,6 +55,10 @@ def get_events(events, types):
 
 def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)
+
+
+def get_steer_max(CP, v_ego):
+  return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
 
 
 def learn_angle_model_bias(lateral_control, v_ego, angle_model_bias, c_poly, c_prob, angle_steers, steer_override):
