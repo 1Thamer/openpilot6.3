@@ -160,6 +160,8 @@ class LongitudinalMpc(object):
       self.save_car_data()
       TR = self.smooth_follow()
       cost = self.get_cost(TR)
+      cost = 0.8
+      TR = 1.8
       if abs(cost - self.last_cost) > .15:
         self.libmpc.init(MPC_COST_LONG.TTC, cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
         self.last_cost = cost
