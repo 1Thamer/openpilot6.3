@@ -30,7 +30,6 @@ class LongitudinalMpc(object):
     self.last_time = None
     self.v_lead = None
     self.x_lead = None
-    self.a_lead = None
     self.phantom = Phantom(timeout=True, do_sshd_mod=True)
 
 
@@ -139,7 +138,7 @@ class LongitudinalMpc(object):
       real_TR = self.x_lead / float(self.v_ego)  # switched to cost generation using actual distance from lead car; should be safer
       if abs(real_TR - TR) >= .25:  # use real TR if diff is greater than x safety threshold
         TR = real_TR
-    if self.a_lead is not None and self.a_lead > -0.1:
+    if self.v_lead is not None and self.v_lead - self.v_ego > -0.5:
       return min(round(float(interp(TR, x, y)), 3)/2, 0.1)
     else:
       return round(float(interp(TR, x, y)), 3)
@@ -259,7 +258,6 @@ class LongitudinalMpc(object):
 
     # Calculate mpc
     t = sec_since_boot()
-    self.a_lead = a_lead
     TR = self.get_TR()
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
     duration = int((sec_since_boot() - t) * 1e9)
