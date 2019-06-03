@@ -20,32 +20,9 @@ def read_config():
     except:
       cloudlog.exception("reading kegman.json error")
       config = default_config
-    if "battPercOff" not in config:
-      config.update({"battPercOff": 25})
-    if "carVoltageMinEonShutdown" not in config:
-      config.update({"carVoltageMinEonShutdown": 11200})
-    if "brakeStoppingTarget" not in config:
-      config.update({"brakeStoppingTarget": 0.25})
-    if "angle_steers_offset" not in config:
-      config.update({"angle_steers_offset": 0})
-    if "brake_distance_extra" not in config:  # extra braking distance in m
-      config.update({"brake_distance_extra": 1})
-    if "lastALCAMode" not in config:
-      config.update({"lastALCAMode": 1})
-    if "brakefactor" not in config:  # brake at 20% higher speeds than what I like
-      config.update({"brakefactor": 1.2})
-    if "lastGasMode" not in config:
-      config.update({"lastGasMode": 0})
-    if "lastSloMode" not in config:
-      config.update({"lastSloMode": 1})
-    if "leadDistance" not in config:  # leadDistance only works for Accord and Insight, have not tested other honda vehicles
-      config.update({"leadDistance": 5.0})
-    if "useCarCaching" not in config:
-      config.update({"useCarCaching": True})  # disable if you want to grab your car's fingerprint on every boot
-    if "autoUpdate" not in config:
-      config.update({"autoUpdate": True})  # this lets updated.py check and pull updates every hour and reboot
-    if "wheelTouchSeconds" not in config:
-      config.update({"wheelTouchSeconds": 1800})
+    for i in default_config:
+      if i not in config:
+        config.update({i: default_config[i]})
 
     # force update
     if config["carVoltageMinEonShutdown"] == "11800":
