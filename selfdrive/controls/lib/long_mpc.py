@@ -139,7 +139,7 @@ class LongitudinalMpc(object):
       if abs(real_TR - TR) >= .25:  # use real TR if diff is greater than x safety threshold
         TR = real_TR
     if self.v_lead is not None:
-      factor = min(1,max(2,(self.v_lead - self.v_ego)/4 + 1.5))
+      factor = min(1,max(2,(self.v_lead - self.v_ego)/2 + 1.5))
       return min(round(float(interp(TR, x, y)), 3)/factor, 0.1)
     else:
       return round(float(interp(TR, x, y)), 3)
