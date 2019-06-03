@@ -163,7 +163,7 @@ class LongitudinalMpc(object):
       self.save_car_data()
       TR = self.smooth_follow()
       cost = self.get_cost(TR)
-      self.libmpc.init(MPC_COST_LONG.TTC, cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+      self.libmpc.change_tr(MPC_COST_LONG.TTC, cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
       self.last_cost = cost
       return TR
     else:
