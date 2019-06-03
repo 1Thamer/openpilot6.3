@@ -81,8 +81,8 @@ class CarInterface(object):
 
     ret.longitudinalTuning.deadzoneBP = [0., 9.]
     ret.longitudinalTuning.deadzoneV = [0., .15]
-    ret.longitudinalTuning.kpBP = [0., 5., 35.]
-    ret.longitudinalTuning.kiBP = [0., 35.]
+    ret.longitudinalTuning.kpBP = [0., 5., 55.]
+    ret.longitudinalTuning.kiBP = [0., 55.]
     ret.stoppingControl = False
     ret.startAccel = 0.0
 
