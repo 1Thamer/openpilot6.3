@@ -105,13 +105,13 @@ class LongitudinalMpc(object):
     return traffic_mod
 
   def smooth_follow(self):  # in m/s
-    x_vel = [0.0, 4.8, 9.0, 11.3, 13.6, 17.1, 23.1, 29.5, 35.1, 39.8, 42.2]  # velocities
-    y_mod = [1.402, 1.408, 1.426, 1.45, 1.468, 1.48, 1.486, 1.51, 1.546, 1.6, 1.672]  # distances
+    x_vel = [0.0, 5.222, 11.164, 14.937, 20.973, 33.975, 42.469]
+    y_mod = [1.542, 1.553, 1.599, 1.68, 1.75, 1.855, 1.9]
 
-    if self.v_ego > 3.57632:  # 8 mph
+    if self.v_ego > 6.7056:  # 8 mph
       TR = interp(self.v_ego, x_vel, y_mod)
     else:  # this allows us to get slightly closer to the lead car when stopping, while being able to have smooth stop and go
-      x = [1.34112, 3.57632]  # smoothly ramp TR between 3 and 8 mph from 1.8s to defined TR above at 8mph
+      x = [4.4704, 6.7056]  # smoothly ramp TR between 10 and 15 mph from 1.8s to defined TR above at 15mph
       y = [1.8, interp(x[1], x_vel, y_mod)]
       TR = interp(self.v_ego, x, y)
 
@@ -125,7 +125,7 @@ class LongitudinalMpc(object):
       TR_mod += interp(self.get_acceleration(), x, y)  # when lead car has been braking over the past 3 seconds, slightly increase TR'''
 
       TR += TR_mod
-      TR *= self.get_traffic_level()  # modify TR based on last minute of traffic data
+      #TR *= self.get_traffic_level()  # modify TR based on last minute of traffic data
     if TR < 0.9:
       return 0.9
     else:
