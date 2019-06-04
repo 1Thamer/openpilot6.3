@@ -125,7 +125,7 @@ class LongitudinalMpc(object):
       TR_mod += interp(self.get_acceleration(), x, y)  # when lead car has been braking over the past 3 seconds, slightly increase TR'''
 
       TR += TR_mod
-      TR *= self.get_traffic_level()  # modify TR based on last minute of traffic data
+      #TR *= self.get_traffic_level()  # modify TR based on last minute of traffic data
     if TR < 0.9:
       return 0.9
     else:
