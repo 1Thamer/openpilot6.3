@@ -105,8 +105,8 @@ class LongitudinalMpc(object):
     return traffic_mod
 
   def smooth_follow(self):  # in m/s
-    x_vel = [0.0, 4.8, 9.0, 11.3, 13.6, 17.1, 23.1, 29.5, 35.1, 39.8, 42.2]  # velocities
-    y_mod = [1.402, 1.408, 1.426, 1.45, 1.468, 1.48, 1.486, 1.51, 1.546, 1.6, 1.672]  # distances
+    x_vel = [0.0, 5.222, 11.164, 14.937, 20.973, 33.975, 42.469]
+    y_mod = [1.542, 1.553, 1.599, 1.68, 1.75, 1.855, 1.9]
 
     if self.v_ego > 6.7056:  # 8 mph
       TR = interp(self.v_ego, x_vel, y_mod)
