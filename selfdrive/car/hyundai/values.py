@@ -11,13 +11,13 @@ def get_hud_alerts(visual_alert, audible_alert):
     return 0
 
 class CAR:
-  ELANTRA = "HYUNDAI ELANTRA LIMITED ULTIMATE 2017"   # First User @TK211X    <-- Ported by @ku7 (Second, First Hyundai in World)
-  GENESIS = "HYUNDAI GENESIS 2018"                    # First User @xx979xx   <-- Ported by @xx979xx
-  KIA_OPTIMA = "KIA OPTIMA SX 2019"                   # First User @blender0
-  KIA_SORENTO = "KIA SORENTO GT LINE 2018"            # First User @ku7       <-- Ported by @ku7 (First Kia in World)
-  KIA_STINGER = "KIA STINGER GT2 2018"                # First User @killian   <-- Ported by @ku7 (Third)
-  SANTA_FE = "HYUNDAI SANTA FE LIMITED 2019"          # First User @rickbias  <-- Ported by @rickbias
-  UNKNOWN = "HKG ON EMMERTEX FORK"                    # Any HKG Car
+  ELANTRA = "HYUNDAI ELANTRA"           # First User @TK211X    <-- Ported by @ku7 (Second, First Hyundai in World)
+  GENESIS = "HYUNDAI GENESIS"           # First User @xx979xx   <-- Ported by @xx979xx
+  KIA_OPTIMA = "KIA OPTIMA"             # First User @blender0
+  KIA_SORENTO = "KIA SORENTO"           # First User @ku7       <-- Ported by @ku7 (First Kia in World)
+  KIA_STINGER = "KIA STINGER"           # First User @killian   <-- Ported by @ku7 (Third)
+  SANTA_FE = "HYUNDAI SANTA FE"         # First User @rickbias  <-- Ported by @rickbias
+  UNKNOWN = "HKG ON EMMERTEX FORK"      # Any HKG Car
 
 class Buttons:
   NONE = 0
@@ -50,6 +50,9 @@ FINGERPRINTS = {
   },
   {
     67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 544: 8, 593: 8, 608: 8, 688: 6, 764: 8, 809: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1064: 8, 1078: 4, 1107: 5, 1136: 8, 1151: 6, 1155: 8, 1162: 8, 1164: 8, 1168: 7, 1170: 8, 1173: 8, 1180: 8, 1183: 8, 1186: 2, 1227: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1371: 8, 1378: 8, 1384: 8, 1407: 8, 1414: 3, 1419: 8, 1427: 6, 1456: 4, 1470: 8, 1988: 8, 2000: 8, 2004: 8, 2008: 8, 2012: 8
+  },
+  {
+    897: 8, 1384: 8, 902: 8, 903: 8, 1674: 8, 1675: 8, 1676: 8, 1677: 8, 1294: 8, 1168: 7, 1170: 8, 1407: 8, 1183: 8, 544: 8, 304: 8, 1040: 8, 1064: 8, 809: 8, 688: 6, 1078: 4, 1162: 8, 1470: 8, 320: 8, 1312: 8, 1348: 8, 1227: 8, 1345: 8, 593: 8, 1107: 5, 854: 7, 1369: 8, 1628: 8, 1629: 8, 1630: 8, 1631: 8, 608: 8, 912: 7, 356: 4, 870: 7, 871: 8, 872: 8, 1363: 8, 127: 8, 1042: 8, 1136: 8, 1265: 4, 339: 8, 1268: 8, 1151: 6, 1791: 8
   }],
   CAR.UNKNOWN: [{
     832: 8
