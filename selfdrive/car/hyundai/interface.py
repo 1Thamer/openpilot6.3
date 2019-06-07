@@ -115,10 +115,6 @@ class CarInterface(object):
 
     ret.mass += std_cargo
     ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
-    ret.longitudinalKpBP = [0.]
-    ret.longitudinalKpV = [0.]
-    ret.longitudinalKiBP = [0.]
-    ret.longitudinalKiV = [0.]
 
     ret.centerToFront = ret.wheelbase * weight_dist_rear
 
