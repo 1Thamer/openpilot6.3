@@ -151,8 +151,6 @@ class CarInterface(object):
     ret.gasMaxV = [1.]
     ret.brakeMaxBP = [0.]
     ret.brakeMaxV = [1.]
-    ret.longPidDeadzoneBP = [0.]
-    ret.longPidDeadzoneV = [0.]
 
     ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
     ret.openpilotLongitudinalControl = True
