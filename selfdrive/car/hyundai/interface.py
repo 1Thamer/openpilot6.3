@@ -88,35 +88,14 @@ class CarInterface(object):
 
     ret.minSteerSpeed = 0.
 
-    if candidate == CAR.ELANTRA:
-      ret.mass = 1275
-      ret.wheelbase = 2.7
-      ret.steerRatio = 13.447
-      ret.minSteerSpeed = 32 * CV.MPH_TO_MS
-    elif candidate == CAR.GENESIS:
+    if candidate == CAR.GENESIS:
       ret.mass = 2060
       ret.wheelbase = 3.01
       ret.steerRatio = 12.069
-    elif candidate == CAR.KIA_OPTIMA:
-      ret.mass = 3558 * CV.LB_TO_KG
-      ret.wheelbase = 2.80
-      ret.steerRatio = 13.75
-    elif candidate == CAR.KIA_SORENTO:
-      ret.mass = 1985
-      ret.wheelbase = 2.78
-      ret.steerRatio = 13.76
-    elif candidate == CAR.KIA_STINGER:  #AWD
-      ret.mass = 1814
-      ret.wheelbase = 2.906
-      ret.steerRatio = 11.451
-    elif candidate == CAR.SANTA_FE:  #AWD
-      ret.mass = 3982 * CV.LB_TO_KG
-      ret.wheelbase = 2.766
-      ret.steerRatio = 13.321
-    elif candidate == CAR.UNKNOWN:
+    else:
       ret.mass = 1800
       ret.wheelbase = 2.8
-      ret.steerRatio = 13.0
+      ret.steerRatio = 13.5
 
     ret.mass += std_cargo
     ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
