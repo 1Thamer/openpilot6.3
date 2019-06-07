@@ -78,9 +78,14 @@ class CarInterface(object):
     ret.steerRateCost = 0.50
     tire_stiffness_factor = 0.60
     ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.12]
+    ret.longitudinalTuning.kpV = [0.]
     ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.06]
+    ret.longitudinalTuning.kiV = [0.]
+    ret.longitudinalTuning.deadzoneBP = [0.]
+    ret.longitudinalTuning.deadzoneV = [0.]
+    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.12], [0.06]]
+
     ret.minSteerSpeed = 0.
 
     if candidate == CAR.ELANTRA:

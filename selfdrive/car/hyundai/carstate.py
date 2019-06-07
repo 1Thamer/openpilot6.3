@@ -215,10 +215,13 @@ class CarState(object):
  #BB init ui buttons
   def init_ui_buttons(self):
     btns = []
-    btns.append(UIButton("sound", "SND", 0, "", 0))
+    btns.append(UIButton("sound", "SND", 1, "", 0))
     btns.append(UIButton("alca", "ALC", 1, self.alcaLabels[self.alcaMode], 1))
     btns.append(UIButton("cam", "CAM", 1, "", 2))
-    btns.append(UIButton("alwon", "MAN", 1, "", 3))
+    btns.append(UIButton("alwon", "MAD", 1, "", 3))
+    btns.append(UIButton("", "", 0, "", 4))
+    btns.append(UIButton("", "", 0, "", 5))
+
     return btns
 
   #BB update ui buttons

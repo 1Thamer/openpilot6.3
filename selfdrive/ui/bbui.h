@@ -1022,8 +1022,8 @@ void  bb_ui_poll_update( UIState *s) {
             LOGW("Car folder set (%s)", s->b.car_folder);
 
             if (strcmp(s->b.car_folder,"arne")==0) {
-              s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.arne.png", 1);
-              s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.arne2.png", 1);
+              s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
+              s->b.img_logo2 = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);
               LOGW("Spinning logo set for Arne");
 	    } else if (strcmp(s->b.car_folder,"tesla")==0) {
               s->b.img_logo = nvgCreateImage(s->vg, "../assets/img_spinner_comma.png", 1);

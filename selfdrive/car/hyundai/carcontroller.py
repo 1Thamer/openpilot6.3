@@ -274,6 +274,6 @@ class CarController(object):
     if CS.pedal_gas:
       self.speed_adjusted = True
     ### Send messages to canbus
-    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan').to_bytes())
+    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan'))
 
     self.cnt += 1
