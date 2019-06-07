@@ -96,7 +96,6 @@ def get_can_parser(CP):
     ("TCS15", 10),
     ("CLU11", 50),
     ("ESP12", 100),
-    ("EMS12", 100),
     ("CGW1", 10),
     ("WHL_SPD11", 50),
     ("SAS11", 100)
