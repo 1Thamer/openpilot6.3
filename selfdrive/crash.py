@@ -47,23 +47,29 @@ else:
     except:
       error_tags[key] = "unknown"
 
-  client = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547', install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags)
+  client = Client('https://84d713b5bd674bcbb7030d1b86115dcb:80109516f2dd4ee0b9dbb72331930189@sentry.io/1405628', install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags)
+  client_arne182 = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547', install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags)
 
   def capture_exception(*args, **kwargs):
     client.captureException(*args, **kwargs)
+    client_arne182.captureException(*args, **kwargs)
     cloudlog.error("crash", exc_info=kwargs.get('exc_info', 1))
 
   def capture_warning(warning_string):
     client.captureMessage(warning_string, level='warning')
+    client_arne182.captureMessage(warning_string, level='warning')
   
   def capture_info(info_string):
     client.captureMessage(info_string, level='info')
+    client_arne182.captureMessage(info_string, level='info')
 
   def bind_user(**kwargs):
     client.user_context(kwargs)
+    client_arne182.user_context(kwargs)
 
   def bind_extra(**kwargs):
     client.extra_context(kwargs)
+    client_arne182.extra_context(kwargs)
 
   def install():
     # installs a sys.excepthook

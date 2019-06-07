@@ -104,16 +104,21 @@ def report_tombstone(fn, client):
 def main(gctx):
   initial_tombstones = set(get_tombstones())
 
-  client = Client('https://d3b175702f62402c91ade04d1c547e68:b20d68c813c74f63a7cdf9c4039d8f56@sentry.io/157615',
+  client = Client('https://84d713b5bd674bcbb7030d1b86115dcb:80109516f2dd4ee0b9dbb72331930189@sentry.io/1405628',
+                  install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty}, string_max_length=10000)
+
+  client_arne182 = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547',
                   install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty}, string_max_length=10000)
 
   client.user_context({'id': os.environ.get('DONGLE_ID')})
+  client_arne182.user_context({'id': os.environ.get('DONGLE_ID')})
   while True:
     now_tombstones = set(get_tombstones())
 
     for fn, ctime in (now_tombstones - initial_tombstones):
       cloudlog.info("reporting new tombstone %s", fn)
       report_tombstone(fn, client)
+      report_tombstone(fn, client_arne182)
 
     initial_tombstones = now_tombstones
     time.sleep(5)
