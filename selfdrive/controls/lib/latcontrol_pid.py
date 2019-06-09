@@ -76,7 +76,7 @@ class LatControlPID(object):
     self.sat_flag = False
 
     # If PID is saturated, set time which it was saturated
-    if self.pid.saturated and self.sat_time < 0.5:
+    if bool(self.pid.saturated) and self.sat_time < 0.5:
       self.sat_time = sec_since_boot()
 
     # To save cycles, nest in sat_time check
@@ -86,7 +86,7 @@ class LatControlPID(object):
         self.sat_flag = True
 
       # If it is no longer saturated, clear the sat flag and timer
-      if not self.pid.saturated:
+      if not bool(self.pid.saturated):
         self.sat_time = 0.0
 
     return output_steer, float(self.angle_steers_des), pid_log
