@@ -104,7 +104,8 @@ def fingerprint(logcan, timeout):
 
     # bail if no cars left or we've been waiting too long
     elif len(candidate_cars) == 0 or (timeout and (ts - st_passive) > timeout):
-      print "Fingerprinting Failed: Assume HKG Car due to fork"
+      print("Fingerprinting Not Found: Assume HKG Car due to fork")
+      params.put("CachedFingerprint", json.dumps(["HKG ON EMMERTEX FORK", {int(key): value for key, value in finger.items()}]))  # probably can remove     long to int conversion
       return "HKG ON EMMERTEX FORK", finger
 
     time.sleep(0.01)
