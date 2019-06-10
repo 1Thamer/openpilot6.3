@@ -192,7 +192,7 @@ class CarState(object):
     self.pid = None
 
     #BB custom message counter
-    self.custom_alert_counter = 100 #set to 100 for 1 second display; carcontroller will take down to zero
+    self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
     
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
