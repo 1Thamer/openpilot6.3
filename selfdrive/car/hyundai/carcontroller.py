@@ -209,9 +209,9 @@ class CarController(object):
       can_sends.append(create_spas12(self.packer))
 
     # Force Disable
-    if pcm_cancel_cmd and (not force_enable):
-      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, 0))
-    elif CS.stopped and (self.cnt - self.last_resume_cnt) > 5:
+    #if pcm_cancel_cmd and (not force_enable):
+      #can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, 0))
+    if CS.stopped and (self.cnt - self.last_resume_cnt) > 5:
       self.last_resume_cnt = self.cnt
       can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, 0))
 
