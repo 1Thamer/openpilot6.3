@@ -211,7 +211,8 @@ class CarState(object):
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
     self.has_scc = False
-
+    self.lkas_button_on = 1
+    
  #BB init ui buttons
   def init_ui_buttons(self):
     btns = []
@@ -309,6 +310,8 @@ class CarState(object):
     self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4. if self.has_scc else False
     self.mdps11_strang = cp.vl["MDPS11"]["CR_Mdps_StrAng"]
     self.mdps11_stat = cp.vl["MDPS11"]["CF_Mdps_Stat"]
+
+    self.lkas_button_on = cp_cam.vl["LKAS11"]['CF_Lkas_LdwsSysState'] != 0
 
     self.user_brake = 0
 
