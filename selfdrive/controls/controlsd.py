@@ -251,6 +251,10 @@ def state_control(rcv_times, plan, path_plan, CS, CP, state, events, v_cruise_kp
     angle_model_bias = learn_angle_model_bias(active, CS.vEgo, angle_model_bias,
                                       path_plan.cPoly, path_plan.cProb, CS.steeringAngle,
                                       CS.steeringPressed)
+  try:
+    gasinterceptor = CP.enableGasInterceptor
+  except AttributeError:
+    gasinterceptor = False
 
   cur_time = sec_since_boot()
   radar_time = rcv_times['plan'] - plan.processingDelay # Subtract processing delay to get the original measurement time
@@ -262,11 +266,11 @@ def state_control(rcv_times, plan, path_plan, CS, CP, state, events, v_cruise_kp
 
   # Gas/Brake PID loop
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
-                                              v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
+                                              v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP, gasinterceptor, CS.gasbuttonstatus)
   # Steering PID loop and lateral MPC
+
   actuators.steer, actuators.steerAngle, lac_log = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate,
                                                               CS.steeringPressed, CP, VM, path_plan)
-
   # Send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert:
     AM.add("steerSaturated", enabled)
@@ -323,9 +327,9 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
     ldw_allowed = CS.vEgo > 12.5 and not blinker
 
     if len(list(path_plan.pathPlan.rPoly)) == 4:
-      CC.hudControl.rightLaneDepart = bool(ldw_allowed and path_plan.pathPlan.rPoly[3] > -(1 + CAMERA_OFFSET) and right_lane_visible)
+      CC.hudControl.rightLaneDepart = bool(ldw_allowed and path_plan.pathPlan.rPoly[3] > -(1.08 + CAMERA_OFFSET) and right_lane_visible)
     if len(list(path_plan.pathPlan.lPoly)) == 4:
-      CC.hudControl.leftLaneDepart = bool(ldw_allowed and path_plan.pathPlan.lPoly[3] < (1 - CAMERA_OFFSET) and left_lane_visible)
+      CC.hudControl.leftLaneDepart = bool(ldw_allowed and path_plan.pathPlan.lPoly[3] < (1.08 - CAMERA_OFFSET) and left_lane_visible)
 
     CC.hudControl.visualAlert = AM.visual_alert
     CC.hudControl.audibleAlert = AM.audible_alert
@@ -338,47 +342,95 @@ def data_send(plan, path_plan, CS, CI, CP, VM, state, events, actuators, v_cruis
   # live100
   dat = messaging.new_message()
   dat.init('live100')
-  dat.live100 = {
-    "alertText1": AM.alert_text_1,
-    "alertText2": AM.alert_text_2,
-    "alertSize": AM.alert_size,
-    "alertStatus": AM.alert_status,
-    "alertBlinkingRate": AM.alert_rate,
-    "alertType": AM.alert_type,
-    "alertSound": "",  # no EON sounds yet
-    "awarenessStatus": max(driver_status.awareness, 0.0) if isEnabled(state) else 0.0,
-    "driverMonitoringOn": bool(driver_status.monitor_on and driver_status.face_detected),
-    "canMonoTimes": list(CS.canMonoTimes),
-    "planMonoTime": plan_ts,
-    "pathPlanMonoTime": path_plan.logMonoTime,
-    "enabled": isEnabled(state),
-    "active": isActive(state),
-    "vEgo": CS.vEgo,
-    "vEgoRaw": CS.vEgoRaw,
-    "angleSteers": CS.steeringAngle,
-    "curvature": VM.calc_curvature(CS.steeringAngle * CV.DEG_TO_RAD, CS.vEgo),
-    "steerOverride": CS.steeringPressed,
-    "state": state,
-    "engageable": not bool(get_events(events, [ET.NO_ENTRY])),
-    "longControlState": LoC.long_control_state,
-    "vPid": float(LoC.v_pid),
-    "vCruise": float(v_cruise_kph),
-    "upAccelCmd": float(LoC.pid.p),
-    "uiAccelCmd": float(LoC.pid.i),
-    "ufAccelCmd": float(LoC.pid.f),
-    "angleSteersDes": float(LaC.angle_steers_des),
-    "vTargetLead": float(v_acc),
-    "aTarget": float(a_acc),
-    "jerkFactor": float(plan.jerkFactor),
-    "angleModelBias": float(angle_model_bias),
-    "gpsPlannerActive": plan.gpsPlannerActive,
-    "vCurvature": plan.vCurvature,
-    "decelForTurn": plan.decelForTurn,
-    "cumLagMs": -rk.remaining * 1000.,
-    "startMonoTime": int(start_time * 1e9),
-    "mapValid": plan.mapValid,
-    "forceDecel": bool(force_decel),
-  }
+  if CP.lateralTuning.which() == 'pid':
+    dat.live100 = {
+      "alertText1": AM.alert_text_1,
+      "alertText2": AM.alert_text_2,
+      "alertSize": AM.alert_size,
+      "alertStatus": AM.alert_status,
+      "alertBlinkingRate": AM.alert_rate,
+      "alertType": AM.alert_type,
+      "alertSound": "",  # no EON sounds yet
+      "awarenessStatus": max(driver_status.awareness, 0.0) if isEnabled(state) else 0.0,
+      "driverMonitoringOn": bool(driver_status.monitor_on and driver_status.face_detected),
+      "canMonoTimes": list(CS.canMonoTimes),
+      "planMonoTime": plan_ts,
+      "pathPlanMonoTime": path_plan.logMonoTime,
+      "enabled": isEnabled(state),
+      "active": isActive(state),
+      "vEgo": CS.vEgo,
+      "vEgoRaw": CS.vEgoRaw,
+      "angleSteers": CS.steeringAngle,
+      "curvature": VM.calc_curvature(CS.steeringAngle * CV.DEG_TO_RAD, CS.vEgo),
+      "steerOverride": CS.steeringPressed,
+      "state": state,
+      "engageable": not bool(get_events(events, [ET.NO_ENTRY])),
+      "longControlState": LoC.long_control_state,
+      "vPid": float(LoC.v_pid),
+      "vCruise": float(v_cruise_kph),
+      "upAccelCmd": float(LoC.pid.p),
+      "uiAccelCmd": float(LoC.pid.i),
+      "ufAccelCmd": float(LoC.pid.f),
+      "angleSteersDes": float(LaC.angle_steers_des),
+      "angleFFRatio": float(LaC.angle_ff_ratio),
+      "vTargetLead": float(v_acc),
+      "aTarget": float(a_acc),
+      "jerkFactor": float(plan.jerkFactor),
+      "angleModelBias": float(angle_model_bias),
+      "angleFFGain": float(LaC.angle_ff_gain),
+      "rateFFGain": float(LaC.rate_ff_gain),
+      "gpsPlannerActive": plan.gpsPlannerActive,
+      "vCurvature": plan.vCurvature,
+      "decelForTurn": plan.decelForTurn,
+      "cumLagMs": -rk.remaining * 1000.,
+      "startMonoTime": int(start_time * 1e9),
+      "mapValid": plan.mapValid,
+      "forceDecel": bool(force_decel),
+      "brakeLights": bool(CS.brakeLights),
+    }
+  else:
+    dat.live100 = {
+      "alertText1": AM.alert_text_1,
+      "alertText2": AM.alert_text_2,
+      "alertSize": AM.alert_size,
+      "alertStatus": AM.alert_status,
+      "alertBlinkingRate": AM.alert_rate,
+      "alertType": AM.alert_type,
+      "alertSound": "",  # no EON sounds yet
+      "awarenessStatus": max(driver_status.awareness, 0.0) if isEnabled(state) else 0.0,
+      "driverMonitoringOn": bool(driver_status.monitor_on and driver_status.face_detected),
+      "canMonoTimes": list(CS.canMonoTimes),
+      "planMonoTime": plan_ts,
+      "pathPlanMonoTime": path_plan.logMonoTime,
+      "enabled": isEnabled(state),
+      "active": isActive(state),
+      "vEgo": CS.vEgo,
+      "vEgoRaw": CS.vEgoRaw,
+      "angleSteers": CS.steeringAngle,
+      "curvature": VM.calc_curvature(CS.steeringAngle * CV.DEG_TO_RAD, CS.vEgo),
+      "steerOverride": CS.steeringPressed,
+      "state": state,
+      "engageable": not bool(get_events(events, [ET.NO_ENTRY])),
+      "longControlState": LoC.long_control_state,
+      "vPid": float(LoC.v_pid),
+      "vCruise": float(v_cruise_kph),
+      "upAccelCmd": float(LoC.pid.p),
+      "uiAccelCmd": float(LoC.pid.i),
+      "ufAccelCmd": float(LoC.pid.f),
+      "angleSteersDes": float(LaC.angle_steers_des),
+      "vTargetLead": float(v_acc),
+      "aTarget": float(a_acc),
+      "jerkFactor": float(plan.jerkFactor),
+      "angleModelBias": float(angle_model_bias),
+      "gpsPlannerActive": plan.gpsPlannerActive,
+      "vCurvature": plan.vCurvature,
+      "decelForTurn": plan.decelForTurn,
+      "cumLagMs": -rk.remaining * 1000.,
+      "startMonoTime": int(start_time * 1e9),
+      "mapValid": plan.mapValid,
+      "forceDecel": bool(force_decel),
+      "brakeLights": bool(CS.brakeLights),
+    }
 
   if CP.lateralTuning.which() == 'pid':
     dat.live100.lateralControlState.pidState = lac_log
@@ -486,6 +538,7 @@ def controlsd_thread(gctx=None, rate=100):
   path_plan.init('pathPlan')
 
   rk = Ratekeeper(rate, print_delay_threshold=2. / 1000)
+
   controls_params = params.get("ControlsParams")
 
   # Read angle offset from previous drive
@@ -494,6 +547,8 @@ def controlsd_thread(gctx=None, rate=100):
     try:
       controls_params = json.loads(controls_params)
       angle_model_bias = controls_params['angle_model_bias']
+      LaC.angle_ff_gain = max(1.0, controls_params['angle_ff_gain'])
+      LaC.rate_ff_gain = min(0.01, controls_params['rate_ff_gain'])
     except (ValueError, KeyError):
       pass
 

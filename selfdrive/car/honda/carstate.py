@@ -3,6 +3,13 @@ from common.kalman.simple_kalman import KF1D
 from selfdrive.can.parser import CANParser, CANDefine
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH
+import selfdrive.kegman_conf as kegman
+from selfdrive.car.modules.UIBT_module import UIButtons,UIButton
+from selfdrive.car.modules.UIEV_module import UIEvents
+#import numpy as np
+#import os
+#import subprocess
+#import sys
 
 def parse_gear_shifter(gear, vals):
 
@@ -108,9 +115,14 @@ def get_can_signals(CP):
       checks += [("CRUISE_PARAMS", 10)]
     else:
       checks += [("CRUISE_PARAMS", 50)]
-
-  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
+      
+  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
+    signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1),
+                ("LEAD_DISTANCE", "RADAR_HUD", 0)]
+    checks += [("RADAR_HUD", 50)]
+  elif CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
     signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
+    checks += [("RADAR_HUD", 50)]
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
     signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1)]
   else:
@@ -168,6 +180,64 @@ def get_cam_can_parser(CP):
 
 class CarState(object):
   def __init__(self, CP):
+    self.lkMode = True
+    self.gasMode = int(kegman.conf['lastGasMode'])
+    self.gasLabels = ["dynamic","sport","eco"]
+    self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
+    self.Angle_Speed = [255,160,100,80,70,60,55,50,40,30,20,10,5]
+    self.blind_spot_on = bool(0)
+    #labels for ALCA modes
+    self.alcaLabels = ["MadMax","Normal","Wifey","off"]
+    steerRatio = CP.steerRatio
+    self.trLabels = ["0.9","dyn","2.7"]
+    self.alcaMode = int(kegman.conf['lastALCAMode'])     # default to last ALCA Mode on startup
+    if self.alcaMode > 3:
+      self.alcaMode = 3
+      kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
+    self.trMode = int(kegman.conf['lastTrMode'])     # default to last distance interval on startup
+    if self.trMode > 2:
+      self.trMode = 2
+      kegman.save({'lastTrMode': int(self.trMode)})  # write last distance bar setting to file
+    #if (CP.carFingerprint == CAR.MODELS):
+    # ALCA PARAMS
+    # max REAL delta angle for correction vs actuator
+    self.CL_MAX_ANGLE_DELTA_BP = [10., 32., 55.]
+    self.CL_MAX_ANGLE_DELTA = [2.2 * 15.4 / steerRatio, 1.1 * 15.4 / steerRatio, 0.5 * 15.4 / steerRatio]
+    # adjustment factor for merging steer angle to actuator; should be over 4; the higher the smoother
+    self.CL_ADJUST_FACTOR_BP = [10., 44.]
+    self.CL_ADJUST_FACTOR = [16. , 8.]
+    # reenrey angle when to let go
+    self.CL_REENTRY_ANGLE_BP = [10., 44.]
+    self.CL_REENTRY_ANGLE = [5. , 5.]
+    # a jump in angle above the CL_LANE_DETECT_FACTOR means we crossed the line
+    self.CL_LANE_DETECT_BP = [10., 44.]
+    self.CL_LANE_DETECT_FACTOR = [1.5, 2.5]
+    self.CL_LANE_PASS_BP = [10., 20., 44.]
+    self.CL_LANE_PASS_TIME = [40.,10., 4.] 
+    # change lane delta angles and other params
+    self.CL_MAXD_BP = [10., 32., 44.]
+    self.CL_MAXD_A = [.358, 0.084, 0.040] #delta angle based on speed; needs fine tune, based on Tesla steer ratio of 16.75
+    self.CL_MIN_V = 8.9 # do not turn if speed less than x m/2; 20 mph = 8.9 m/s
+    # do not turn if actuator wants more than x deg for going straight; this should be interp based on speed
+    self.CL_MAX_A_BP = [10., 44.]
+    self.CL_MAX_A = [10., 10.] 
+    # define limits for angle change every 0.1 s
+    # we need to force correction above 10 deg but less than 20
+    # anything more means we are going to steep or not enough in a turn
+    self.CL_MAX_ACTUATOR_DELTA = 2.
+
+    self.CL_MIN_ACTUATOR_DELTA = 0. 
+    self.CL_CORRECTION_FACTOR = [1.,1.1,1.2]
+    self.CL_CORRECTION_FACTOR_BP = [10., 32., 44.]
+    #duration after we cross the line until we release is a factor of speed
+    self.CL_TIMEA_BP = [10., 32., 44.]
+    self.CL_TIMEA_T = [0.7 ,0.30, 0.30]
+    #duration to wait (in seconds) with blinkers on before starting to turn
+    self.CL_WAIT_BEFORE_START = 1
+    #END OF ALCA PARAMS
+    
+    self.read_distance_lines_prev = 3
+    
     self.CP = CP
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = self.can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
@@ -175,6 +245,8 @@ class CarState(object):
     self.user_gas, self.user_gas_pressed = 0., 0
     self.brake_switch_prev = 0
     self.brake_switch_ts = 0
+    self.lead_distance = 255
+    self.hud_lead = 0
 
     self.cruise_buttons = 0
     self.cruise_setting = 0
@@ -185,7 +257,19 @@ class CarState(object):
     self.right_blinker_on = 0
 
     self.stopped = 0
-
+    
+    #BB UIEvents
+    self.UE = UIEvents(self)
+    
+    #BB variable for custom buttons
+    self.cstm_btns = UIButtons(self,"Honda","honda")
+    
+    #BB pid holder for ALCA
+    self.pid = None
+    
+    #BB custom message counter
+    self.custom_alert_counter = -1 #set to 100 for 1 second display; carcontroller will take down to zero
+    
     # vEgo kalman filter
     dt = 0.01
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
@@ -195,6 +279,59 @@ class CarState(object):
                          C=[1.0, 0.0],
                          K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.0
+    #BB init ui buttons
+  def init_ui_buttons(self):
+    btns = []
+    btns.append(UIButton("alca", "ALC", 1, self.alcaLabels[self.alcaMode], 0))
+    btns.append(UIButton("lka","LKA",1,"",1))
+    btns.append(UIButton("mad","MAD",0,"",2))
+    btns.append(UIButton("sound","SND",0,"",3))
+    btns.append(UIButton("tr","TR",0,self.trLabels[self.trMode],4))
+    btns.append(UIButton("gas","Gas",1,self.gasLabels[self.gasMode],5))
+    return btns
+
+  #BB update ui buttons
+  def update_ui_buttons(self,id,btn_status):
+    if self.cstm_btns.btns[id].btn_status > 0:
+      if (id == 0) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="alca":
+          if self.cstm_btns.btns[id].btn_label2 == self.alcaLabels[self.alcaMode]:
+            self.alcaMode = (self.alcaMode + 1 ) % 4
+            kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
+          else:
+            self.alcaMode = 0
+            kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
+          self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
+          self.cstm_btns.hasChanges = True
+          if self.alcaMode == 3:
+            self.cstm_btns.set_button_status("alca", 0)
+          
+      elif (id == 4) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="tr":
+          if self.cstm_btns.btns[id].btn_label2 == self.trLabels[self.trMode]:
+            self.trMode = (self.trMode + 1 ) % 3
+            kegman.save({'lastTrMode': int(self.trMode)})  # write last distance bar setting to file
+          else:
+            self.trMode = 0
+            kegman.save({'lastTrMode': int(self.trMode)})  # write last distance bar setting to file
+          self.cstm_btns.btns[id].btn_label2 = self.trLabels[self.trMode]
+          self.cstm_btns.hasChanges = True
+      elif (id == 5) and (btn_status == 0) and self.cstm_btns.btns[id].btn_name=="gas":
+          if self.cstm_btns.btns[id].btn_label2 == self.gasLabels[self.gasMode]:
+            self.gasMode = (self.gasMode + 1 ) % 3
+            kegman.save({'lastGasMode': int(self.gasMode)})  # write last GasMode setting to file
+          else:
+            self.gasMode = 0
+            kegman.save({'lastGasMode': int(self.gasMode)})  # write last GasMode setting to file
+          self.cstm_btns.btns[id].btn_label2 = self.gasLabels[self.gasMode]
+          self.cstm_btns.hasChanges = True
+      else:
+        self.cstm_btns.btns[id].btn_status = btn_status * self.cstm_btns.btns[id].btn_status
+    else:
+        self.cstm_btns.btns[id].btn_status = btn_status
+        if (id == 0) and self.cstm_btns.btns[id].btn_name=="alca":
+          self.alcaMode = (self.alcaMode + 1 ) % 4
+          kegman.save({'lastALCAMode': int(self.alcaMode)})  # write last distance bar setting to file
+          self.cstm_btns.btns[id].btn_label2 = self.alcaLabels[self.alcaMode]
+          self.cstm_btns.hasChanges = True
 
   def update(self, cp, cp_cam):
 
@@ -208,15 +345,20 @@ class CarState(object):
 
     # update prevs, update must run once per loop
     self.prev_cruise_buttons = self.cruise_buttons
-    self.prev_cruise_setting = self.cruise_setting
     self.prev_blinker_on = self.blinker_on
+    self.prev_lead_distance = self.lead_distance
 
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
 
     # ******************* parse out can *******************
 
-    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CRV_HYBRID): # TODO: find wheels moving bit in dbc
+
+    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH): # TODO: find wheels moving bit in dbc
+      self.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
+      self.door_all_closed = not cp.vl["SCM_FEEDBACK"]['DRIVERS_DOOR_OPEN']
+      self.lead_distance = cp.vl["RADAR_HUD"]['LEAD_DISTANCE']
+    elif self.CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.CRV_HYBRID):
       self.standstill = cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] < 0.1
       self.door_all_closed = not cp.vl["SCM_FEEDBACK"]['DRIVERS_DOOR_OPEN']
     elif self.CP.carFingerprint == CAR.ODYSSEY_CHN:
@@ -270,7 +412,7 @@ class CarState(object):
     self.angle_steers = cp.vl["STEERING_SENSORS"]['STEER_ANGLE']
     self.angle_steers_rate = cp.vl["STEERING_SENSORS"]['STEER_ANGLE_RATE']
 
-    self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
+    
     self.cruise_buttons = cp.vl["SCM_BUTTONS"]['CRUISE_BUTTONS']
 
     self.blinker_on = cp.vl["SCM_FEEDBACK"]['LEFT_BLINKER'] or cp.vl["SCM_FEEDBACK"]['RIGHT_BLINKER']
@@ -329,11 +471,46 @@ class CarState(object):
                          cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != self.brake_switch_ts)
       self.brake_switch_prev = self.brake_switch
       self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']
-
+    
+    self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(self.angle_steers, self.Angle, self.Angle_Speed)))
     self.user_brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     self.pcm_acc_status = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS']
     self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']
-
+    if self.cruise_setting == 3:
+      if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
+        self.trMode = (self.trMode + 1 ) % 3
+        kegman.save({'lastTrMode': int(self.trMode)})  # write last distance bar setting to file
+        self.cstm_btns.btns[4].btn_label2 = self.trLabels[self.trMode]
+    
+    self.read_distance_lines = self.trMode + 1
+    if self.read_distance_lines <> self.read_distance_lines_prev:
+      if self.read_distance_lines == 1:
+        self.UE.custom_alert_message(2,"Following distance set to 0.9s",200,3)
+      if self.read_distance_lines == 2:
+        self.UE.custom_alert_message(2,"Smooth following distance",200,3)
+      if self.read_distance_lines == 3:
+        self.UE.custom_alert_message(2,"Following distance set to 2.7s",200,3)
+      self.read_distance_lines_prev = self.read_distance_lines
+      
+    # when user presses LKAS button on steering wheel
+    if self.cruise_setting == 1:
+      if cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"] == 0:
+        if self.lkMode:
+          self.lkMode = False
+        else:
+          self.lkMode = True
+          
+    self.prev_cruise_setting = self.cruise_setting
+    self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
+    
+    if self.cstm_btns.get_button_status("lka") == 0:
+      self.lane_departure_toggle_on = False
+    else:
+      if self.alcaMode == 3 and (self.left_blinker_on or self.right_blinker_on):
+        self.lane_departure_toggle_on = False
+      else:
+        self.lane_departure_toggle_on = True
+      
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     # TODO: this should be ok for all cars. Verify it.
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PILOT_2019, CAR.RIDGELINE):

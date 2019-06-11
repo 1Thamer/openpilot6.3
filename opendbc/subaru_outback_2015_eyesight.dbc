@@ -78,7 +78,7 @@ BO_ 211 Brake_Type: 8 XXX
 BO_ 212 Wheel_Speeds: 8 XXX
  SG_ FL : 0|16@1+ (0.0592,0) [2|255] "KPH" XXX
  SG_ FR : 16|16@1+ (0.0592,0) [0|255] "KPH" XXX
- SG_ RL : 32|16@1+ (0.0592,0) [0|255] "" XXX
+ SG_ RL : 32|16@1+ (0.0592,0) [0|255] "KPH" XXX
  SG_ RR : 48|16@1+ (0.0592,0) [0|127] "KPH" XXX
 
 BO_ 320 Throttle: 8 XXX
@@ -106,6 +106,7 @@ BO_ 321 undefined: 8 XXX
  SG_ Engine_Stop : 15|1@0+ (1,0) [0|3] "" XXX
 
 BO_ 324 CruiseControl: 8 XXX
+ SG_ Standard_Cruise : 6|2@1+ (1,0) [0|3] "" XXX
  SG_ Cruise_On : 48|1@0+ (1,0) [0|3] "" XXX
  SG_ OnOffButton : 2|1@1+ (1,0) [0|3] "" XXX
  SG_ SET_BUTTON : 3|1@0+ (1,0) [0|3] "" XXX
@@ -120,15 +121,17 @@ BO_ 324 CruiseControl: 8 XXX
  SG_ Button : 13|1@0+ (1,0) [0|3] "" XXX
 
 BO_ 328 Transmission: 8 XXX
+ SG_ Gear_3 : 3|5@0+ (1,0) [11|15] "" XXX
+ SG_ Manual_Mode : 14|1@0+ (1,0) [0|15] "" XXX
  SG_ Counter : 11|4@0+ (1,0) [0|255] "" XXX
  SG_ NEW_SIGNAL_7 : 63|1@0+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_4 : 15|4@0+ (1,0) [0|15] "" XXX
- SG_ Paddle_Shift : 60|2@1+ (1,0) [0|255] "" XXX
+ SG_ Can_Down_Shift : 61|1@1+ (1,0) [0|255] "Used In Manual Mode, Tells When You Can Down Shift" XXX
+ SG_ Can_Up_Shift : 60|1@1+ (1,0) [0|255] "Used In Manual Mode, Tells When You Can Up Shift" XXX
  SG_ NEW_SIGNAL_1 : 31|1@0+ (1,0) [0|3] "" XXX
  SG_ Transmission_Engine : 16|15@1+ (1,0) [0|65535] "" XXX
  SG_ NEW_SIGNAL_5 : 43|1@0+ (1,0) [0|65535] "" XXX
- SG_ Gear : 48|4@1+ (1,0) [0|15] "" XXX
  SG_ Gear_2 : 52|4@1+ (1,0) [0|15] "" XXX
+ SG_ Gear_4 : 48|4@1+ (1,0) [0|15] "15=P, 14=R, 0=N, 1=D" XXX
  SG_ Manual_Gear : 4|4@1+ (1,0) [0|255] "" XXX
 
 BO_ 329 CVT_Ratio: 8 XXX
@@ -198,6 +201,7 @@ BO_ 356 ES_LKAS: 8 XXX
  SG_ LKAS_Command : 8|13@1- (-1,0) [-4096|4096] "" XXX
 
 BO_ 358 ES_DashStatus: 8 XXX
+ SG_ Set_Distance : 7|3@0+ (1,0) [1|4] "" XXX
  SG_ Counter : 39|3@0+ (1,0) [0|7] "" XXX
  SG_ Obstacle_Distance : 48|4@1+ (1,0) [0|15] "" XXX
  SG_ Cruise_Off : 22|1@0+ (1,0) [0|3] "" XXX
@@ -207,7 +211,7 @@ BO_ 358 ES_DashStatus: 8 XXX
  SG_ Untitled_Blank : 18|1@0+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_6_Blank : 21|1@0+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_5_Blank : 33|1@1+ (1,0) [0|3] "" XXX
- SG_ NEW_SIGNAL_4_Blank : 34|1@1+ (1,0) [0|7] "" XXX
+ SG_ Cruise_Activatable : 34|1@1+ (1,0) [0|7] "" XXX
  SG_ NEW_SIGNAL_1 : 35|1@0+ (1,0) [0|31] "" XXX
  SG_ Steep_Hill_Disengage : 44|1@0+ (1,0) [0|3] "" XXX
  SG_ ES_Error : 32|1@1+ (1,0) [0|3] "" XXX
@@ -232,8 +236,11 @@ BO_ 359 ES_LDW: 8 XXX
  SG_ Left_Depart_Front : 51|1@0+ (1,0) [0|3] "" XXX
  SG_ Sig3All_Depart : 52|1@0+ (1,0) [0|3] "" XXX
 
-BO_ 392 Counter_0: 8 XXX
- SG_ Counter : 16|4@1+ (1,0) [0|15] "" XXX
+BO_ 392 Unknown_2: 8 XXX
+ SG_ Parking_Brake : 7|1@1+ (1,0) [0|1] "" XXX
+ SG_ Parking_Brake_2 : 11|1@1+ (1,0) [0|1] "" XXX
+ SG_ Hill_Hold : 10|1@1+ (1,0) [0|1] "" XXX
+ SG_ Counter : 17|3@1+ (1,0) [0|255] "" XXX
 
 BO_ 554 NEW_MSG_3: 8 XXX
  SG_ Counter : 0|4@1+ (1,0) [0|255] "" XXX
@@ -251,6 +258,7 @@ BO_ 640 NEW_MSG_10: 8 XXX
  SG_ NEW_SIGNAL_7 : 38|1@0+ (1,0) [0|3] "" XXX
 
 BO_ 642 Dashlights: 8 XXX
+ SG_ Dash_Dimmer : 16|8@1+ (1,0) [18|250] "" XXX
  SG_ NEW_SIGNAL_2 : 32|1@1+ (1,0) [0|15] "" XXX
  SG_ Counter : 15|4@0+ (1,0) [0|15] "" XXX
  SG_ NEW_SIGNAL_1 : 0|12@1+ (1,0) [0|255] "" XXX
@@ -344,7 +352,6 @@ CM_ SG_ 212 FL "KPH";
 CM_ SG_ 212 RL "KPH";
 CM_ SG_ 320 Off_Throttle_2 "Less sensitive";
 CM_ SG_ 320 Throttle_Body_ "Throttle related";
-CM_ SG_ 328 Gear "15 = P, 14 = R, 0 = N, 1-6=gear";
 CM_ SG_ 328 Gear_2 "15 = P, 14 = R, 0 = N, 1-6=gear";
 CM_ SG_ 353 NEW_SIGNAL_3_Blank "always 2";
 CM_ SG_ 353 NEW_SIGNAL_2_Blank "0";

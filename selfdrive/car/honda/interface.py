@@ -11,6 +11,10 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, AUDIO_HUD, VISUAL_HUD
 from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
+import selfdrive.kegman_conf as kegman
+
+angleSteersoffset = float(kegman.conf['angle_steers_offset'])  # deg offset
+
 
 try:
   from selfdrive.car.honda.carcontroller import CarController
@@ -90,6 +94,7 @@ class CarInterface(object):
     self.brake_pressed_prev = False
     self.can_invalid_count = 0
     self.cam_can_invalid_count = 0
+    self.cruise_enabled_prev = False
 
     self.cp = get_can_parser(CP)
     self.cp_cam = get_cam_can_parser(CP)
@@ -191,7 +196,7 @@ class CarInterface(object):
       ret.mass = mass_civic
       ret.wheelbase = wheelbase_civic
       ret.centerToFront = centerToFront_civic
-      ret.steerRatio = 14.63  # 10.93 is end-to-end spec
+      ret.steerRatio = 15.58  # 0.5.10
       tire_stiffness_factor = 1.
       # Civic at comma has modified steering FW, so different tuning for the Neo in that car
       is_fw_modified = os.getenv("DONGLE_ID") in ['99c94dc769b5d96e']
@@ -211,13 +216,15 @@ class CarInterface(object):
       ret.mass = 3279. * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.83
       ret.centerToFront = ret.wheelbase * 0.39
-      ret.steerRatio = 15.96  # 11.82 is spec end-to-end
+      ret.steerRatio = 17.11  # 0.5.10
       tire_stiffness_factor = 0.8467
+
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+
 
     elif candidate == CAR.ACURA_ILX:
       stop_and_go = False
@@ -237,13 +244,15 @@ class CarInterface(object):
       ret.mass = 3572 * CV.LB_TO_KG + std_cargo
       ret.wheelbase = 2.62
       ret.centerToFront = ret.wheelbase * 0.41
-      ret.steerRatio = 15.3         # as spec
+      ret.steerRatio = 16.0         # 0.5.10
       tire_stiffness_factor = 0.444 # not optimized yet
+
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+
 
     elif candidate == CAR.CRV_5G:
       stop_and_go = True
@@ -318,12 +327,14 @@ class CarInterface(object):
       ret.wheelbase = 2.81
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.0         # as spec
+
       tire_stiffness_factor = 0.444 # not optimized yet
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
+
 
     elif candidate == CAR.RIDGELINE:
       stop_and_go = False
@@ -427,7 +438,7 @@ class CarInterface(object):
                            c.actuators.brake > brakelights_threshold)
 
     # steering wheel
-    ret.steeringAngle = self.CS.angle_steers
+    ret.steeringAngle = self.CS.angle_steers + angleSteersoffset
     ret.steeringRate = self.CS.angle_steers_rate
 
     # gear shifter lever
@@ -442,6 +453,8 @@ class CarInterface(object):
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = self.CS.cruise_speed_offset
     ret.cruiseState.standstill = False
+    
+    ret.readdistancelines = self.CS.read_distance_lines
 
     # TODO: button presses
     buttonEvents = []
@@ -496,7 +509,7 @@ class CarInterface(object):
       # TODO: more buttons?
       buttonEvents.append(be)
     ret.buttonEvents = buttonEvents
-
+    ret.gasbuttonstatus = self.CS.gasMode
     # events
     # TODO: event names aren't checked at compile time.
     # Maybe there is a way to use capnp enums directly
@@ -516,6 +529,11 @@ class CarInterface(object):
     else:
       self.cam_can_invalid_count = 0
 
+    if ret.cruiseState.enabled and not self.cruise_enabled_prev:
+      disengage_event = True
+    else:
+      disengage_event = False
+
     if self.CS.steer_error:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     elif self.CS.steer_warning:
@@ -524,9 +542,9 @@ class CarInterface(object):
       events.append(create_event('brakeUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     if not ret.gearShifter == 'drive':
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.doorOpen:
+    if ret.doorOpen and disengage_event:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
+    if ret.seatbeltUnlatched and disengage_event:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.esp_disabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
@@ -545,10 +563,12 @@ class CarInterface(object):
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
     if (ret.gasPressed and not self.gas_pressed_prev) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
-      events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
+      if self.CS.cstm_btns.get_button_status("mad") == 0:
+        events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
     if ret.gasPressed:
-      events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+      if self.CS.cstm_btns.get_button_status("mad") == 0:
+        events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
@@ -597,6 +617,7 @@ class CarInterface(object):
     self.brake_pressed_prev = ret.brakePressed
 
     # cast to reader so it can't be modified
+    self.cruise_enabled_prev = ret.cruiseState.enabled
     return ret.as_reader()
 
   # pass in a car.CarControl

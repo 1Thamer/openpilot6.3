@@ -7,6 +7,8 @@ from selfdrive.car import create_gas_command
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import AH, CruiseButtons, CAR
 from selfdrive.can.packer import CANPacker
+from selfdrive.car.modules.ALCA_module import ALCAController
+import selfdrive.kegman_conf as kegman
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
@@ -71,7 +73,7 @@ def process_hud_alert(hud_alert):
 
 HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise", "mini_car", "car", "X4",
-                      "lanes", "beep", "chime", "fcw", "acc_alert", "steer_required"])
+                      "lanes", "beep", "chime", "fcw", "acc_alert", "steer_required", "dist_lines"])
 
 
 class CarController(object):
@@ -84,6 +86,8 @@ class CarController(object):
     self.enable_camera = enable_camera
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
+    self.prev_lead_distance = 0.0
+    self.ALCA = ALCAController(self,True,False)  # Enabled  True and SteerByAngle only False
 
   def update(self, sendcan, enabled, CS, frame, actuators, \
              pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel, \
@@ -128,7 +132,7 @@ class CarController(object):
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), 1, hud_car,
-                  0xc1, hud_lanes, int(snd_beep), snd_chime, fcw_display, acc_alert, steer_required)
+                  0xc1, hud_lanes, int(snd_beep), snd_chime, fcw_display, acc_alert, steer_required, CS.read_distance_lines)
 
     # **** process the car messages ****
 
@@ -143,12 +147,34 @@ class CarController(object):
     else:
       STEER_MAX = 0x1000
 
+    #update custom UI buttons and alerts
+    CS.UE.update_custom_ui()
+    if (frame % 1000 == 0):
+      CS.cstm_btns.send_button_info()
+      CS.UE.uiSetCarEvent(CS.cstm_btns.car_folder,CS.cstm_btns.car_name)
+
+    # Get the angle from ALCA.
+    alca_enabled = False
+    alca_steer = 0.
+    alca_angle = 0.
+    turn_signal_needed = 0
+    # Update ALCA status and custom button every 0.1 sec.
+    if self.ALCA.pid == None:
+      self.ALCA.set_pid(CS)
+    if (frame % 10 == 0):
+      self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
+    # steer torque
+    alca_angle, alca_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, frame, actuators)
+
+
     # steer torque is converted back to CAN reference (positive when steering right)
     apply_gas = clip(actuators.gas, 0., 1.)
     apply_brake = int(clip(self.brake_last * BRAKE_MAX, 0, BRAKE_MAX - 1))
-    apply_steer = int(clip(-actuators.steer * STEER_MAX, -STEER_MAX, STEER_MAX))
-
-    lkas_active = enabled and not CS.steer_not_allowed
+    apply_steer = int(clip(-alca_steer * STEER_MAX, -STEER_MAX, STEER_MAX))
+    if not CS.lane_departure_toggle_on:
+      apply_steer = 0
+    # any other cp.vl[0x18F]['STEER_STATUS'] is common and can happen during user override. sending 0 torque to avoid EPS sending error 5
+    lkas_active = enabled and not CS.steer_not_allowed and CS.lkMode
 
     # Send CAN commands.
     can_sends = []
@@ -168,7 +194,16 @@ class CarController(object):
       if pcm_cancel_cmd:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx))
       elif CS.stopped:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+        if CS.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
+          if CS.lead_distance > (self.prev_lead_distance + float(kegman.conf['leadDistance'])):
+            can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+        elif CS.CP.carFingerprint in (CAR.CIVIC_BOSCH):
+          if CS.hud_lead == 1:
+            can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+        else:
+          can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx))
+      else:
+        self.prev_lead_distance = CS.lead_distance
 
     else:
       # Send gas and brake commands.

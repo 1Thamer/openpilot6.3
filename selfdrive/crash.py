@@ -1,6 +1,8 @@
 """Install exception handler for process crash."""
 import os
 import sys
+import json
+#from subprocess import check_output
 import threading
 from selfdrive.version import version, dirty
 
@@ -18,18 +20,56 @@ if os.getenv("NOLOG") or os.getenv("NOCRASH"):
 else:
   from raven import Client
   from raven.transport.http import HTTPTransport
-  client = Client('https://1994756b5e6f41cf939a4c65de45f4f2:cefebaf3a8aa40d182609785f7189bd7@app.getsentry.com/77924',
-                  install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty})
+
+  error_tags = {'dirty': dirty, 'branch': 'unknown'}
+
+  try:
+    with open("/data/data/ai.comma.plus.offroad/files/persistStore/persist-auth", "r") as f:
+      auth = json.loads(f.read())
+    auth = json.loads(auth['commaUser'])
+    try:
+      error_tags['username'] = ''.join(char for char in auth['username'].decode('utf-8', 'ignore') if char.isalnum())
+    except:
+      error_tags['username'] = "char_error"
+    try:
+      error_tags['email'] = auth['email']
+    except:
+      pass
+  except:
+    pass
+
+  logging_data = {"branch": "/data/params/d/GitBranch", "commit": "/data/params/d/GitCommit", "remote": "/data/params/d/GitRemote"}
+
+  for key in logging_data:
+    try:
+      with open(logging_data[key], "r") as f:
+        error_tags[key] = str(f.read())
+    except:
+      error_tags[key] = "unknown"
+
+  client = Client('https://84d713b5bd674bcbb7030d1b86115dcb:80109516f2dd4ee0b9dbb72331930189@sentry.io/1405628', install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags)
+  client_arne182 = Client('https://137e8e621f114f858f4c392c52e18c6d:8aba82f49af040c8aac45e95a8484970@sentry.io/1404547', install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags)
 
   def capture_exception(*args, **kwargs):
     client.captureException(*args, **kwargs)
+    client_arne182.captureException(*args, **kwargs)
     cloudlog.error("crash", exc_info=kwargs.get('exc_info', 1))
+
+  def capture_warning(warning_string):
+    client.captureMessage(warning_string, level='warning')
+    client_arne182.captureMessage(warning_string, level='warning')
+  
+  def capture_info(info_string):
+    client.captureMessage(info_string, level='info')
+    client_arne182.captureMessage(info_string, level='info')
 
   def bind_user(**kwargs):
     client.user_context(kwargs)
+    client_arne182.user_context(kwargs)
 
   def bind_extra(**kwargs):
     client.extra_context(kwargs)
+    client_arne182.extra_context(kwargs)
 
   def install():
     # installs a sys.excepthook

@@ -35,6 +35,10 @@
 #include "cereal/gen/c/log.capnp.h"
 #include "slplay.h"
 
+//BB include BBUIState def
+#include "bbuistate.h"
+//BB end
+
 #define STATUS_STOPPED 0
 #define STATUS_DISENGAGED 1
 #define STATUS_ENGAGED 2
@@ -58,6 +62,7 @@ const int nav_w = 640;
 const int nav_ww= 760;
 const int sbr_w = 300;
 const int bdr_s = 30;
+const int bdr_is = 30;
 const int box_x = sbr_w+bdr_s;
 const int box_y = bdr_s;
 const int box_w = vwp_w-sbr_w-(bdr_s*2);
@@ -67,7 +72,7 @@ const int header_h = 420;
 const int footer_h = 280;
 const int footer_y = vwp_h-bdr_s-footer_h;
 
-const int UI_FREQ = 30;   // Hz
+const int UI_FREQ = 60;   // Hz
 
 const int MODEL_PATH_MAX_VERTICES_CNT = 98;
 const int MODEL_LANE_PATH_CNT = 3;
@@ -157,7 +162,15 @@ typedef struct UIScene {
   float awareness_status;
 
   uint64_t started_ts;
-
+  
+  //BB CPU TEMP
+  uint16_t maxCpuTemp;
+  uint32_t maxBatTemp;
+  float freeSpace;
+  float angleSteers;
+  float angleSteersDes;
+  //BB END CPU TEMP
+  bool brakeLights;
   // Used to show gps planner status
   bool gps_planner_active;
 
@@ -180,6 +193,9 @@ typedef struct {
 
 
 typedef struct UIState {
+  //BB define BBUIState
+  BBUIState b;
+  //BB end
   pthread_mutex_t lock;
   pthread_cond_t bg_cond;
 
@@ -198,6 +214,7 @@ typedef struct UIState {
   int img_turn;
   int img_face;
   int img_map;
+  int img_brake;
 
   zsock_t *thermal_sock;
   void *thermal_sock_raw;
@@ -213,6 +230,8 @@ typedef struct UIState {
   void *livempc_sock_raw;
   zsock_t *plus_sock;
   void *plus_sock_raw;
+  
+  
   zsock_t *map_data_sock;
   void *map_data_sock_raw;
 
@@ -291,6 +310,9 @@ typedef struct UIState {
   track_vertices_data track_vertices[2];
 
 } UIState;
+
+#include "dashcam.h"
+#include "bbui.h"
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -542,6 +564,9 @@ static void ui_init(UIState *s) {
   assert(s->img_map >= 0);
   s->img_map = nvgCreateImage(s->vg, "../assets/img_map.png", 1);
 
+  assert(s->img_brake >= 0);
+  s->img_brake = nvgCreateImage(s->vg, "../assets/img_brake_disc.png", 1);
+
   // init gl
   s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
   assert(s->frame_program);
@@ -765,6 +790,11 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   nvgBeginPath(s->vg);
   float g_xo = sz/5;
   float g_yo = sz/10;
+  //BB added for printing the car
+  if (s->b.tri_state_switch == 2) {
+    nvgRestore(s->vg);
+    bb_ui_draw_car(s);
+  } else {
   if (x >= 0 && y >= 0.) {
     nvgMoveTo(s->vg, x+(sz*1.35)+g_xo, y+sz+g_yo);
     nvgLineTo(s->vg, x, y-g_xo);
@@ -786,13 +816,12 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   }
   nvgFillColor(s->vg, fillColor);
   nvgFill(s->vg);
-
+  }
   nvgRestore(s->vg);
 }
 
 static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color) {
   const UIScene *scene = &s->scene;
-
   nvgSave(s->vg);
   nvgTranslate(s->vg, 240.0f, 0.0); // rgb-box space
   nvgTranslate(s->vg, -1440.0f / 2, -1080.0f / 2); // zoom 2x
@@ -963,11 +992,15 @@ static void draw_frame(UIState *s) {
     out_mat = &s->rear_frame_mat;
   }
   glActiveTexture(GL_TEXTURE0);
-  if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
-  } else if (!scene->frontview && s->cur_vision_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
+  //BB added to suppress video printing
+  if (s->b.tri_state_switch != 2) {
+    if (s->scene.frontview && s->cur_vision_front_idx >= 0) {
+      glBindTexture(GL_TEXTURE_2D, s->frame_front_texs[s->cur_vision_front_idx]);
+    } else if (!scene->frontview && s->cur_vision_idx >= 0) {
+      glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->cur_vision_idx]);
+    }
   }
+  //BB end  
 
   glUseProgram(s->frame_program);
   glUniform1i(s->frame_texture_loc, 0);
@@ -1018,6 +1051,11 @@ static void update_all_lane_lines_data(UIState *s, const PathData path, model_pa
 }
 
 static void ui_draw_lane(UIState *s, const PathData *path, model_path_vertices_data *pstart, NVGcolor color) {
+  //BB added to make the line blue
+  if (s->b.tri_state_switch == 2) {
+    color = nvgRGBA(66, 220, 244,250);
+  }
+  //BB end
   ui_draw_lane_line(s, pstart, color);
   float var = min(path->std, 0.7);
   color.a /= 4;
@@ -1027,6 +1065,10 @@ static void ui_draw_lane(UIState *s, const PathData *path, model_path_vertices_d
 
 static void ui_draw_vision_lanes(UIState *s) {
   const UIScene *scene = &s->scene;
+  //BB add to draw our lanes
+  if (s->b.tri_state_switch == 2) {
+    bb_draw_lane_fill(s);
+  }
   model_path_vertices_data *pvd = &s->model_path_vertices[0];
   if(s->model_changed) {
     update_all_lane_lines_data(s, scene->model.left_lane, pvd);
@@ -1108,13 +1150,13 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   bool is_set_over_limit = is_speedlim_valid && s->scene.engaged &&
                        is_cruise_set && maxspeed_calc > (speedlim_calc + speed_lim_off);
 
-  int viz_maxspeed_w = 184;
+  int viz_maxspeed_w = 180;
   int viz_maxspeed_h = 202;
   int viz_maxspeed_x = (ui_viz_rx + (bdr_s*2));
   int viz_maxspeed_y = (box_y + (bdr_s*1.5));
-  int viz_maxspeed_xo = 180;
+  int viz_maxspeed_xo = 0;
   viz_maxspeed_w += viz_maxspeed_xo;
-  viz_maxspeed_x += viz_maxspeed_w - (viz_maxspeed_xo * 2);
+  //viz_maxspeed_x += viz_maxspeed_w - (viz_maxspeed_xo *2);
 
   // Draw Background
   nvgBeginPath(s->vg);
@@ -1166,6 +1208,9 @@ static void ui_draw_vision_maxspeed(UIState *s) {
     nvgText(s->vg, viz_maxspeed_x+(viz_maxspeed_xo/2)+(viz_maxspeed_w/2), 242, "N/A", NULL);
   }
 
+  //BB START: add new measures panel  const int bb_dml_w = 180;
+	bb_ui_draw_UI(s) ;
+  //BB END: add new measures panel
 #ifdef DEBUG_TURN
   if (s->scene.decel_for_turn && s->scene.engaged){
     int v_curvature = s->scene.v_curvature * 2.2369363 + 0.5;
@@ -1309,8 +1354,8 @@ static void ui_draw_vision_event(UIState *s) {
   const int viz_event_h = (header_h - (bdr_s*1.5));
   if (s->scene.decel_for_turn && s->scene.engaged && s->limit_set_speed) {
     // draw winding road sign
-    const int img_turn_size = 160*1.5;
-    const int img_turn_x = viz_event_x-(img_turn_size/4);
+    const int img_turn_size = 160;
+    const int img_turn_x = viz_event_x-(img_turn_size/4)+80;
     const int img_turn_y = viz_event_y+bdr_s-25;
     float img_turn_alpha = 1.0f;
     nvgBeginPath(s->vg);
@@ -1327,6 +1372,7 @@ static void ui_draw_vision_event(UIState *s) {
     const int img_wheel_size = bg_wheel_size*1.5;
     const int img_wheel_x = bg_wheel_x-(img_wheel_size/2);
     const int img_wheel_y = bg_wheel_y-25;
+    const float img_rotation = s->scene.angleSteers/180*3.141592;
     float img_wheel_alpha = 0.1f;
     bool is_engaged = (s->status == STATUS_ENGAGED);
     bool is_warning = (s->status == STATUS_WARNING);
@@ -1344,12 +1390,16 @@ static void ui_draw_vision_event(UIState *s) {
       nvgFill(s->vg);
       img_wheel_alpha = 1.0f;
     }
+    nvgSave(s->vg);
+    nvgTranslate(s->vg,bg_wheel_x,(bg_wheel_y + (bdr_s*1.5)));
+    nvgRotate(s->vg,-img_rotation);
     nvgBeginPath(s->vg);
-    NVGpaint imgPaint = nvgImagePattern(s->vg, img_wheel_x, img_wheel_y,
+    NVGpaint imgPaint = nvgImagePattern(s->vg, img_wheel_x-bg_wheel_x, img_wheel_y-(bg_wheel_y + (bdr_s*1.5)),
       img_wheel_size, img_wheel_size, 0, s->img_wheel, img_wheel_alpha);
-    nvgRect(s->vg, img_wheel_x, img_wheel_y, img_wheel_size, img_wheel_size);
+    nvgRect(s->vg, img_wheel_x-bg_wheel_x, img_wheel_y-(bg_wheel_y + (bdr_s*1.5)), img_wheel_size, img_wheel_size);
     nvgFillPaint(s->vg, imgPaint);
     nvgFill(s->vg);
+    nvgRestore(s->vg);
   }
 }
 
@@ -1405,6 +1455,33 @@ static void ui_draw_vision_face(UIState *s) {
   nvgFill(s->vg);
 }
 
+static void ui_draw_vision_brake(UIState *s) {
+  const UIScene *scene = &s->scene;
+  const int brake_size = 96;
+  const int brake_x = (scene->ui_viz_rx + (brake_size * 5) + (bdr_is * 4));
+  const int brake_y = (footer_y + ((footer_h - brake_size) / 2));
+  const int brake_img_size = (brake_size * 1.5);
+  const int brake_img_x = (brake_x - (brake_img_size / 2));
+  const int brake_img_y = (brake_y - (brake_size / 4));
+
+  bool brake_valid = scene->brakeLights;
+  float brake_img_alpha = brake_valid ? 1.0f : 0.15f;
+  float brake_bg_alpha = brake_valid ? 0.3f : 0.1f;
+  NVGcolor brake_bg = nvgRGBA(0, 0, 0, (255 * brake_bg_alpha));
+  NVGpaint brake_img = nvgImagePattern(s->vg, brake_img_x, brake_img_y,
+    brake_img_size, brake_img_size, 0, s->img_brake, brake_img_alpha);
+
+  nvgBeginPath(s->vg);
+  nvgCircle(s->vg, brake_x, (brake_y + (bdr_is * 1.5)), brake_size);
+  nvgFillColor(s->vg, brake_bg);
+  nvgFill(s->vg);
+
+  nvgBeginPath(s->vg);
+  nvgRect(s->vg, brake_img_x, brake_img_y, brake_img_size, brake_img_size);
+  nvgFillPaint(s->vg, brake_img);
+  nvgFill(s->vg);
+}
+
 static void ui_draw_vision_header(UIState *s) {
   const UIScene *scene = &s->scene;
   int ui_viz_rx = scene->ui_viz_rx;
@@ -1420,7 +1497,7 @@ static void ui_draw_vision_header(UIState *s) {
   nvgFill(s->vg);
 
   ui_draw_vision_maxspeed(s);
-  ui_draw_vision_speedlimit(s);
+  //ui_draw_vision_speedlimit(s);
   ui_draw_vision_speed(s);
   ui_draw_vision_event(s);
 }
@@ -1435,6 +1512,7 @@ static void ui_draw_vision_footer(UIState *s) {
 
   ui_draw_vision_face(s);
   ui_draw_vision_map(s);
+  ui_draw_vision_brake(s);
 }
 
 static void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
@@ -1522,6 +1600,7 @@ static void ui_draw_vision(UIState *s) {
   nvgScale(s->vg, (float)viz_w / s->fb_w, (float)inner_height / s->fb_h);
   if (!scene->frontview && !scene->fullview) {
     ui_draw_world(s);
+    
   }
 
   nvgRestore(s->vg);
@@ -1604,10 +1683,16 @@ static ModelData read_model(cereal_ModelData_ptr modelp) {
 }
 
 static void update_status(UIState *s, int status) {
+  //BB Variable for the old status
+  int old_status = s->status;
   if (s->status != status) {
     s->status = status;
     // wake up bg thread to change
     pthread_cond_signal(&s->bg_cond);
+    //BB add sound
+    if ((old_status != STATUS_STOPPED) || (s->status != STATUS_DISENGAGED)) {
+      bb_ui_play_sound(s,s->status);
+    }
   }
 }
 
@@ -1615,6 +1700,8 @@ static void ui_update(UIState *s) {
   int err;
 
   if (s->vision_connect_firstrun) {
+    
+
     // cant run this in connector thread because opengl.
     // do this here for now in lieu of a run_on_main_thread event
 
@@ -1708,6 +1795,7 @@ static void ui_update(UIState *s) {
       close(s->ipc_fd);
       s->ipc_fd = -1;
       s->vision_connected = false;
+      
       return;
     }
     if (rp.type == VIPC_STREAM_ACQUIRE) {
@@ -1765,6 +1853,9 @@ static void ui_update(UIState *s) {
     polls[8].socket = s->plus_sock_raw; // plus_sock should be last
     polls[8].events = ZMQ_POLLIN;
     int num_polls = 9;
+    
+    
+
     int ret = zmq_poll(polls, num_polls, 0);
     if (ret < 0) {
       LOGW("poll failed (%d)", ret);
@@ -1776,7 +1867,7 @@ static void ui_update(UIState *s) {
 
     if (polls[0].revents || polls[1].revents || polls[2].revents ||
         polls[3].revents || polls[4].revents || polls[6].revents ||
-        polls[7].revents || polls[8].revents) {
+        polls[7].revents || polls[8].revents){
       // awake on any (old) activity
       set_awake(s, true);
     }
@@ -1825,12 +1916,17 @@ static void ui_update(UIState *s) {
       if (eventd.which == cereal_Event_live100) {
         struct cereal_Live100Data datad;
         cereal_read_Live100Data(&datad, eventd.live100);
-
+        s->scene.brakeLights = datad.brakeLights;
         if (datad.vCruise != s->scene.v_cruise) {
           s->scene.v_cruise_update_ts = eventd.logMonoTime;
         }
         s->scene.v_cruise = datad.vCruise;
         s->scene.v_ego = datad.vEgo;
+        //BB get angles
+        s->b.angleSteers = datad.angleSteers;
+	s->scene.angleSteers = datad.angleSteers;
+        s->b.angleSteersDes = datad.angleSteersDes;
+        //BB END
         s->scene.curvature = datad.curvature;
         s->scene.engaged = datad.enabled;
         s->scene.engageable = datad.engageable;
@@ -1987,6 +2083,24 @@ static void ui_update(UIState *s) {
         }
 
         s->scene.started_ts = datad.startedTs;
+
+        //BB CPU TEMP
+		    s->b.maxCpuTemp=datad.cpu0;
+        if (s->b.maxCpuTemp<datad.cpu1)
+        {
+            s->b.maxCpuTemp=datad.cpu1;
+        }
+        else if (s->b.maxCpuTemp<datad.cpu2)
+        {
+            s->b.maxCpuTemp=datad.cpu2;
+        }
+        else if (s->b.maxCpuTemp<datad.cpu3)
+        {
+            s->b.maxCpuTemp=datad.cpu3;
+        }
+        s->b.maxBatTemp=datad.bat;
+        s->b.freeSpace=datad.freeSpace;
+        //BB END CPU TEMP
       } else if (eventd.which == cereal_Event_uiLayoutState) {
         struct cereal_UiLayoutState datad;
         cereal_read_UiLayoutState(&datad, eventd.uiLayoutState);
@@ -2010,7 +2124,7 @@ static void ui_update(UIState *s) {
         s->scene.speedlimit = datad.speedLimit;
         s->scene.speedlimit_valid = datad.speedLimitValid;
         s->scene.map_valid = datad.mapValid;
-      }
+      } 
       capn_free(&ctx);
       zmq_msg_close(&msg);
     }
@@ -2143,11 +2257,14 @@ static void* bg_thread(void* args) {
   int bg_status = -1;
   while(!do_exit) {
     pthread_mutex_lock(&s->lock);
-    if (bg_status == s->status) {
+    //BB Change of background based on our color
+    int actual_status = bb_get_status(s);
+    if (bg_status == actual_status) {
       // will always be signaled if it changes?
       pthread_cond_wait(&s->bg_cond, &s->lock);
     }
-    bg_status = s->status;
+    bg_status = actual_status;
+    //BB End of background color change
     pthread_mutex_unlock(&s->lock);
 
     assert(bg_status < ARRAYSIZE(bg_colors));
@@ -2189,6 +2306,8 @@ int main() {
   UIState uistate;
   UIState *s = &uistate;
   ui_init(s);
+  //BB init our UI
+  bb_ui_init(s);
 
   pthread_t connect_thread_handle;
   err = pthread_create(&connect_thread_handle, NULL,
@@ -2204,7 +2323,7 @@ int main() {
   err = pthread_create(&bg_thread_handle, NULL,
                        bg_thread, s);
   assert(err == 0);
-
+  s->b.touch_last_width = s->scene.ui_viz_rw;
   TouchState touch = {0};
   touch_init(&touch);
   s->touch_fd = touch.fd;
@@ -2253,6 +2372,11 @@ int main() {
       set_brightness(s, NEO_BRIGHTNESS);
     }
 
+    int touched = 0;
+    int touch_x = -1, touch_y = -1;
+    int dc_touch_x = -1, dc_touch_y = -1;
+    s->b.touch_timeout = max(s->b.touch_timeout -1,0);
+
     if (!s->vision_connected) {
       // Car is not started, keep in idle state and awake on touch events
       zmq_pollitem_t polls[1] = {{0}};
@@ -2263,14 +2387,12 @@ int main() {
         LOGW("poll failed (%d)", ret);
       else if (ret > 0) {
         // awake on any touch
-        int touch_x = -1, touch_y = -1;
-        int touched = touch_read(&touch, &touch_x, &touch_y);
-        if (touched == 1) {
-          set_awake(s, true);
-        }
+        touched = touch_read(&touch, &touch_x, &touch_y);
       }
     } else {
       // Car started, fetch a new rgb image from ipc and peek for zmq events.
+      touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 20 : 500);
+      //touched = touch_read(&touch, &touch_x, &touch_y);
       ui_update(s);
       if(!s->vision_connected) {
         // Visiond process is just stopped, force a redraw to make screen blank again.
@@ -2279,6 +2401,30 @@ int main() {
         should_swap = true;
       }
     }
+    if (touched == 1) {
+      set_awake(s, true);
+      s->b.touch_last = true;
+      s->b.touch_last_x = touch_x;
+      s->b.touch_last_y = touch_y;
+      s->b.touch_timeout = touch_timeout;
+    }
+    //BB check touch
+    if (s->b.touch_last) {
+      if (s->b.touch_last_width != s->scene.ui_viz_rw) {
+        s->b.touch_last_width=s->scene.ui_viz_rw;
+        bb_handle_ui_touch(s,s->b.touch_last_x,s->b.touch_last_y);
+        dc_touch_x = s->b.touch_last_x;
+        dc_touch_y = s->b.touch_last_y;
+        s->b.touch_last = false;
+        s->b.touch_last_x = 0;
+        s->b.touch_last_y = 0;
+      }
+    }
+    
+    //s->b.touch_last_width = s->scene.ui_viz_rw;
+    //BB Update our cereal polls
+    bb_ui_poll_update(s);
+    
     // manage wakefulness
     if (s->awake_timeout > 0) {
       s->awake_timeout--;
@@ -2287,6 +2433,7 @@ int main() {
     }
     // Don't waste resources on drawing in case screen is off or car is not started.
     if (s->awake && s->vision_connected) {
+      dashcam(s, dc_touch_x, dc_touch_y);
       ui_draw(s);
       glFinish();
       should_swap = true;

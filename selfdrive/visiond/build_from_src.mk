@@ -110,7 +110,7 @@ else
 endif
 
 OBJS = visiond.o
-OUTPUT = visiond
+OUTPUT = visiond-normal
 
 .PHONY: all
 all: $(OUTPUT)
@@ -234,6 +234,7 @@ $(MODEL_OBJS): %.o: %.dlc
 
 .PHONY: clean
 clean:
-	rm -f visiond rgb_to_yuv_test rgb_to_yuv_test.o $(OBJS) $(DEPS)
+
+	rm -f visiond-normal rgb_to_yuv_test rgb_to_yuv_test.o $(OBJS) $(DEPS)
 
 -include $(DEPS)

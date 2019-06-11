@@ -1,10 +1,14 @@
 import os
 import time
+import json
 from common.basedir import BASEDIR
 from common.realtime import sec_since_boot
 from common.fingerprints import eliminate_incompatible_cars, all_known_cars
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
+import selfdrive.crash as crash
+from common.params import Params
+import selfdrive.kegman_conf as kegman
 
 def load_interfaces(x):
   ret = {}
@@ -13,6 +17,7 @@ def load_interfaces(x):
       imp = __import__('selfdrive.car.%s.interface' % interface, fromlist=['CarInterface']).CarInterface
     except ImportError:
       imp = None
+      print ("Import Exception on Interface " + interface)
     for car in x[interface]:
       ret[car] = imp
   return ret
@@ -47,6 +52,28 @@ def fingerprint(logcan, timeout):
   elif os.getenv("SIMULATOR") is not None:
     return ("simulator", None)
 
+  params = Params()
+
+  cached_fingerprint = params.get('CachedFingerprint')
+  if cached_fingerprint is not None and kegman.get("useCarCaching", True):  # if we previously identified a car and fingerprint and user hasn't disabled caching
+    cached_fingerprint = json.loads(cached_fingerprint)
+    try:
+      with open("/data/kegman.json", "r") as f:
+        cloudlog.warning(str(f.read()))
+    except:
+      pass
+    try:
+      with open("/data/params/d/ControlsParams", "r") as f:
+        cloudlog.warning(f.read())
+    except:
+      pass
+    try:
+      with open("/data/params/d/LiveParameters", "r") as f:
+        cloudlog.warning(f.read())
+    except:
+      pass
+    return (str(cached_fingerprint[0]), {long(key): value for key, value in cached_fingerprint[1].items()})  # not sure if dict of longs is required
+
   cloudlog.warning("waiting for fingerprint...")
   candidate_cars = all_known_cars()
   finger = {}
@@ -77,11 +104,30 @@ def fingerprint(logcan, timeout):
 
     # bail if no cars left or we've been waiting too long
     elif len(candidate_cars) == 0 or (timeout and (ts - st_passive) > timeout):
-      return None, finger
+      print("Fingerprinting Not Found: Assume HKG Car due to fork")
+      params.put("CachedFingerprint", json.dumps(["HKG ON EMMERTEX FORK", {int(key): value for key, value in finger.items()}]))  # probably can remove     long to int conversion
+      return "HKG ON EMMERTEX FORK", finger
 
     time.sleep(0.01)
-
+  try:
+    with open("/data/kegman.json", "r") as f:
+      cloudlog.warning(str(f.read()))
+  except:
+    pass
+  try:
+    with open("/data/params/d/ControlsParams", "r") as f:
+      cloudlog.warning(f.read())
+  except:
+    pass
+  try:
+    with open("/data/params/d/LiveParameters", "r") as f:
+      cloudlog.warning(f.read())
+  except:
+    pass
+  
   cloudlog.warning("fingerprinted %s", candidate_cars[0])
+
+  params.put("CachedFingerprint", json.dumps([candidate_cars[0], {int(key): value for key, value in finger.items()}]))  # probably can remove long to int conversion
   return (candidate_cars[0], finger)
 
 
@@ -96,7 +142,13 @@ def get_car(logcan, sendcan=None, passive=True):
       candidate = "mock"
     else:
       return None, None
-
+  else:
+    cloudlog.warning("car does match fingerprint: %r", fingerprints)
+    try:
+      crash.capture_warning("fingerprinted %s" % candidate)
+    except:  # fixes occasional travis errors
+      pass
+    
   interface_cls = interfaces[candidate]
 
   if interface_cls is None:
