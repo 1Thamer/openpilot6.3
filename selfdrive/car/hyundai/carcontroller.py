@@ -221,7 +221,7 @@ class CarController(object):
     if (self.cnt % 50) == 0:
       if self.params.get("LimitSetSpeed") == "1" and self.params.get("SpeedLimitOffset") is not None:
         # If Not Enabled, or cruise not set, allow auto speed adjustment again
-        if not (enabled and CS.acc_active_real):
+        if not (enabled and CS.acc_active):
           self.speed_adjusted = False
         # Attempt to read the speed limit from zmq
         map_data = messaging.recv_one_or_none(self.map_data_sock)
@@ -260,7 +260,7 @@ class CarController(object):
     # Ensure the speed limit is within range of the stock cruise control capabilities
     # Do the spamming 10 times a second, we might get from 0 to 10 successful
     # Only do this if we have not yet set the cruise speed
-    if CS.acc_active_real and not self.speed_adjusted and self.map_speed > (8.5 * self.speed_conv) and (self.cnt % 9 == 0 or self.cnt % 9 == 1):
+    if CS.acc_active and not self.speed_adjusted and self.map_speed > (8.5 * self.speed_conv) and (self.cnt % 9 == 0 or self.cnt % 9 == 1):
       # Use some tolerance because of Floats being what they are...
       if (CS.cruise_set_speed * self.speed_conv) > (self.map_speed * 1.005):
         can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.SET_DECEL, (1 if self.cnt % 9 == 1 else 0)))
