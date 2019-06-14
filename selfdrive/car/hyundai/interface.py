@@ -235,8 +235,6 @@ class CarInterface(object):
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.esp_disabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if not self.CS.main_on or not self.CS.lkas_button_on:
-      events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if ret.gearShifter == 'reverse':
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
@@ -246,6 +244,13 @@ class CarInterface(object):
       events.append(create_event('pcmEnable', [ET.ENABLE]))
     elif not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
+
+    if self.CS.lkas_button_on:
+      events.append(create_event('wrongCarMode', [ET.ENABLE]))
+    elif not self.CS.lkas_button_on:
+      events.append(create_event('wrongCarMode', [ET.USER_DISABLE]))
+
+
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
     if (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgoRaw > 0.1)):

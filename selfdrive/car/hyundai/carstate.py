@@ -211,7 +211,7 @@ class CarState(object):
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
     self.has_scc = False
-    self.lkas_button_on = 1
+    self.lkas_button_on = 0
     
  #BB init ui buttons
   def init_ui_buttons(self):
