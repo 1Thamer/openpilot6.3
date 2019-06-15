@@ -85,18 +85,6 @@ class CarController(object):
       else:
         self.checksum_learn_cnt += 1
 
-    force_enable = False
-
-    # I don't care about your opinion, deal with it!
-    if (CS.cstm_btns.get_button_status("alwon") > 0) and CS.acc_active:
-      enabled = True
-      force_enable = True
-
-    if (self.car_fingerprint in FEATURES["soft_disable"] and CS.v_wheel < 16.8):
-      enabled = False
-      force_enable = False
-
-
     if (CS.left_blinker_on == 1 or CS.right_blinker_on == 1):
       self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
 
@@ -117,10 +105,10 @@ class CarController(object):
     self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
 
     alca_angle, alca_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, self.cnt, actuators)
-    if force_enable and not CS.acc_active:
-      apply_steer = int(round(actuators.steer * SteerLimitParams.STEER_MAX))
-    else:
-      apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
+    #if CS.openpilot_mad_mode_on and not CS.acc_active:
+      #apply_steer = int(round(actuators.steer * SteerLimitParams.STEER_MAX))
+    #else:
+    apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
 
     # SPAS limit angle extremes for safety
     apply_steer_ang_req = np.clip(actuators.steerAngle, -1*(SteerLimitParams.STEER_ANG_MAX), SteerLimitParams.STEER_ANG_MAX)
@@ -209,8 +197,8 @@ class CarController(object):
       can_sends.append(create_spas12(self.packer))
 
     # Force Disable
-    #if pcm_cancel_cmd and (not force_enable):
-      #can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, 0))
+    if pcm_cancel_cmd and not CS.openpilot_mad_mode_on:
+      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, 0))
     if CS.stopped and (self.cnt - self.last_resume_cnt) > 5:
       self.last_resume_cnt = self.cnt
       can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, 0))
