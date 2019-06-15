@@ -29,6 +29,7 @@ class CarInterface(object):
     self.can_invalid_count = 0
     self.cruise_enabled_prev = False
     self.low_speed_alert = False
+    self.lkas_button_on_prev = False
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -240,17 +241,16 @@ class CarInterface(object):
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
 
-    if ret.cruiseState.enabled and not self.cruise_enabled_prev:
-      events.append(create_event('pcmEnable', [ET.ENABLE]))
-    elif not ret.cruiseState.enabled:
-      events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
-
-    if self.CS.lkas_button_on:
-      events.append(create_event('wrongCarMode', [ET.ENABLE]))
-    elif not self.CS.lkas_button_on:
-      events.append(create_event('wrongCarMode', [ET.USER_DISABLE]))
-
-
+    if self.CS.openpilot_mad_mode_on:
+      if self.CS.lkas_button_on and not self.lkas_button_on_prev:
+        events.append(create_event('wrongCarMode', [ET.ENABLE]))
+      elif not self.CS.lkas_button_on and self.lkas_button_on_prev:
+        events.append(create_event('wrongCarMode', [ET.USER_DISABLE]))
+    else:
+      if ret.cruiseState.enabled and not self.cruise_enabled_prev:
+        events.append(create_event('pcmEnable', [ET.ENABLE]))
+      elif not ret.cruiseState.enabled:
+        events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
     if (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgoRaw > 0.1)):
@@ -268,6 +268,8 @@ class CarInterface(object):
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
+    self.lkas_button_on_prev = self.CS.lkas_button_on
+
 
     return ret.as_reader()
 
