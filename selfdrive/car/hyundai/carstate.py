@@ -212,7 +212,8 @@ class CarState(object):
     self.right_blinker_flash = 0
     self.has_scc = False
     self.lkas_button_on = 0
-    
+    self.openpilot_mad_mode_on = False
+
  #BB init ui buttons
   def init_ui_buttons(self):
     btns = []
@@ -374,3 +375,6 @@ class CarState(object):
     self.lca_left = cp.vl["LCA11"]["CF_Lca_IndLeft"]
     self.lca_right = cp.vl["LCA11"]["CF_Lca_IndRight"]
     self.blind_spot_on = self.lca_left or self.lca_right
+
+    self.openpilot_mad_mode_on = self.cstm_btns.get_button_status("alwon")
+

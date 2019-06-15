@@ -30,7 +30,6 @@ class CarInterface(object):
     self.cruise_enabled_prev = False
     self.low_speed_alert = False
     self.lkas_button_on_prev = False
-    self.openpilot_mad_mode_on = self.CS.cstm_btns.get_button_status("alwon")
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -242,7 +241,7 @@ class CarInterface(object):
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
 
-    if self.openpilot_mad_mode_on:
+    if self.CS.openpilot_mad_mode_on:
       if self.CS.lkas_button_on and not self.lkas_button_on_prev:
         events.append(create_event('wrongCarMode', [ET.ENABLE]))
       elif not self.CS.lkas_button_on and self.lkas_button_on_prev:
