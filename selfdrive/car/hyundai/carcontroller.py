@@ -85,6 +85,10 @@ class CarController(object):
       else:
         self.checksum_learn_cnt += 1
 
+    #if (self.car_fingerprint in FEATURES["soft_disable"] and CS.v_wheel < 16.8):
+      #enabled = False
+
+
     if (CS.left_blinker_on == 1 or CS.right_blinker_on == 1):
       self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
 
