@@ -243,13 +243,15 @@ class CarInterface(object):
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-
+    if ret.vEgo < self.CP.minEnableSpeed and self.CP.enableDsu:
+      events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
+      if c.actuators.gas > 0.1:
+        # some margin on the actuator to not false trigger cancellation while stopping
+        events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
     if self.CS.openpilot_mad_mode_on:
       if self.CS.lkas_button_on:
-        if not self.lkas_button_on_prev:
-          events.append(create_event('wrongCarMode', [ET.ENABLE]))
-        elif ret.vEgo > self.CP.minSteerSpeed >= self.vEgo_prev:
-          events.append(create_event('wrongCarMode', [ET.ENABLE]))
+        if not self.lkas_button_on_prev or ret.vEgo > self.CP.minSteerSpeed >= self.vEgo_prev:
+          ret.cruiseState.enabled = True
       elif not self.CS.lkas_button_on and self.lkas_button_on_prev:
         events.append(create_event('wrongCarMode', [ET.USER_DISABLE]))
     else:
