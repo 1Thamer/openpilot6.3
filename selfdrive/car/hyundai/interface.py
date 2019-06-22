@@ -217,7 +217,7 @@ class CarInterface(object):
 
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
-    if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
+    if ret.vEgo < (self.CP.minSteerSpeed + 4.) and self.CP.minSteerSpeed > 10.:
       self.low_speed_alert = True
     if ret.vEgo > (self.CP.minSteerSpeed + 4.):
       self.low_speed_alert = False
@@ -243,15 +243,12 @@ class CarInterface(object):
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-    if ret.vEgo < self.CP.minEnableSpeed:
-      events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
-      if c.actuators.gas > 0.1:
-        # some margin on the actuator to not false trigger cancellation while stopping
-        events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
+    if ret.vEgo < self.CP.minSteerSpeed:
+      events.append(create_event('speedTooLow', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.openpilot_mad_mode_on:
       if self.CS.lkas_button_on:
         if not self.lkas_button_on_prev or ret.vEgo > self.CP.minSteerSpeed >= self.vEgo_prev:
-          ret.cruiseState.enabled = True
+          events.append(create_event('wrongCarMode', [ET.ENABLE]))
       elif not self.CS.lkas_button_on and self.lkas_button_on_prev:
         events.append(create_event('wrongCarMode', [ET.USER_DISABLE]))
     else:
@@ -261,10 +258,10 @@ class CarInterface(object):
         events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgoRaw > 0.1)):
+    if (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgoRaw > 0.1)) and not self.CS.lkas_button_on:
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    if ret.gasPressed:
+    if ret.gasPressed and not self.CS.lkas_button_on:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     if self.low_speed_alert:
