@@ -30,6 +30,8 @@ class CarInterface(object):
     self.cruise_enabled_prev = False
     self.low_speed_alert = False
     self.lkas_button_on_prev = False
+    self.vEgo_prev = False
+
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -93,6 +95,7 @@ class CarInterface(object):
       ret.mass = 2060
       ret.wheelbase = 3.01
       ret.steerRatio = 12.069
+      ret.minSteerSpeed = 35 * CV.MPH_TO_MS
     else:
       ret.mass = 1800
       ret.wheelbase = 2.8
@@ -214,9 +217,9 @@ class CarInterface(object):
 
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
-    if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
+    if ret.vEgo < (self.CP.minSteerSpeed + 1.) and self.CP.minSteerSpeed > 10.:
       self.low_speed_alert = True
-    if ret.vEgo > (self.CP.minSteerSpeed + 4.):
+    if ret.vEgo > (self.CP.minSteerSpeed + 1.):
       self.low_speed_alert = False
 
     # events
@@ -240,10 +243,12 @@ class CarInterface(object):
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-
+    if ret.vEgo < self.CP.minSteerSpeed:
+      events.append(create_event('speedTooLow', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.openpilot_mad_mode_on:
-      if self.CS.lkas_button_on and not self.lkas_button_on_prev:
-        events.append(create_event('wrongCarMode', [ET.ENABLE]))
+      if self.CS.lkas_button_on:
+        if not self.lkas_button_on_prev or ret.vEgo > self.CP.minSteerSpeed >= self.vEgo_prev:
+          events.append(create_event('wrongCarMode', [ET.ENABLE]))
       elif not self.CS.lkas_button_on and self.lkas_button_on_prev:
         events.append(create_event('wrongCarMode', [ET.USER_DISABLE]))
     else:
@@ -253,10 +258,10 @@ class CarInterface(object):
         events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgoRaw > 0.1)):
+    if (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgoRaw > 0.1)) and not self.CS.lkas_button_on:
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    if ret.gasPressed:
+    if ret.gasPressed and not self.CS.lkas_button_on:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     if self.low_speed_alert:
@@ -269,7 +274,7 @@ class CarInterface(object):
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
     self.lkas_button_on_prev = self.CS.lkas_button_on
-
+    self.vEgo_prev = ret.vEgo
 
     return ret.as_reader()
 

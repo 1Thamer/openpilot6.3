@@ -309,9 +309,9 @@ class CarState(object):
     self.mdps11_stat = cp.vl["MDPS11"]["CF_Mdps_Stat"]
 
     if cp_cam.can_valid == True:
-      self.lkas_button_on = cp_cam.vl["LKAS11"]['CF_Lkas_LdwsSysState'] != 0
+      self.lkas_button_on = 7 >= cp_cam.vl["LKAS11"]['CF_Lkas_LdwsSysState'] != 0
     elif cp_cam2.can_valid == True:
-      self.lkas_button_on = cp_cam2.vl["LKAS11"]['CF_Lkas_LdwsSysState'] != 0
+      self.lkas_button_on = 7 >= cp_cam2.vl["LKAS11"]['CF_Lkas_LdwsSysState'] != 0
 
     self.user_brake = 0
 
