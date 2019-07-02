@@ -21,6 +21,7 @@ class CarInterface(object):
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
     self.low_speed_alert = False
+    self.vEgo_prev = False
     self.force_disable = True
 
     # *** init the major players ***
@@ -271,9 +272,11 @@ class CarInterface(object):
     if ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
       self.force_disable = False
+    elif ret.vEgo > (self.CP.minEnableSpeed + 1):
+      self.force_disable = True
 
     # enable request in prius is simple, as we activate when Toyota is active (rising edge)
-    if ret.cruiseState.enabled and not self.cruise_enabled_prev:
+    if ret.cruiseState.enabled and (not self.cruise_enabled_prev or ret.vEgo > self.CP.minEnableSpeed >= self.vEgo_prev):
       events.append(create_event('pcmEnable', [ET.ENABLE]))
     elif not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
@@ -295,6 +298,7 @@ class CarInterface(object):
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
+    self.vEgo_prev = ret.vEgo
 
     return ret.as_reader()
 
