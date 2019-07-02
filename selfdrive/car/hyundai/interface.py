@@ -21,7 +21,7 @@ class CarInterface(object):
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
     self.low_speed_alert = False
-    self.force_disable = true
+    self.force_disable = True
 
     # *** init the major players ***
     self.CS = CarState(CP)
