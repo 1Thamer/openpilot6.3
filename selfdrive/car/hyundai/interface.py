@@ -21,6 +21,7 @@ class CarInterface(object):
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
     self.low_speed_alert = False
+    self.force_disable = true
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -269,6 +270,7 @@ class CarInterface(object):
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     if ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      self.force_disable = False
 
     # enable request in prius is simple, as we activate when Toyota is active (rising edge)
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
@@ -299,6 +301,7 @@ class CarInterface(object):
   def apply(self, c):
 
     hud_alert = get_hud_alerts(c.hudControl.visualAlert, c.hudControl.audibleAlert)
+    if not self.force_disable: c.cruiseControl.cancel = False
 
     can_sends = self.CC.update(c.enabled, self.CS, c.actuators,
                                c.cruiseControl.cancel, hud_alert)
