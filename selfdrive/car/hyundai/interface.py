@@ -298,6 +298,7 @@ class CarInterface(object):
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
+    self.vEgo_prev = ret.vEgo
 
     return ret.as_reader()
 
