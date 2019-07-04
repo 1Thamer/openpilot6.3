@@ -10,7 +10,8 @@ from panda import Panda, PandaDFU, BASEDIR
 def update_panda():
   with open(os.path.join(BASEDIR, "VERSION")) as f:
     repo_version = f.read()
-  repo_version += "-EON" if os.path.isfile('/EON') else "-DEV"
+  #repo_version += "-EON" if os.path.isfile('/EON') else "-DEV"
+  repo_version += "-unknown-DEBUG"
 
   panda = None
   panda_dfu = None

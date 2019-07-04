@@ -22,3 +22,4 @@ if __name__ == "__main__":
     ret = RI.update()
     print(chr(27) + "[2J")
     print(ret)
+

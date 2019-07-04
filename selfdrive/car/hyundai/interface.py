@@ -6,11 +6,15 @@ from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.hyundai.carstate import CarState, get_can_parser, get_camera_parser
 from selfdrive.car.hyundai.values import CAMERA_MSGS, CAR, get_hud_alerts, FEATURES
-from selfdrive.car import STD_CARGO_KG
+
+try:
+  from selfdrive.car.hyundai.carcontroller import CarController
+except ImportError:
+  CarController = None
 
 
 class CarInterface(object):
-  def __init__(self, CP, CarController):
+  def __init__(self, CP, sendcan=None):
     self.CP = CP
     self.VM = VehicleModel(CP)
     self.idx = 0
@@ -19,16 +23,18 @@ class CarInterface(object):
 
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
+    self.can_invalid_count = 0
     self.cruise_enabled_prev = False
     self.low_speed_alert = False
 
     # *** init the major players ***
     self.CS = CarState(CP)
     self.cp = get_can_parser(CP)
-    self.cp_cam = get_camera_parser(CP)
+    self.cp_cam, self.cp_cam2 = get_camera_parser(CP)
 
-    self.CC = None
-    if CarController is not None:
+    # sending if read only is False
+    if sendcan is not None:
+      self.sendcan = sendcan
       self.CC = CarController(self.cp.dbc_name, CP.carFingerprint)
 
   @staticmethod
@@ -42,6 +48,10 @@ class CarInterface(object):
   @staticmethod
   def get_params(candidate, fingerprint, vin=""):
 
+    # kg of standard extra cargo to count for drive, gas, etc...
+    std_cargo = 200 # Comma use 136kg  ..  Fuel = 60kg, Driver = 80kg (assuming 70kg and not naked), Cargo = 20kg .. This is the minimum.. assume 50% of the time there is a passenger also 70kg and not naked, so 40kg.
+    weight_dist_rear = 0.45
+
     ret = car.CarParams.new_message()
 
     ret.carName = "hyundai"
@@ -53,81 +63,56 @@ class CarInterface(object):
 
     # FIXME: hardcoding honda civic 2016 touring params so they can be used to
     # scale unknown params for other cars
-    mass_civic = 2923. * CV.LB_TO_KG + STD_CARGO_KG
+    mass_civic = 2923 * CV.LB_TO_KG + std_cargo
     wheelbase_civic = 2.70
-    centerToFront_civic = wheelbase_civic * 0.4
+    centerToFront_civic = wheelbase_civic * weight_dist_rear
     centerToRear_civic = wheelbase_civic - centerToFront_civic
     rotationalInertia_civic = 2500
     tireStiffnessFront_civic = 192150
     tireStiffnessRear_civic = 202500
-    tire_stiffness_factor = 1.
 
-    ret.steerActuatorDelay = 0.1  # Default delay
-    ret.steerRateCost = 0.5
+    ret.steerActuatorDelay = 0.10
+    ret.lateralTuning.pid.kf = 0.00006
+    ret.steerRateCost = 0.50
+    tire_stiffness_factor = 0.60
+    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.12], [0.06]]
+    ret.minSteerSpeed = 0.
 
-    if candidate == CAR.SANTA_FE:
-      ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.wheelbase = 2.766
-
-      # Values from optimizer
-      ret.steerRatio = 16.55  # 13.8 is spec end-to-end
-      tire_stiffness_factor = 0.82
-
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[9., 22.], [9., 22.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.35], [0.05, 0.09]]
-      ret.minSteerSpeed = 0.
-    elif candidate == CAR.KIA_SORENTO:
-      ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 1985. + STD_CARGO_KG
-      ret.wheelbase = 2.78
-      ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-      ret.minSteerSpeed = 0.
-    elif candidate == CAR.ELANTRA:
-      ret.lateralTuning.pid.kf = 0.00006
-      ret.mass = 1275. + STD_CARGO_KG
+    if candidate == CAR.ELANTRA:
+      ret.mass = 1275
       ret.wheelbase = 2.7
-      ret.steerRatio = 13.73   #Spec
-      tire_stiffness_factor = 0.385
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+      ret.steerRatio = 13.447
       ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.GENESIS:
-      ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 2060. + STD_CARGO_KG
+      ret.mass = 2060
       ret.wheelbase = 3.01
-      ret.steerRatio = 16.5
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
-      ret.minSteerSpeed = 35 * CV.MPH_TO_MS
+      ret.steerRatio = 12.069
     elif candidate == CAR.KIA_OPTIMA:
-      ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 3558. * CV.LB_TO_KG
+      ret.mass = 3558 * CV.LB_TO_KG
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
-      tire_stiffness_factor = 0.5
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-    elif candidate == CAR.KIA_STINGER:
-      ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 1825. + STD_CARGO_KG
+    elif candidate == CAR.KIA_SORENTO:
+      ret.mass = 1985
       ret.wheelbase = 2.78
-      ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-      ret.minSteerSpeed = 0.
+      ret.steerRatio = 13.76
+    elif candidate == CAR.KIA_STINGER:  #AWD
+      ret.mass = 1814
+      ret.wheelbase = 2.906
+      ret.steerRatio = 11.451
+    elif candidate == CAR.SANTA_FE:  #AWD
+      ret.mass = 3982 * CV.LB_TO_KG
+      ret.wheelbase = 2.766
+      ret.steerRatio = 13.321
+    elif candidate == CAR.UNKNOWN:
+      ret.mass = 1800
+      ret.wheelbase = 2.8
+      ret.steerRatio = 13.0
 
+    ret.mass += std_cargo
     ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
-    ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.]
-    ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.]
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.]
 
-    ret.centerToFront = ret.wheelbase * 0.4
+    ret.centerToFront = ret.wheelbase * weight_dist_rear
 
     centerToRear = ret.wheelbase - ret.centerToFront
 
@@ -150,6 +135,14 @@ class CarInterface(object):
     ret.steerRatioRear = 0.
     ret.steerControlType = car.CarParams.SteerControlType.torque
 
+
+    ret.longitudinalTuning.kpBP = [0.]
+    ret.longitudinalTuning.kpV = [0.]
+    ret.longitudinalTuning.kiBP = [0.]
+    ret.longitudinalTuning.kiV = [0.]
+    ret.longitudinalTuning.deadzoneBP = [0.]
+    ret.longitudinalTuning.deadzoneV = [0.]
+
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [0.]
     ret.steerMaxV = [1.0]
@@ -161,7 +154,7 @@ class CarInterface(object):
     ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
     ret.openpilotLongitudinalControl = False
 
-    ret.steerLimitAlert = False
+    ret.steerLimitAlert = True
     ret.stoppingControl = False
     ret.startAccel = 0.0
 
@@ -171,15 +164,12 @@ class CarInterface(object):
   def update(self, c):
     # ******************* do can recv *******************
     canMonoTimes = []
-    can_rcv_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
-    cam_rcv_valid, _ = self.cp_cam.update(int(sec_since_boot() * 1e9), False)
-
-    self.CS.update(self.cp, self.cp_cam)
+    self.cp.update(int(sec_since_boot() * 1e9), False)
+    self.cp_cam.update(int(sec_since_boot() * 1e9), False)
+    self.cp_cam2.update(int(sec_since_boot() * 1e9), False)
+    self.CS.update(self.cp, self.cp_cam, self.cp_cam2)
     # create message
     ret = car.CarState.new_message()
-
-    ret.canValid = can_rcv_valid and cam_rcv_valid and self.cp.can_valid  # TODO: check cp_cam validity
-
     # speeds
     ret.vEgo = self.CS.v_ego
     ret.vEgoRaw = self.CS.v_ego_raw
@@ -191,13 +181,9 @@ class CarInterface(object):
     ret.wheelSpeeds.rl = self.CS.v_wheel_rl
     ret.wheelSpeeds.rr = self.CS.v_wheel_rr
 
+    ret.canValid = self.CS.can_valid
     # gear shifter
-    if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
-      ret.gearShifter = self.CS.gear_shifter_cluster
-    elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
-      ret.gearShifter = self.CS.gear_tcu
-    else:
-      ret.gearShifter = self.CS.gear_shifter
+    ret.gearShifter = self.CS.gear_shifter_cluster
 
     # gas pedal
     ret.gas = self.CS.car_gas
@@ -246,14 +232,23 @@ class CarInterface(object):
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
 
+
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
     if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
       self.low_speed_alert = True
     if ret.vEgo > (self.CP.minSteerSpeed + 4.):
       self.low_speed_alert = False
 
+    # events
     events = []
-    if not ret.gearShifter == 'drive':
+    if not self.CS.can_valid:
+      self.can_invalid_count += 1
+      if self.can_invalid_count >= 5:
+        events.append(create_event('commIssue', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+    else:
+      self.can_invalid_count = 0
+    # Try all 3 gear selector locations, as some cars miss one or 2 of them inconsistently
+    if (self.CS.gear_shifter != 'drive') and (self.CS.gear_tcu != 'drive') and (self.CS.gear_shifter_cluster != 'drive'):
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
@@ -268,15 +263,13 @@ class CarInterface(object):
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
 
-    # enable request in prius is simple, as we activate when Toyota is active (rising edge)
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
     elif not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.gasPressed and not self.gas_pressed_prev) or \
-      (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgoRaw > 0.1)):
+    if (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgoRaw > 0.1)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
     if ret.gasPressed:
@@ -298,7 +291,7 @@ class CarInterface(object):
 
     hud_alert = get_hud_alerts(c.hudControl.visualAlert, c.hudControl.audibleAlert)
 
-    can_sends = self.CC.update(c.enabled, self.CS, c.actuators,
-                               c.cruiseControl.cancel, hud_alert)
+    can_sends = self.CC.update(self, c.enabled, self.CS, c.actuators,
+                   c.cruiseControl.cancel, hud_alert)
 
     return can_sends

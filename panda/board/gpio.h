@@ -1,5 +1,3 @@
-// this is last place with ifdef PANDA
-
 #ifdef STM32F4
   #include "stm32f4xx_hal_gpio_ex.h"
 #else
@@ -13,25 +11,23 @@
 
 #define PULL_EFFECTIVE_DELAY 10
 
-void puts(const char *a);
-
-bool has_external_debug_serial = 0;
-bool is_giant_panda = 0;
-bool is_entering_bootmode = 0;
+int has_external_debug_serial = 0;
+int is_giant_panda = 0;
+int is_entering_bootmode = 0;
 int revision = PANDA_REV_AB;
-bool is_grey_panda = 0;
+int is_grey_panda = 0;
 
-bool detect_with_pull(GPIO_TypeDef *GPIO, int pin, int mode) {
+int detect_with_pull(GPIO_TypeDef *GPIO, int pin, int mode) {
   set_gpio_mode(GPIO, pin, MODE_INPUT);
   set_gpio_pullup(GPIO, pin, mode);
   for (volatile int i=0; i<PULL_EFFECTIVE_DELAY; i++);
-  bool ret = get_gpio_input(GPIO, pin);
+  int ret = get_gpio_input(GPIO, pin);
   set_gpio_pullup(GPIO, pin, PULL_NONE);
   return ret;
 }
 
 // must call again from main because BSS is zeroed
-void detect(void) {
+void detect() {
   // detect has_external_debug_serial
   has_external_debug_serial = detect_with_pull(GPIOA, 3, PULL_DOWN);
 
@@ -65,7 +61,44 @@ void detect(void) {
 
 // ********************* bringup *********************
 
-void periph_init(void) {
+void clock_init() {
+  // enable external oscillator
+  RCC->CR |= RCC_CR_HSEON;
+  while ((RCC->CR & RCC_CR_HSERDY) == 0);
+
+  // divide shit
+  RCC->CFGR = RCC_CFGR_HPRE_DIV1 | RCC_CFGR_PPRE2_DIV2 | RCC_CFGR_PPRE1_DIV4;
+  #ifdef PANDA
+    RCC->PLLCFGR = RCC_PLLCFGR_PLLQ_2 | RCC_PLLCFGR_PLLM_3 |
+                   RCC_PLLCFGR_PLLN_6 | RCC_PLLCFGR_PLLN_5 | RCC_PLLCFGR_PLLSRC_HSE;
+  #else
+    #ifdef PEDAL
+      // comma pedal has a 16mhz crystal
+      RCC->PLLCFGR = RCC_PLLCFGR_PLLQ_2 | RCC_PLLCFGR_PLLM_3 |
+                     RCC_PLLCFGR_PLLN_6 | RCC_PLLCFGR_PLLN_5 | RCC_PLLCFGR_PLLSRC_HSE;
+    #else
+      // NEO board has a 8mhz crystal
+      RCC->PLLCFGR = RCC_PLLCFGR_PLLQ_2 | RCC_PLLCFGR_PLLM_3 |
+                     RCC_PLLCFGR_PLLN_7 | RCC_PLLCFGR_PLLN_6 | RCC_PLLCFGR_PLLSRC_HSE;
+    #endif
+  #endif
+
+  // start PLL
+  RCC->CR |= RCC_CR_PLLON;
+  while ((RCC->CR & RCC_CR_PLLRDY) == 0);
+
+  // Configure Flash prefetch, Instruction cache, Data cache and wait state
+  // *** without this, it breaks ***
+  FLASH->ACR = FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_LATENCY_5WS;
+
+  // switch to PLL
+  RCC->CFGR |= RCC_CFGR_SW_PLL;
+  while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL);
+
+  // *** running on PLL ***
+}
+
+void periph_init() {
   // enable GPIOB, UART2, CAN, USB clock
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
@@ -84,22 +117,22 @@ void periph_init(void) {
     RCC->APB1ENR |= RCC_APB1ENR_CAN3EN;
   #endif
   RCC->APB1ENR |= RCC_APB1ENR_DACEN;
-  RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;  // main counter
-  RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;  // slow loop and pedal
-  RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;  // gmlan_alt
-  //RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
-  //RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
+  RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+  RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+  RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
   RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
   RCC->AHB2ENR |= RCC_AHB2ENR_OTGFSEN;
-  //RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
+  RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
   RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
   RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+
+  // needed?
   RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
 }
 
 // ********************* setters *********************
 
-void set_can_enable(CAN_TypeDef *CAN, bool enabled) {
+void set_can_enable(CAN_TypeDef *CAN, int enabled) {
   // enable CAN busses
   if (CAN == CAN1) {
     #ifdef PANDA
@@ -141,16 +174,16 @@ void set_can_enable(CAN_TypeDef *CAN, bool enabled) {
 #endif
 
 void set_led(int led_num, int on) {
-  if (led_num != -1) {
+  if (led_num == -1) return;
+
   #ifdef PANDA
     set_gpio_output(GPIOC, led_num, !on);
   #else
     set_gpio_output(GPIOB, led_num, !on);
   #endif
-  }
 }
 
-void set_can_mode(int can, bool use_gmlan) {
+void set_can_mode(int can, int use_gmlan) {
   // connects to CAN2 xcvr or GMLAN xcvr
   if (use_gmlan) {
     if (can == 1) {
@@ -162,7 +195,7 @@ void set_can_mode(int can, bool use_gmlan) {
       set_gpio_alternate(GPIOB, 12, GPIO_AF9_CAN2);
       set_gpio_alternate(GPIOB, 13, GPIO_AF9_CAN2);
 #ifdef CAN3
-    } else if (can == 2) {
+    } else if (revision == PANDA_REV_C && can == 2) {
       // A8,A15: disable normal mode
       set_gpio_mode(GPIOA, 8, MODE_INPUT);
       set_gpio_mode(GPIOA, 15, MODE_INPUT);
@@ -183,9 +216,11 @@ void set_can_mode(int can, bool use_gmlan) {
       set_gpio_alternate(GPIOB, 6, GPIO_AF9_CAN2);
 #ifdef CAN3
     } else if (can == 2) {
-      // B3,B4: disable gmlan mode
-      set_gpio_mode(GPIOB, 3, MODE_INPUT);
-      set_gpio_mode(GPIOB, 4, MODE_INPUT);
+      if(revision == PANDA_REV_C){
+        // B3,B4: disable gmlan mode
+        set_gpio_mode(GPIOB, 3, MODE_INPUT);
+        set_gpio_mode(GPIOB, 4, MODE_INPUT);
+      }
       // A8,A15: normal mode
       set_gpio_alternate(GPIOA, 8, GPIO_AF11_CAN3);
       set_gpio_alternate(GPIOA, 15, GPIO_AF11_CAN3);
@@ -202,7 +237,6 @@ void set_can_mode(int can, bool use_gmlan) {
 int usb_power_mode = USB_POWER_NONE;
 
 void set_usb_power_mode(int mode) {
-  bool valid_mode = true;
   switch (mode) {
     case USB_POWER_CLIENT:
       // B2,A13: set client mode
@@ -219,15 +253,8 @@ void set_usb_power_mode(int mode) {
       set_gpio_output(GPIOB, 2, 0);
       set_gpio_output(GPIOA, 13, 0);
       break;
-    default:
-      valid_mode = false;
-      puts("Invalid usb power mode\n");
-      break;
   }
-
-  if (valid_mode) {
-    usb_power_mode = mode;
-  }
+  usb_power_mode = mode;
 }
 
 #define ESP_DISABLED 0
@@ -250,16 +277,13 @@ void set_esp_mode(int mode) {
       set_gpio_output(GPIOC, 14, 1);
       set_gpio_output(GPIOC, 5, 0);
       break;
-    default:
-      puts("Invalid esp mode\n");
-      break;
   }
 }
 
 // ********************* big init function *********************
 
 // board specific
-void gpio_init(void) {
+void gpio_init() {
   // pull low to hold ESP in reset??
   // enable OTG out tied to ground
   GPIOA->ODR = 0;
@@ -351,7 +375,11 @@ void gpio_init(void) {
 
   #ifdef PANDA
     // K-line enable moved from B4->B7 to make room for GMLAN on CAN3
-    set_gpio_output(GPIOB, 7, 1); // REV C
+    if (revision == PANDA_REV_C) {
+      set_gpio_output(GPIOB, 7, 1); // REV C
+    } else {
+      set_gpio_output(GPIOB, 4, 1); // REV AB
+    }
 
     // C12,D2: K-Line setup on UART 5
     set_gpio_alternate(GPIOC, 12, GPIO_AF8_UART5);
@@ -367,7 +395,9 @@ void gpio_init(void) {
     set_gpio_pullup(GPIOC, 11, PULL_UP);
   #endif
 
-  set_usb_power_mode(USB_POWER_CLIENT);
+  if (revision == PANDA_REV_C) {
+    set_usb_power_mode(USB_POWER_CLIENT);
+  }
 }
 
 // ********************* early bringup *********************
@@ -379,7 +409,7 @@ void gpio_init(void) {
 extern void *g_pfnVectors;
 extern uint32_t enter_bootloader_mode;
 
-void jump_to_bootloader(void) {
+void jump_to_bootloader() {
   // do enter bootloader
   enter_bootloader_mode = 0;
   void (*bootloader)(void) = (void (*)(void)) (*((uint32_t *)0x1fff0004));
@@ -392,11 +422,11 @@ void jump_to_bootloader(void) {
   NVIC_SystemReset();
 }
 
-void early(void) {
+void early() {
   // after it's been in the bootloader, things are initted differently, so we reset
-  if ((enter_bootloader_mode != BOOT_NORMAL) &&
-      (enter_bootloader_mode != ENTER_BOOTLOADER_MAGIC) &&
-      (enter_bootloader_mode != ENTER_SOFTLOADER_MAGIC)) {
+  if (enter_bootloader_mode != BOOT_NORMAL &&
+      enter_bootloader_mode != ENTER_BOOTLOADER_MAGIC &&
+      enter_bootloader_mode != ENTER_SOFTLOADER_MAGIC) {
     enter_bootloader_mode = BOOT_NORMAL;
     NVIC_SystemReset();
   }
@@ -424,7 +454,6 @@ void early(void) {
   #ifdef PANDA
     // enable the ESP, disable ESP boot mode
     // unless we are on a giant panda, then there's no ESP
-    // dont disable on grey panda
     if (is_giant_panda) {
       set_esp_mode(ESP_DISABLED);
     } else {
@@ -445,3 +474,4 @@ void early(void) {
     enter_bootloader_mode = ENTER_SOFTLOADER_MAGIC;
   }
 }
+
