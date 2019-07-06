@@ -105,7 +105,7 @@ def get_can_parser(CP):
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
 
 
-def get_camera_parser(CP):
+def get_camera_parser(CP, can):
 
   signals = [
     # sig_name, sig_address, default
@@ -134,8 +134,8 @@ def get_camera_parser(CP):
   ]
 
   checks = [("LKAS11", 100)]
-  return (CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, timeout=100)), \
-    (CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1, timeout=100))
+
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, can, timeout=100)
 
 class CarState(object):
   def __init__(self, CP):
@@ -159,8 +159,9 @@ class CarState(object):
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
     self.has_scc = False
+    self.cancan = 1
 
-  def update(self, cp, cp_cam, cp_cam2):
+  def update(self, cp, cp_cam):
     # copy can_valid
     self.can_valid = cp.can_valid
 
@@ -275,14 +276,7 @@ class CarState(object):
       self.gear_tcu = "unknown"
 
     # save the entire LKAS11, CLU11 and MDPS12
-    if cp_cam.can_valid == True:
-      self.lkas11 = cp_cam.vl["LKAS11"]
-      self.camcan = 2
-    elif cp_cam2.can_valid == True:
-      self.lkas11 = cp_cam2.vl["LKAS11"]
-      self.camcan = 1
-    else:
-      self.camcan = 0
+    self.lkas11 = cp_cam.vl["LKAS11"]
 
     self.clu11 = cp.vl["CLU11"]
     self.mdps12 = cp.vl["MDPS12"]

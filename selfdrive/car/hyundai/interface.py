@@ -30,7 +30,7 @@ class CarInterface(object):
     # *** init the major players ***
     self.CS = CarState(CP)
     self.cp = get_can_parser(CP)
-    self.cp_cam, self.cp_cam2 = get_camera_parser(CP)
+    self.cp_cam = get_camera_parser(CP, CS.camcan)
 
     self.CC = None
     if CarController is not None:
@@ -164,8 +164,7 @@ class CarInterface(object):
     canMonoTimes = []
     self.cp.update(int(sec_since_boot() * 1e9), False)
     self.cp_cam.update(int(sec_since_boot() * 1e9), False)
-    self.cp_cam2.update(int(sec_since_boot() * 1e9), False)
-    self.CS.update(self.cp, self.cp_cam, self.cp_cam2)
+    self.CS.update(self.cp, self.cp_cam)
     # create message
     ret = car.CarState.new_message()
     # speeds
