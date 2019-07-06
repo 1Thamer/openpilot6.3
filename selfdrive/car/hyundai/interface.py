@@ -289,7 +289,7 @@ class CarInterface(object):
 
     hud_alert = get_hud_alerts(c.hudControl.visualAlert, c.hudControl.audibleAlert)
 
-    can_sends = self.CC.update(self, c.enabled, self.CS, c.actuators,
-                   c.cruiseControl.cancel, hud_alert)
+    can_sends = self.CC.update(c.enabled, self.CS, c.actuators,
+                               c.cruiseControl.cancel, hud_alert)
 
     return can_sends
