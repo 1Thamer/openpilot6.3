@@ -170,7 +170,7 @@ class CarController(object):
     self.spas_cnt = self.cnt % 0x200
 
     can_sends.append(create_lkas11(self.packer, self.car_fingerprint, apply_steer, steer_req, self.lkas11_cnt, \
-                                  enabled if self.lkas else False, False, hud_alert, True, \
+                                  enabled if self.lkas else False, CS.lkas11, hud_alert, True, \
                                   (False if CS.camcan == 0 else True), self.checksum))
 
     if False: #CS.camcan > 0:
