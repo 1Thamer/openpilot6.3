@@ -253,7 +253,7 @@ class CarInterface(object):
       self.low_speed_alert = False
 
     events = []
-    if not ret.gearShifter == 'drive':
+    if (self.CS.gear_shifter != 'drive') and (self.CS.gear_tcu != 'drive') and (self.CS.gear_shifter_cluster != 'drive'):
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
@@ -274,10 +274,6 @@ class CarInterface(object):
     elif not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
-    # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.gasPressed and not self.gas_pressed_prev) or \
-      (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgoRaw > 0.1)):
-      events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
