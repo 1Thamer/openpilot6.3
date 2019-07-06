@@ -51,7 +51,7 @@ class CarController(object):
     self.apply_steer_ang = 0.0
     self.en_spas = 3
     self.mdps11_stat_last = 0
-    self.lkas = False
+    self.lkas = True
     self.spas_present = True # TODO Make Automatic
 
     #self.ALCA = ALCAController(self,True,False)  # Enabled True and SteerByAngle only False
@@ -111,8 +111,8 @@ class CarController(object):
     #self.ALCA.update_status(CS.cstm_btns.get_button_status("alca") > 0)
 
     #alca_angle, alca_steer, alca_enabled, turn_signal_needed = self.ALCA.update(enabled, CS, self.cnt, actuators)
-    #if force_enable and not CS.acc_active:
-    apply_steer = int(round(actuators.steer * SteerLimitParams.STEER_MAX))
+    if force_enable and not CS.acc_active:
+      apply_steer = int(round(actuators.steer * SteerLimitParams.STEER_MAX))
     '''
     else:
       apply_steer = int(round(alca_steer * SteerLimitParams.STEER_MAX))
@@ -170,7 +170,7 @@ class CarController(object):
     self.spas_cnt = self.cnt % 0x200
 
     can_sends.append(create_lkas11(self.packer, self.car_fingerprint, apply_steer, steer_req, self.lkas11_cnt, \
-                                  enabled if self.lkas else False, CS.lkas11, hud_alert, True, \
+                                  enabled if self.lkas else False, CS.lkas11, hud_alert, not enabled, \
                                   (False if CS.camcan == 0 else True), self.checksum))
 
     if False: #CS.camcan > 0:
