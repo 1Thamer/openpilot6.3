@@ -102,7 +102,8 @@ def get_can_parser(CP):
     ("SAS11", 100)
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
+
 
 def get_camera_parser(CP):
 
@@ -133,8 +134,8 @@ def get_camera_parser(CP):
   ]
 
   checks = [("LKAS11", 100)]
-  return (CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)), \
-    (CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1))
+  return (CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, timeout=100)), \
+    (CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1, timeout=100))
 
 class CarState(object):
   def __init__(self, CP):

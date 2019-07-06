@@ -14,7 +14,7 @@ except ImportError:
 
 
 class CarInterface(object):
-  def __init__(self, CP, sendcan=None):
+  def __init__(self, CP, CarController):
     self.CP = CP
     self.VM = VehicleModel(CP)
     self.idx = 0
@@ -32,9 +32,8 @@ class CarInterface(object):
     self.cp = get_can_parser(CP)
     self.cp_cam, self.cp_cam2 = get_camera_parser(CP)
 
-    # sending if read only is False
-    if sendcan is not None:
-      self.sendcan = sendcan
+    self.CC = None
+    if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP.carFingerprint)
 
   @staticmethod
@@ -70,6 +69,7 @@ class CarInterface(object):
     rotationalInertia_civic = 2500
     tireStiffnessFront_civic = 192150
     tireStiffnessRear_civic = 202500
+    tire_stiffness_factor = 1.
 
     ret.steerActuatorDelay = 0.10
     ret.lateralTuning.pid.kf = 0.00006
@@ -111,6 +111,12 @@ class CarInterface(object):
 
     ret.mass += std_cargo
     ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
+    ret.longitudinalTuning.kpBP = [0.]
+    ret.longitudinalTuning.kpV = [0.]
+    ret.longitudinalTuning.kiBP = [0.]
+    ret.longitudinalTuning.kiV = [0.]
+    ret.longitudinalTuning.deadzoneBP = [0.]
+    ret.longitudinalTuning.deadzoneV = [0.]
 
     ret.centerToFront = ret.wheelbase * weight_dist_rear
 
@@ -135,14 +141,6 @@ class CarInterface(object):
     ret.steerRatioRear = 0.
     ret.steerControlType = car.CarParams.SteerControlType.torque
 
-
-    ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.]
-    ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.]
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.]
-
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [0.]
     ret.steerMaxV = [1.0]
@@ -154,7 +152,7 @@ class CarInterface(object):
     ret.enableCamera = not any(x for x in CAMERA_MSGS if x in fingerprint)
     ret.openpilotLongitudinalControl = False
 
-    ret.steerLimitAlert = True
+    ret.steerLimitAlert = False
     ret.stoppingControl = False
     ret.startAccel = 0.0
 

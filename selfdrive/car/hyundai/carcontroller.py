@@ -19,7 +19,7 @@ from selfdrive.config import Conversions as CV
 class SteerLimitParams:
   STEER_MAX = 255   # >255 results in frozen torque, >409 results in no torque
   STEER_DELTA_UP = 3
-  STEER_DELTA_DOWN = 5
+  STEER_DELTA_DOWN = 7
   STEER_ANG_MAX = 20          # SPAS Max Angle
   STEER_ANG_MAX_RATE = 0.4    # SPAS Degrees per ms
   DIVIDER = 2.0     # Must be > 1.0
@@ -57,7 +57,7 @@ class CarController(object):
     #self.ALCA = ALCAController(self,True,False)  # Enabled True and SteerByAngle only False
 
 
-  def update(self, sendcan, enabled, CS, actuators, pcm_cancel_cmd, hud_alert):
+  def update(self, enabled, CS, actuators, pcm_cancel_cmd, hud_alert):
 
     if not self.enable_camera:
       return
