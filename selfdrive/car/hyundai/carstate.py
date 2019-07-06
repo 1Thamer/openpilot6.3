@@ -203,7 +203,7 @@ class CarState(object):
     speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
 
     self.cruise_set_speed = (cp.vl["SCC11"]['VSetDis'] * speed_conv) if self.has_scc else (cp.vl["LVR12"]["CF_Lvr_CruiseSet"] * speed_conv)
-    self.standstill = not self.v_wheel > 0.1
+    self.standstill = not v_wheel > 0.1
 
     self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
     self.angle_steers_rate = cp.vl["SAS11"]['SAS_Speed']
