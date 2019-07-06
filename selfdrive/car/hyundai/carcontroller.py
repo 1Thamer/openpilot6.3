@@ -1,7 +1,7 @@
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_lkas12, \
                                              create_1191, create_1156, \
-                                             create_clu11
+                                             create_clu11, learn_checksum
 from selfdrive.car.hyundai.values import Buttons
 from selfdrive.can.packer import CANPacker
 
@@ -23,6 +23,8 @@ class CarController(object):
     self.lkas11_cnt = 0
     self.cnt = 0
     self.last_resume_cnt = 0
+    self.checksum = "NONE"
+    self.checksum_learn_cnt = 0
     # True when giraffe switch 2 is low and we need to replace all the camera messages
     # otherwise we forward the camera msgs and we just replace the lkas cmd signals
     self.camera_disconnected = False
@@ -31,10 +33,35 @@ class CarController(object):
 
   def update(self, enabled, CS, actuators, pcm_cancel_cmd, hud_alert):
 
+
+
+    if self.checksum == "NONE":
+      self.checksum = learn_checksum(self.packer, CS.lkas11)
+      print ("Discovered Checksum", self.checksum)
+      if self.checksum == "NONE":
+        return
+
+    if CS.steer_error == 1:
+      if self.checksum_learn_cnt > 200:
+        self.checksum_learn_cnt = 0
+        if self.checksum == "NONE":
+          print ("Testing 6B Checksum")
+          self.checksum == "6B"
+        elif self.checksum == "6B":
+          print ("Testing 7B Checksum")
+          self.checksum == "7B"
+        elif self.checksum == "7B":
+          print ("Testing CRC8 Checksum")
+          self.checksum == "crc8"
+        else:
+          self.checksum == "NONE"
+      else:
+        self.checksum_learn_cnt += 1
+
     ### Steering Torque
     apply_steer = actuators.steer * SteerLimitParams.STEER_MAX
 
-    apply_steer = apply_std_steer_torque_limits(apply_steer, self.apply_steer_last, CS.steer_torque_driver, SteerLimitParams)
+    apply_steer = limit_steer_rate(apply_steer, self.apply_steer_last, CS.steer_torque_driver, SteerLimitParams)
 
     if not enabled:
       apply_steer = 0
@@ -57,7 +84,7 @@ class CarController(object):
         can_sends.append(create_1156())
 
     can_sends.append(create_lkas11(self.packer, self.car_fingerprint, apply_steer, steer_req, self.lkas11_cnt,
-                                   enabled, CS.lkas11, hud_alert, keep_stock=(not self.camera_disconnected)))
+                                   enabled, CS.lkas11, hud_alert, (not self.camera_disconnected), self.checksum))
 
     if pcm_cancel_cmd:
       can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL))
