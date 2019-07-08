@@ -117,7 +117,7 @@ class CarInterface(object):
     ret.brakeMaxV = [1.]
 
     ret.openpilotLongitudinalControl = False
-
+    ret.enableCamera = True
     ret.steerLimitAlert = False
     ret.stoppingControl = False
     ret.startAccel = 0.0
