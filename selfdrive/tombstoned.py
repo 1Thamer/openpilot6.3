@@ -104,7 +104,7 @@ def report_tombstone(fn, client):
 def main(gctx=None):
   initial_tombstones = set(get_tombstones())
 
-  client = Client('https://d3b175702f62402c91ade04d1c547e68:b20d68c813c74f63a7cdf9c4039d8f56@sentry.io/157615',
+  client = Client('https://84d713b5bd674bcbb7030d1b86115dcb:80109516f2dd4ee0b9dbb72331930189@sentry.io/1405628',
                   install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty}, string_max_length=10000)
 
   client.user_context({'id': os.environ.get('DONGLE_ID')})
