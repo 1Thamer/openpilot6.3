@@ -1,27 +1,5 @@
 // IRQs: USART1, USART2, USART3, UART5
 
-#define FIFO_SIZE 0x400
-typedef struct uart_ring {
-  volatile uint16_t w_ptr_tx;
-  volatile uint16_t r_ptr_tx;
-  uint8_t elems_tx[FIFO_SIZE];
-  volatile uint16_t w_ptr_rx;
-  volatile uint16_t r_ptr_rx;
-  uint8_t elems_rx[FIFO_SIZE];
-  USART_TypeDef *uart;
-  void (*callback)(struct uart_ring*);
-} uart_ring;
-
-void uart_init(USART_TypeDef *u, int baud);
-
-bool getc(uart_ring *q, char *elem);
-bool putc(uart_ring *q, char elem);
-
-void puts(const char *a);
-void puth(unsigned int i);
-void hexdump(const void *a, int l);
-
-
 // ***************************** serial port queues *****************************
 
 // esp = USART1
@@ -50,25 +28,18 @@ uart_ring debug_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
 
 
 uart_ring *get_ring_by_number(int a) {
-  uart_ring *ring = NULL;
   switch(a) {
     case 0:
-      ring = &debug_ring;
-      break;
+      return &debug_ring;
     case 1:
-      ring = &esp_ring;
-      break;
+      return &esp_ring;
     case 2:
-      ring = &lin1_ring;
-      break;
+      return &lin1_ring;
     case 3:
-      ring = &lin2_ring;
-      break;
+      return &lin2_ring;
     default:
-      ring = NULL;
-      break;
+      return NULL;
   }
-  return ring;
 }
 
 // ***************************** serial port *****************************
@@ -79,32 +50,31 @@ void uart_ring_process(uart_ring *q) {
   int sr = q->uart->SR;
 
   if (q->w_ptr_tx != q->r_ptr_tx) {
-    if ((sr & USART_SR_TXE) != 0) {
+    if (sr & USART_SR_TXE) {
       q->uart->DR = q->elems_tx[q->r_ptr_tx];
       q->r_ptr_tx = (q->r_ptr_tx + 1) % FIFO_SIZE;
+    } else {
+      // push on interrupt later
+      q->uart->CR1 |= USART_CR1_TXEIE;
     }
-    // there could be more to send
-    q->uart->CR1 |= USART_CR1_TXEIE;
   } else {
     // nothing to send
     q->uart->CR1 &= ~USART_CR1_TXEIE;
   }
 
-  if ((sr & USART_SR_RXNE) || (sr & USART_SR_ORE)) {
+  if (sr & USART_SR_RXNE || sr & USART_SR_ORE) {
     uint8_t c = q->uart->DR;  // TODO: can drop packets
     if (q != &esp_ring) {
       uint16_t next_w_ptr = (q->w_ptr_rx + 1) % FIFO_SIZE;
       if (next_w_ptr != q->r_ptr_rx) {
         q->elems_rx[q->w_ptr_rx] = c;
         q->w_ptr_rx = next_w_ptr;
-        if (q->callback != NULL) {
-          q->callback(q);
-        }
+        if (q->callback) q->callback(q);
       }
     }
   }
 
-  if ((sr & USART_SR_ORE) != 0) {
+  if (sr & USART_SR_ORE) {
     // set dropped packet flag?
   }
 
@@ -118,22 +88,22 @@ void USART2_IRQHandler(void) { uart_ring_process(&debug_ring); }
 void USART3_IRQHandler(void) { uart_ring_process(&lin2_ring); }
 void UART5_IRQHandler(void) { uart_ring_process(&lin1_ring); }
 
-bool getc(uart_ring *q, char *elem) {
-  bool ret = false;
+int getc(uart_ring *q, char *elem) {
+  int ret = 0;
 
   enter_critical_section();
   if (q->w_ptr_rx != q->r_ptr_rx) {
-    if (elem != NULL) *elem = q->elems_rx[q->r_ptr_rx];
+    *elem = q->elems_rx[q->r_ptr_rx];
     q->r_ptr_rx = (q->r_ptr_rx + 1) % FIFO_SIZE;
-    ret = true;
+    ret = 1;
   }
   exit_critical_section();
 
   return ret;
 }
 
-bool injectc(uart_ring *q, char elem) {
-  int ret = false;
+int injectc(uart_ring *q, char elem) {
+  int ret = 0;
   uint16_t next_w_ptr;
 
   enter_critical_section();
@@ -141,15 +111,15 @@ bool injectc(uart_ring *q, char elem) {
   if (next_w_ptr != q->r_ptr_rx) {
     q->elems_rx[q->w_ptr_rx] = elem;
     q->w_ptr_rx = next_w_ptr;
-    ret = true;
+    ret = 1;
   }
   exit_critical_section();
 
   return ret;
 }
 
-bool putc(uart_ring *q, char elem) {
-  bool ret = false;
+int putc(uart_ring *q, char elem) {
+  int ret = 0;
   uint16_t next_w_ptr;
 
   enter_critical_section();
@@ -157,31 +127,13 @@ bool putc(uart_ring *q, char elem) {
   if (next_w_ptr != q->r_ptr_tx) {
     q->elems_tx[q->w_ptr_tx] = elem;
     q->w_ptr_tx = next_w_ptr;
-    ret = true;
+    ret = 1;
   }
   exit_critical_section();
 
   uart_ring_process(q);
 
   return ret;
-}
-
-void uart_flush(uart_ring *q) {
-  while (q->w_ptr_tx != q->r_ptr_tx) {
-    __WFI();
-  }
-}
-
-void uart_flush_sync(uart_ring *q) {
-  // empty the TX buffer
-  while (q->w_ptr_tx != q->r_ptr_tx) {
-    uart_ring_process(q);
-  }
-}
-
-void uart_send_break(uart_ring *u) {
-  while ((u->uart->CR1 & USART_CR1_SBK) != 0);
-  u->uart->CR1 |= USART_CR1_SBK;
 }
 
 void clear_uart_buff(uart_ring *q) {
@@ -195,10 +147,10 @@ void clear_uart_buff(uart_ring *q) {
 
 // ***************************** start UART code *****************************
 
-#define __DIV(_PCLK_, _BAUD_)                        (((_PCLK_) * 25) / (4 * (_BAUD_)))
-#define __DIVMANT(_PCLK_, _BAUD_)                    (__DIV((_PCLK_), (_BAUD_)) / 100)
-#define __DIVFRAQ(_PCLK_, _BAUD_)                    ((((__DIV((_PCLK_), (_BAUD_)) - (__DIVMANT((_PCLK_), (_BAUD_)) * 100)) * 16) + 50) / 100)
-#define __USART_BRR(_PCLK_, _BAUD_)              ((__DIVMANT((_PCLK_), (_BAUD_)) << 4) | (__DIVFRAQ((_PCLK_), (_BAUD_)) & 0x0F))
+#define __DIV(_PCLK_, _BAUD_)                        (((_PCLK_)*25)/(4*(_BAUD_)))
+#define __DIVMANT(_PCLK_, _BAUD_)                    (__DIV((_PCLK_), (_BAUD_))/100)
+#define __DIVFRAQ(_PCLK_, _BAUD_)                    (((__DIV((_PCLK_), (_BAUD_)) - (__DIVMANT((_PCLK_), (_BAUD_)) * 100)) * 16 + 50) / 100)
+#define __USART_BRR(_PCLK_, _BAUD_)              ((__DIVMANT((_PCLK_), (_BAUD_)) << 4)|(__DIVFRAQ((_PCLK_), (_BAUD_)) & 0x0F))
 
 void uart_set_baud(USART_TypeDef *u, int baud) {
   if (u == USART1) {
@@ -212,19 +164,19 @@ void uart_set_baud(USART_TypeDef *u, int baud) {
 #define USART1_DMA_LEN 0x20
 char usart1_dma[USART1_DMA_LEN];
 
-void uart_dma_drain(void) {
+void uart_dma_drain() {
   uart_ring *q = &esp_ring;
 
   enter_critical_section();
 
-  if ((DMA2->HISR & DMA_HISR_TCIF5) || (DMA2->HISR & DMA_HISR_HTIF5) || (DMA2_Stream5->NDTR != USART1_DMA_LEN)) {
+  if (DMA2->HISR & DMA_HISR_TCIF5 || DMA2->HISR & DMA_HISR_HTIF5 || DMA2_Stream5->NDTR != USART1_DMA_LEN) {
     // disable DMA
     q->uart->CR3 &= ~USART_CR3_DMAR;
     DMA2_Stream5->CR &= ~DMA_SxCR_EN;
-    while ((DMA2_Stream5->CR & DMA_SxCR_EN) != 0);
+    while (DMA2_Stream5->CR & DMA_SxCR_EN);
 
-    unsigned int i;
-    for (i = 0; i < (USART1_DMA_LEN - DMA2_Stream5->NDTR); i++) {
+    int i;
+    for (i = 0; i < USART1_DMA_LEN - DMA2_Stream5->NDTR; i++) {
       char c = usart1_dma[i];
       uint16_t next_w_ptr = (q->w_ptr_rx + 1) % FIFO_SIZE;
       if (next_w_ptr != q->r_ptr_rx) {
@@ -306,23 +258,22 @@ void putch(const char a) {
   }
 }
 
-void puts(const char *a) {
+int puts(const char *a) {
   for (;*a;a++) {
     if (*a == '\n') putch('\r');
     putch(*a);
   }
+  return 0;
 }
 
 void putui(uint32_t i) {
   char str[11];
   uint8_t idx = 10;
-  str[idx] = '\0';
-  idx--;
+  str[idx--] = '\0';
   do {
-    str[idx] = (i % 10) + 0x30;
-    idx--;
+    str[idx--] = (i % 10) + 0x30;
     i /= 10;
-  } while (i != 0);
+  } while (i);
   puts(str + idx + 1);
 }
 
@@ -345,7 +296,7 @@ void puth2(unsigned int i) {
 void hexdump(const void *a, int l) {
   int i;
   for (i=0;i<l;i++) {
-    if ((i != 0) && ((i & 0xf) == 0)) puts("\n");
+    if (i != 0 && (i&0xf) == 0) puts("\n");
     puth2(((const unsigned char*)a)[i]);
     puts(" ");
   }

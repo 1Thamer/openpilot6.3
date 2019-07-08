@@ -96,7 +96,6 @@ def get_can_parser(CP):
     ("TCS15", 10),
     ("CLU11", 50),
     ("ESP12", 100),
-    ("EMS12", 100),
     ("CGW1", 10),
     ("WHL_SPD11", 50),
     ("SAS11", 100)
@@ -223,6 +222,7 @@ class CarState(object):
     self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4. if self.has_scc else False
     self.mdps11_strang = cp.vl["MDPS11"]["CR_Mdps_StrAng"]
     self.mdps11_stat = cp.vl["MDPS11"]["CF_Mdps_Stat"]
+    self.mdps12_flt = cp.vl["MDPS12"]['CF_Mdps_ToiFlt']
 
     self.user_brake = 0
 

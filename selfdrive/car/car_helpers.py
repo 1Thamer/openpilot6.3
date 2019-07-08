@@ -117,8 +117,8 @@ def fingerprint(logcan, sendcan):
     # bail if no cars left or we've been waiting for more than 2s since can_seen
     elif len(candidate_cars) == 0 or (can_seen_frame is not None and (frame - can_seen_frame) > 200):
       #return None, finger, ""
-      print "Fingerprinting Failed: Returning Generic Style Car"
-      return "UNKNOWN CAR ON EMMERTEX FORK", finger, ""
+      print "WARNING: This fork is ONLY compatible with Hyundai, Kia and Genesis Vehicles"
+      return "HYUNDAI OR KIA", finger, ""
 
     # keep sending VIN qury if ECU isn't responsing.
     # sendcan is probably not ready due to the zmq slow joiner syndrome
