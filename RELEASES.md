@@ -1,3 +1,26 @@
+Version 0.6.0.2-ku7 (2019-07-08)
+========================
+* HKG - Auto Discover Checksum if LKAS11 Message not present
+* HKG - Disable Torque on Lane Change
+* HKG - Auto Learn Low Speed Cutoff
+* HKG - Disable during Low Speed, where low speed is learnt
+* HKG - Improve Support, maybe even Genesis
+* HKG - Clean up redundant code, remove last "Fingerprint" stuff
+* HKG - Add Sentry Crash Reporting
+* HKG - PUF is back, Auto Forward CAM/CAR when EON is not active
+* HKG - Hopefully a better attempt at "Remove remnants of CP UI"
+
+
+Version 0.6.0.1-ku7 (2019-07-05)
+========================
+* HKG - Auto Support Cars with all 3 Gear Selector Types
+* HKG - Auto Support Cars with no SCC
+* HKG - Auto Learn Checksum from LKAS11
+* HKG - Do not diable on Accelerator or Brake
+* HKG - Removed Fingerprint Requiement
+* HKG - Removed Noisy Console/Logs
+* HKG - Remove remnants of CP UI
+
 Version 0.6 (2019-07-01)
 ========================
  * New model, with double the pixels and ten times the temporal context!

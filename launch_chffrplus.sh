@@ -13,13 +13,12 @@ fi
 function launch {
   # apply update
   if [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
+     rm /data/data/com.termux/files/continue.sh ;
+     cp /data/openpilot/continue.sh /data/data/com.termux/files/continue.sh ;
      git reset --hard @{u} &&
      git clean -xdf &&
      exec "${BASH_SOURCE[0]}"
   fi
-  
-  rm /data/data/com.termux/files/continue.sh ;
-  cp /data/openpilot/continue.sh /data/data/com.termux/files/continue.sh ;
   
   # no cpu rationing for now
   echo 0-3 > /dev/cpuset/background/cpus

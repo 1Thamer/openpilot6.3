@@ -1,12 +1,12 @@
-// **** libc ****
+// **** shitty libc ****
 
 void delay(int a) {
   volatile int i;
-  for (i = 0; i < a; i++);
+  for (i=0;i<a;i++);
 }
 
 void *memset(void *str, int c, unsigned int n) {
-  unsigned int i;
+  int i;
   for (i = 0; i < n; i++) {
     *((uint8_t*)str) = c;
     ++str;
@@ -15,7 +15,7 @@ void *memset(void *str, int c, unsigned int n) {
 }
 
 void *memcpy(void *dest, const void *src, unsigned int n) {
-  unsigned int i;
+  int i;
   // TODO: make not slow
   for (i = 0; i < n; i++) {
     ((uint8_t*)dest)[i] = *(uint8_t*)src;
@@ -25,36 +25,26 @@ void *memcpy(void *dest, const void *src, unsigned int n) {
 }
 
 int memcmp(const void * ptr1, const void * ptr2, unsigned int num) {
-  unsigned int i;
-  int ret = 0;
+  int i;
   for (i = 0; i < num; i++) {
-    if ( ((uint8_t*)ptr1)[i] != ((uint8_t*)ptr2)[i] ) {
-      ret = -1;
-      break;
-    }
+    if ( ((uint8_t*)ptr1)[i] != ((uint8_t*)ptr2)[i] ) return -1;
   }
-  return ret;
+  return 0;
 }
 
 // ********************* IRQ helpers *********************
 
-int interrupts_enabled = 0;
-void enable_interrupts(void) {
-  interrupts_enabled = 1;
-  __enable_irq();
-}
-
 int critical_depth = 0;
-void enter_critical_section(void) {
+void enter_critical_section() {
   __disable_irq();
   // this is safe because interrupts are disabled
   critical_depth += 1;
 }
 
-void exit_critical_section(void) {
+void exit_critical_section() {
   // this is safe because interrupts are disabled
   critical_depth -= 1;
-  if ((critical_depth == 0) && interrupts_enabled) {
+  if (critical_depth == 0) {
     __enable_irq();
   }
 }
