@@ -1,7 +1,7 @@
 Version 0.6.0.3-ku7 (2019-07-**)
 ========================
 * HKG - Send fingerprints to Sentry
-* HKG - Bring back mapd from 0.5.12
+* HKG - Start to bring back mapd from 0.5.12
 * HKG - Auto Set Cruise to Speed Limit
 * HKG - Don't Learn Min Steer Speed when turning corners
 * HKG - Create MDPS12 Message (to reduce/stop Stock cam faults)
