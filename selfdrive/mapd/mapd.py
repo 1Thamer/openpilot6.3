@@ -137,11 +137,10 @@ def save_gps_data(gps):
 def mapsd_thread():
   global last_gps
 
-  context = zmq.Context()
   poller = zmq.Poller()
-  gps_sock = messaging.sub_sock(context, service_list['gpsLocation'].port, conflate=True)
-  gps_external_sock = messaging.sub_sock(context, service_list['gpsLocationExternal'].port, conflate=True, poller=poller)
-  map_data_sock = messaging.pub_sock(context, service_list['liveMapData'].port)
+  gps_sock = messaging.sub_sock(service_list['gpsLocation'].port)
+  gps_external_sock = messaging.sub_sock(service_list['gpsLocationExternal'].port)
+  map_data_sock = messaging.pub_sock(service_list['liveMapData'].port)
 
   cur_way = None
   curvature_valid = False

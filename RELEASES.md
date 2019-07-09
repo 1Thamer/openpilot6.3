@@ -1,3 +1,10 @@
+Version 0.6.0.4-ku7 (2019-07-**)
+========================
+* HKG - Log to cloudlog rather than print to stdout
+* HKG - Finish bringing back mapd
+* HKG - Finish Auto Cruise Speed Limit
+
+
 Version 0.6.0.3-ku7 (2019-07-09)
 ========================
 * HKG - Send fingerprints to Sentry

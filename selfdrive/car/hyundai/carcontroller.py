@@ -9,6 +9,8 @@ from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 from selfdrive.config import Conversions as CV
 from common.params import Params
+from selfdrive.swaglog import cloudlog
+
 
 
 # Steer torque limits
@@ -34,9 +36,8 @@ class CarController(object):
     self.last_resume_cnt = 0
 
     self.map_speed = 0
-    #context = zmq.Context()
-    #self.map_data_sock = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True)
-    #self.params = Params()
+    self.map_data_sock = messaging.sub_sock(service_list['liveMapData'].port)
+    self.params = Params()
     self.speed_conv = 3.6
     self.speed_offset = 1.03      # Multiplier for cruise speed vs speed limit  TODO: Add to UI
     self.speed_enable = True      # Enable Auto Speed Set                       TODO: Add to UI
@@ -61,7 +62,7 @@ class CarController(object):
     # Learn Checksum from the Camera
     if self.checksum == "NONE":
       self.checksum = learn_checksum(self.packer, CS.lkas11)
-      print ("Discovered Checksum", self.checksum)
+      cloudlog.info("Discovered Checksum", self.checksum)
       if self.checksum == "NONE" and self.checksum_learn_cnt < 50:
         self.checksum_learn_cnt += 1
         return
@@ -69,17 +70,17 @@ class CarController(object):
     # If MDPS is faulted from bad checksum, then cycle through all Checksums until 1 works
     if CS.steer_error == 1:
       self.camera_disconnected = True
-      print ("Camera Not Detected: Brute Forcing Checksums")
+      cloudlog.warning("Camera Not Detected: Brute Forcing Checksums")
       if self.checksum_learn_cnt > 250:
         self.checksum_learn_cnt = 50
         if self.checksum == "NONE":
-          print ("Testing 6B Checksum")
+          cloudlog.info("Testing 6B Checksum")
           self.checksum == "6B"
         elif self.checksum == "6B":
-          print ("Testing 7B Checksum")
+          cloudlog.info("Testing 7B Checksum")
           self.checksum == "7B"
         elif self.checksum == "7B":
-          print ("Testing CRC8 Checksum")
+          cloudlog.info("Testing CRC8 Checksum")
           self.checksum == "crc8"
         else:
           self.checksum == "NONE"
@@ -92,7 +93,7 @@ class CarController(object):
     if CS.mdps12_flt != 0 and CS.v_ego_raw > 0. and abs(CS.angle_steers) < 10.0 :
       if CS.v_ego_raw > self.min_steer_speed:
         self.min_steer_speed = CS.v_ego_raw + 0.1
-        print ("Discovered new Min Speed as", self.min_steer_speed)
+        cloudlog.info("Discovered new Min Speed as", self.min_steer_speed)
 
     # Apply Usage of Minimum Steer Speed
     if CS.v_ego_raw < self.min_steer_speed:
@@ -117,7 +118,7 @@ class CarController(object):
 
     self.apply_steer_last = apply_steer
 
-    '''
+    
     ### Auto Speed Limit ###
 
     # Read Speed Limit and define if adjustment needed
@@ -157,7 +158,7 @@ class CarController(object):
     if CS.pedal_gas:
       self.speed_adjusted = True
 
-    '''
+    
 
     ### Generate CAN Messages ###
 
