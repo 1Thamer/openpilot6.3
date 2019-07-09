@@ -98,7 +98,6 @@ class CarController(object):
     if CS.v_ego_raw < self.min_steer_speed:
       disable_steer = True
 
-
     ### Turning Indicators ###
     if (CS.left_blinker_on == 1 or CS.right_blinker_on == 1):
       self.turning_signal_timer = 100 # Disable for 1.0 Seconds after blinker turned off

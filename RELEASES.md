@@ -8,7 +8,7 @@ Version 0.6.0.3-ku7 (2019-07-09)
 * HKG - Implement Min Speed Speed Warning
 
 Version 0.6.0.2-ku7 (2019-07-08)
-========================low
+========================
 * HKG - Auto Discover Checksum if LKAS11 Message not present
 * HKG - Disable Torque on Lane Change
 * HKG - Auto Learn Min Steer Speed Cutoff
@@ -18,7 +18,6 @@ Version 0.6.0.2-ku7 (2019-07-08)
 * HKG - Add Sentry Crash Reporting
 * HKG - PUF is back, Auto Forward CAM/CAR when EON is not active
 * HKG - Hopefully a better attempt at "Remove remnants of CP UI"
-
 
 Version 0.6.0.1-ku7 (2019-07-05)
 ========================

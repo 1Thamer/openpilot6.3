@@ -8,7 +8,6 @@ from selfdrive.car.hyundai.carstate import CarState, get_can_parser, get_camera_
 from selfdrive.car.hyundai.values import CAR, get_hud_alerts
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness
 
-
 class CarInterface(object):
   def __init__(self, CP, CarController):
     self.CP = CP
@@ -51,9 +50,13 @@ class CarInterface(object):
     ret.safetyModel = car.CarParams.SafetyModel.hyundai
     ret.enableCruise = True  # stock acc
 
-    ret.steerActuatorDelay = 0.1
-    ret.steerRateCost = 0.5
     tire_stiffness_factor = 1.
+
+    # Hyundai Kia and Genesis Starting Values
+    # Auto Tune corrects anything from here on out.
+
+    ret.steerActuatorDelay = 0.1 
+    ret.steerRateCost = 0.5
 
     ret.lateralTuning.pid.kf = 0.00005
     ret.mass = 1985. + STD_CARGO_KG
