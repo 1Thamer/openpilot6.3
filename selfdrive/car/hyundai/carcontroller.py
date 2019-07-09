@@ -1,9 +1,14 @@
 from selfdrive.car import limit_steer_rate
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_lkas12, \
                                              create_1191, create_1156, \
-                                             create_clu11, learn_checksum
+                                             create_clu11, learn_checksum, create_mdps12
 from selfdrive.car.hyundai.values import Buttons
 from selfdrive.can.packer import CANPacker
+import zmq
+from selfdrive.services import service_list
+import selfdrive.messaging as messaging
+from selfdrive.config import Conversions as CV
+from common.params import Params
 
 
 # Steer torque limits
@@ -24,8 +29,18 @@ class CarController(object):
 
     self.lkas11_cnt = 0
     self.clu11_cnt = 0
+    self.mdps12_cnt = 0
     self.cnt = 0
     self.last_resume_cnt = 0
+
+    self.map_speed = 0
+    #context = zmq.Context()
+    #self.map_data_sock = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True)
+    #self.params = Params()
+    self.speed_conv = 3.6
+    self.speed_offset = 1.03      # Multiplier for cruise speed vs speed limit  TODO: Add to UI
+    self.speed_enable = True      # Enable Auto Speed Set                       TODO: Add to UI
+    self.speed_adjusted = False
 
     self.checksum = "NONE"
     self.checksum_learn_cnt = 0
@@ -39,6 +54,7 @@ class CarController(object):
   def update(self, enabled, CS, actuators, pcm_cancel_cmd, hud_alert):
     ### Error State Resets ###
     disable_steer = False
+    can_sends = []
 
     ### Learn Checksum ###
 
@@ -53,6 +69,7 @@ class CarController(object):
     # If MDPS is faulted from bad checksum, then cycle through all Checksums until 1 works
     if CS.steer_error == 1:
       self.camera_disconnected = True
+      print ("Camera Not Detected: Brute Forcing Checksums")
       if self.checksum_learn_cnt > 250:
         self.checksum_learn_cnt = 50
         if self.checksum == "NONE":
@@ -72,7 +89,7 @@ class CarController(object):
     ### Minimum Steer Speed ###
 
     # Learn Minimum Steer Speed
-    if CS.mdps12_flt != 0 and CS.v_ego_raw > 0.:
+    if CS.mdps12_flt != 0 and CS.v_ego_raw > 0. and abs(CS.angle_steers) < 10.0 :
       if CS.v_ego_raw > self.min_steer_speed:
         self.min_steer_speed = CS.v_ego_raw + 0.1
         print ("Discovered new Min Speed as", self.min_steer_speed)
@@ -80,7 +97,6 @@ class CarController(object):
     # Apply Usage of Minimum Steer Speed
     if CS.v_ego_raw < self.min_steer_speed:
       disable_steer = True
-
 
     ### Turning Indicators ###
     if (CS.left_blinker_on == 1 or CS.right_blinker_on == 1):
@@ -101,12 +117,53 @@ class CarController(object):
 
     self.apply_steer_last = apply_steer
 
+    '''
+    ### Auto Speed Limit ###
+
+    # Read Speed Limit and define if adjustment needed
+    if (self.cnt % 50) == 0 and self.speed_enable:
+      if not (enabled and CS.acc_active):
+        self.speed_adjusted = False
+      map_data = messaging.recv_one_or_none(self.map_data_sock)
+      if map_data is not None:
+        if bool(self.params.get("IsMetric")):
+          self.speed_conv = CV.MS_TO_KPH
+        else:
+          self.speed_conv = CV.MS_TO_MPH
+
+        if map_data.liveMapData.speedLimitValid:
+          last_speed = self.map_speed
+          v_speed = int(map_data.liveMapData.speedLimit * self.speed_offset)
+          self.map_speed = v_speed * self.speed_conv
+          if last_speed != self.map_speed:
+            self.speed_adjusted = False
+        else:
+          self.map_speed = 0
+          self.speed_adjusted = True
+    else:
+      self.map_speed = 0
+      self.speed_adjusted = True
+
+    # Spam buttons for Speed Adjustment
+    if CS.acc_active and not self.speed_adjusted and self.map_speed > (8.5 * self.speed_conv) and (self.cnt % 9 == 0 or self.cnt % 9 == 1):
+      if (CS.cruise_set_speed * self.speed_conv) > (self.map_speed * 1.005):
+        can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.SET_DECEL, (1 if self.cnt % 9 == 1 else 0)))
+      elif (CS.cruise_set_speed * self.speed_conv) < (self.map_speed / 1.005):
+        can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, (1 if self.cnt % 9 == 1 else 0)))
+      else:
+        self.speed_adjusted = True
+
+    # Cancel Adjustment on Pedal
+    if CS.pedal_gas:
+      self.speed_adjusted = True
+
+    '''
 
     ### Generate CAN Messages ###
-    can_sends = []
 
     self.lkas11_cnt = self.cnt % 0x10
     self.clu11_cnt = self.cnt % 0x10
+    self.mdps12_cnt = self.cnt % 0x100
 
     if self.camera_disconnected:
       if (self.cnt % 10) == 0:
@@ -119,11 +176,15 @@ class CarController(object):
     can_sends.append(create_lkas11(self.packer, self.car_fingerprint, apply_steer, steer_req, self.lkas11_cnt,
                                    enabled, CS.lkas11, hud_alert, (not self.camera_disconnected), self.checksum))
 
+    if not self.camera_disconnected:
+      can_sends.append(create_mdps12(self.packer, self.car_fingerprint, self.mdps12_cnt, CS.mdps12, CS.lkas11, \
+                                    self.checksum))
+
     if pcm_cancel_cmd:
-      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL))
+      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, 0))
     elif CS.stopped and (self.cnt - self.last_resume_cnt) > 5:
       self.last_resume_cnt = self.cnt
-      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL))
+      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, 0))
 
     self.cnt += 1
 

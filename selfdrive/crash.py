@@ -19,6 +19,44 @@ if os.getenv("NOLOG") or os.getenv("NOCRASH"):
 else:
   from raven import Client
   from raven.transport.http import HTTPTransport
+  import json
+
+  error_tags = {'dirty': dirty, 'username': 'char_error'}
+
+  try:
+    with open("/data/data/ai.comma.plus.offroad/files/persistStore/persist-auth", "r") as f:
+      auth = json.loads(f.read())
+    auth = json.loads(auth['commaUser'])
+    tags = ['username', 'email']
+    for tag in tags:
+      try:
+        error_tags[tag] = ''.join(char for char in auth[tag].decode('utf-8', 'ignore') if char.isalnum())
+      except:
+        pass
+  except:
+    pass
+
+  try:
+    with open("/data/params/d/CommunityPilotUser", "r") as f:
+      auth = json.loads(f.read())
+    tags = ['username', 'email']
+    for tag in tags:
+      try:
+        error_tags[tag] = ''.join(char for char in auth[tag].decode('utf-8', 'ignore') if char.isalnum())
+      except:
+        pass
+  except:
+    pass
+
+  logging_data = {"branch": "/data/params/d/GitBranch", "commit": "/data/params/d/GitCommit", "remote": "/data/params/d/GitRemote"}
+
+  for key in logging_data:
+    try:
+      with open(logging_data[key], "r") as f:
+        error_tags[key] = str(f.read())
+    except:
+        error_tags[key] = "unknown"
+
   client = Client('https://84d713b5bd674bcbb7030d1b86115dcb:80109516f2dd4ee0b9dbb72331930189@sentry.io/1405628',
                   install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty})
 
@@ -27,6 +65,9 @@ else:
     if not exc_info[0] is capnp.lib.capnp.KjException:
       client.captureException(*args, **kwargs)
     cloudlog.error("crash", exc_info=kwargs.get('exc_info', 1))
+
+  def capture_warning(warning_string):
+    client.captureMessage(warning_string, level='warning')
 
   def bind_user(**kwargs):
     client.user_context(kwargs)

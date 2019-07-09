@@ -5,6 +5,7 @@ from common.fingerprints import eliminate_incompatible_cars, all_known_cars
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
+import selfdrive.crash as crash
 
 
 def get_startup_alert(car_recognized, controller_available):
@@ -146,6 +147,12 @@ def get_car(logcan, sendcan):
   if candidate is None:
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
     candidate = "mock"
+  else:
+    cloudlog.warning("car does match fingerprint: %r", fingerprints)
+    try:
+      crash.capture_warning("fingerprinted %s" % candidate)
+    except:  # fixes occasional travis errors
+      pass
 
   CarInterface, CarController = interfaces[candidate]
   params = CarInterface.get_params(candidate, fingerprints, vin)

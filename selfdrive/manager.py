@@ -100,6 +100,7 @@ managed_processes = {
   "plannerd": "selfdrive.controls.plannerd",
   "radard": "selfdrive.controls.radard",
   "ubloxd": ("selfdrive/locationd", ["./ubloxd"]),
+  # "mapd": "selfdrive.mapd.mapd",
   "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
   "logmessaged": "selfdrive.logmessaged",
   "tombstoned": "selfdrive.tombstoned",
@@ -151,6 +152,7 @@ car_started_processes = [
   'proclogd',
   'ubloxd',
   'gpsd',
+  # 'mapd',
   'deleter',
 ]
 
