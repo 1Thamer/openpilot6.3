@@ -34,9 +34,9 @@ class CarController(object):
     self.last_resume_cnt = 0
 
     self.map_speed = 0
-    context = zmq.Context()
-    self.map_data_sock = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True)
-    self.params = Params()
+    #context = zmq.Context()
+    #self.map_data_sock = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True)
+    #self.params = Params()
     self.speed_conv = 3.6
     self.speed_offset = 1.03      # Multiplier for cruise speed vs speed limit  TODO: Add to UI
     self.speed_enable = True      # Enable Auto Speed Set                       TODO: Add to UI
@@ -118,7 +118,7 @@ class CarController(object):
 
     self.apply_steer_last = apply_steer
 
-
+    '''
     ### Auto Speed Limit ###
 
     # Read Speed Limit and define if adjustment needed
@@ -158,7 +158,7 @@ class CarController(object):
     if CS.pedal_gas:
       self.speed_adjusted = True
 
-
+    '''
 
     ### Generate CAN Messages ###
 
