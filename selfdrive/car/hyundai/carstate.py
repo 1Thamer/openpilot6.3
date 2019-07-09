@@ -159,6 +159,10 @@ class CarState(object):
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
     self.has_scc = False
+    self.min_steer_speed = 0
+  
+  def update_min_speed(speed):
+    self.min_steer_speed = speed
 
   def update(self, cp, cp_cam):
     if (cp.vl["SCC11"]['TauGapSet'] > 0):
@@ -270,6 +274,7 @@ class CarState(object):
     else:
       self.gear_tcu = "unknown"
 
-    # save the entire LKAS11 and CLU11
+    # save the entire LKAS11, CLU11 and MDPS12 messages
     self.lkas11 = cp_cam.vl["LKAS11"]
     self.clu11 = cp.vl["CLU11"]
+    self.mdps12 = cp.vl["MDPS12"]
