@@ -1,4 +1,4 @@
-Version 0.6.0.3-ku7 (2019-07-**)
+Version 0.6.0.3-ku7 (2019-07-09)
 ========================
 * HKG - Send fingerprints to Sentry
 * HKG - WIP: bring back mapd from 0.5.12
