@@ -1,9 +1,18 @@
-Version 0.6.0.2-ku7 (2019-07-08)
+Version 0.6.0.3-ku7 (2019-07-**)
 ========================
+* HKG - Send fingerprints to Sentry
+* HKG - Bring back mapd from 0.5.12
+* HKG - Auto Set Cruise to Speed Limit
+* HKG - Don't Learn Min Steer Speed when turning corners
+* HKG - Create MDPS12 Message (to reduce/stop Stock cam faults)
+* HKG - Implement Min Speed Speed Warning
+
+Version 0.6.0.2-ku7 (2019-07-08)
+========================low
 * HKG - Auto Discover Checksum if LKAS11 Message not present
 * HKG - Disable Torque on Lane Change
-* HKG - Auto Learn Low Speed Cutoff
-* HKG - Disable during Low Speed, where low speed is learnt
+* HKG - Auto Learn Min Steer Speed Cutoff
+* HKG - Disable during Min Steer Speed, where min speed is learnt
 * HKG - Improve Support, maybe even Genesis
 * HKG - Clean up redundant code, remove last "Fingerprint" stuff
 * HKG - Add Sentry Crash Reporting

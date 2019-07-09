@@ -58,7 +58,7 @@ def create_1191():
 def create_1156():
   return make_can_msg(1156, "\x08\x20\xfe\x3f\x00\xe0\xfd\x3f", 0)
 
-def create_clu11(packer, clu11, button):
+def create_clu11(packer, clu11, button, cnt):
   values = {
     "CF_Clu_CruiseSwState": button,
     "CF_Clu_CruiseSwMain": clu11["CF_Clu_CruiseSwMain"],
@@ -71,12 +71,12 @@ def create_clu11(packer, clu11, button):
     "CF_Clu_RheostatLevel": clu11["CF_Clu_RheostatLevel"],
     "CF_Clu_CluInfo": clu11["CF_Clu_CluInfo"],
     "CF_Clu_AmpInfo": clu11["CF_Clu_AmpInfo"],
-    "CF_Clu_AliveCnt1": 0,
+    "CF_Clu_AliveCnt1": cnt,
   }
 
   return packer.make_can_msg("CLU11", 0, values)
 
-def create_mdps12(packer, car_fingerprint, cnt, mdps12, lkas11, camcan, checksum):
+def create_mdps12(packer, car_fingerprint, cnt, mdps12, lkas11, checksum):
   values = {
     "CR_Mdps_StrColTq": mdps12["CR_Mdps_StrColTq"],
     "CF_Mdps_Def": mdps12["CF_Mdps_Def"],
@@ -92,12 +92,12 @@ def create_mdps12(packer, car_fingerprint, cnt, mdps12, lkas11, camcan, checksum
   }
 
   if not (checksum == "crc8"):
-    dat = packer.make_can_msg("MDPS12", camcan, values)[2]
+    dat = packer.make_can_msg("MDPS12", 2, values)[2]
     dat = [ord(i) for i in dat]
     checksum = (dat[0] + dat[1] + dat[2] + dat[4] + dat[5] + dat[6] + dat[7]) % 256
     values["CF_Mdps_Chksum2"] = checksum
 
-  return packer.make_can_msg("MDPS12", camcan, values)
+  return packer.make_can_msg("MDPS12", 2, values)
 
 def learn_checksum(packer, lkas11):
     values = {
