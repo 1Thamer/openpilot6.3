@@ -161,7 +161,7 @@ class CarState(object):
     self.has_scc = False
     self.min_steer_speed = 0
   
-  def update_min_speed(speed):
+  def update_min_speed(self, speed):
     self.min_steer_speed = speed
 
   def update(self, cp, cp_cam):
@@ -226,6 +226,7 @@ class CarState(object):
     self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4. if self.has_scc else False
     self.mdps11_strang = cp.vl["MDPS11"]["CR_Mdps_StrAng"]
     self.mdps11_stat = cp.vl["MDPS11"]["CF_Mdps_Stat"]
+    self.lkas11_icon = cp.vl["LKAS11"]["CF_Lkas_Icon"]
     self.mdps12_flt = cp.vl["MDPS12"]['CF_Mdps_ToiFlt']
 
     self.user_brake = 0

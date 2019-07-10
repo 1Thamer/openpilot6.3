@@ -3,6 +3,7 @@ from selfdrive.car.hyundai.hyundaican import create_lkas11, create_lkas12, \
                                              create_1191, create_1156, \
                                              create_clu11, learn_checksum, create_mdps12
 from selfdrive.car.hyundai.values import Buttons
+from selfdrive.car.hyundai.carstate import update_min_speed
 from selfdrive.can.packer import CANPacker
 import zmq
 from selfdrive.services import service_list
@@ -47,7 +48,6 @@ class CarController(object):
     self.checksum_learn_cnt = 0
 
     self.turning_signal_timer = 0
-    self.min_steer_speed = 0.
     self.camera_disconnected = False
 
     self.packer = CANPacker(dbc_name)
@@ -75,28 +75,32 @@ class CarController(object):
         self.checksum_learn_cnt = 50
         if self.checksum == "NONE":
           cloudlog.info("Testing 6B Checksum")
-          self.checksum == "6B"
+          self.checksum = "6B"
         elif self.checksum == "6B":
           cloudlog.info("Testing 7B Checksum")
-          self.checksum == "7B"
+          self.checksum = "7B"
         elif self.checksum == "7B":
           cloudlog.info("Testing CRC8 Checksum")
-          self.checksum == "crc8"
+          self.checksum = "crc8"
         else:
-          self.checksum == "NONE"
+          self.checksum = "NONE"
       else:
         self.checksum_learn_cnt += 1
 
     ### Minimum Steer Speed ###
 
     # Learn Minimum Steer Speed
-    if CS.mdps12_flt != 0 and CS.v_ego_raw > 0. and abs(CS.angle_steers) < 10.0 :
-      if CS.v_ego_raw > self.min_steer_speed:
-        self.min_steer_speed = CS.v_ego_raw + 0.1
-        cloudlog.info("Discovered new Min Speed as", self.min_steer_speed)
+    if CS.mdps12_flt != 0 and CS.v_ego_raw > 0. and abs(CS.angle_steers) < 10.0 and CS.lkas11_icon != 2:
+      if CS.v_ego_raw > CS.min_steer_speed:
+        update_min_speed(CS.v_ego_raw + 0.1)
+        cloudlog.info("Discovered new Min Speed as", CS.min_steer_speed)
+    # If we have LKAS_Icon == 2, then we know its 16.7m/s
+    elif CS.lkas11_icon == 2 and CS.min_steer_speed < 16.7:
+      update_min_speed(16.7)
+      cloudlog.info("Suspected Genesis, new Min Speed as 16.7")
 
     # Apply Usage of Minimum Steer Speed
-    if CS.v_ego_raw < self.min_steer_speed:
+    if CS.v_ego_raw < CS.min_steer_speed:
       disable_steer = True
 
     ### Turning Indicators ###
@@ -113,12 +117,13 @@ class CarController(object):
 
     if not enabled or disable_steer:
       apply_steer = 0
-
-    steer_req = 1 if enabled else 0
+      steer_req = 0
+    else:
+      steer_req = 1
 
     self.apply_steer_last = apply_steer
 
-    
+    '''
     ### Auto Speed Limit ###
 
     # Read Speed Limit and define if adjustment needed
@@ -158,7 +163,7 @@ class CarController(object):
     if CS.pedal_gas:
       self.speed_adjusted = True
 
-    
+    '''
 
     ### Generate CAN Messages ###
 
