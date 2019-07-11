@@ -136,7 +136,10 @@ def get_camera_parser(CP):
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, timeout=100)
 
+min_steer_speed = 0.
 
+def update_min_speed(self, speed):
+  min_steer_speed = speed
 class CarState(object):
   def __init__(self, CP):
 
@@ -159,10 +162,6 @@ class CarState(object):
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
     self.has_scc = False
-    self.min_steer_speed = 0
-  
-  def update_min_speed(self, speed):
-    self.min_steer_speed = speed
 
   def update(self, cp, cp_cam):
     if (cp.vl["SCC11"]['TauGapSet'] > 0):
@@ -238,6 +237,8 @@ class CarState(object):
     else:
       self.pedal_gas = cp.vl["EMS12"]['TPS']
     self.car_gas = cp.vl["EMS12"]['TPS']
+
+    self.min_steer_speed = min_steer_speed
 
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
     gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
