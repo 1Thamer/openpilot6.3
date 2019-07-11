@@ -21,6 +21,7 @@ class CarInterface(object):
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
     self.low_speed_alert = False
+    self.lkas_button_on_prev = False
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -240,8 +241,8 @@ class CarInterface(object):
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
-      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    #if ret.seatbeltUnlatched:
+      #events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.esp_disabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not self.CS.main_on:
@@ -250,7 +251,11 @@ class CarInterface(object):
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-
+    if self.CS.lkas_button_on and not self.lkas_button_on_prev:
+      events.append(create_event('wrongCarMode', [ET.ENABLE]))
+    if not self.CS.lkas_button_on:
+      events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
+"""
     # enable request in prius is simple, as we activate when Toyota is active (rising edge)
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
@@ -264,7 +269,7 @@ class CarInterface(object):
 
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
-
+"""
     if self.low_speed_alert:
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
@@ -274,6 +279,7 @@ class CarInterface(object):
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
+    self.lkas_button_on_prev = self.CS.lkas_button_on
 
     return ret.as_reader()
 
