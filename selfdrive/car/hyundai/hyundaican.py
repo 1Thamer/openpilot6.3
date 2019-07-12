@@ -85,7 +85,7 @@ def create_mdps12(packer, car_fingerprint, cnt, mdps12, lkas11):
     "CF_Mdps_ToiActive": lkas11["CF_Lkas_ActToi"],
     "CF_Mdps_ToiUnavail": mdps12["CF_Mdps_ToiUnavail"],
     "CF_Mdps_MsgCount2": cnt,
-    "CF_Mdps_Chksum2": mdps12["CF_Mdps_Chksum2"],
+    "CF_Mdps_Chksum2": 0,
     "CF_Mdps_ToiFlt": 0,
     "CF_Mdps_SErr": mdps12["CF_Mdps_SErr"],
     "CR_Mdps_StrTq": mdps12["CR_Mdps_StrTq"],
