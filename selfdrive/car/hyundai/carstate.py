@@ -158,7 +158,7 @@ class CarState(object):
 
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
     self.main_on = True
-    self.acc_active = cp.vl["SCC12"]['ACCMode'] != 0
+    self.acc_active = cp.vl["SCC11"]["MainMode_ACC"] != 0
     self.pcm_acc_status = int(self.acc_active)
 
     # calc best v_ego estimate, by averaging two opposite corners
