@@ -250,3 +250,4 @@ class CarState(object):
     # save the entire LKAS11 and CLU11
     self.lkas11 = cp_cam.vl["LKAS11"]
     self.clu11 = cp.vl["CLU11"]
+    self.mdps12 = cp.vl["MDPS12"]
