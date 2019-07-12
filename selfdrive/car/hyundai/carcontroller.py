@@ -61,7 +61,7 @@ class CarController(object):
     # Learn Checksum from the Camera
     if self.checksum == "NONE":
       self.checksum = learn_checksum(self.packer, CS.lkas11)
-      cloudlog.info("Discovered Checksum", self.checksum)
+      cloudlog.info("Discovered Checksum")
       if self.checksum == "NONE" and self.checksum_learn_cnt < 50:
         self.checksum_learn_cnt += 1
         return
