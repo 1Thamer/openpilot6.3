@@ -236,7 +236,7 @@ class CarState(object):
     self.car_gas = cp.vl["EMS12"]['TPS']
 
     # Learn Minimum Steer Speed
-    if self.mdps12_flt != 0 and self.v_ego_raw > 0. and abs(self.angle_steers) < 10.0 and self.lkas11_icon != 2:
+    if self.mdps12_flt != 0 and self.v_ego_raw > 0. and abs(self.angle_steers) < 5.0 and self.lkas11_icon != 2:
       if self.v_ego_raw > self.min_steer_speed:
         self.min_steer_speed = self.v_ego_raw + 0.1
     # If we have LKAS_Icon == 2, then we know its 16.7m/s
