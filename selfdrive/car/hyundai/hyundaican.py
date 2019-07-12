@@ -8,7 +8,7 @@ def make_can_msg(addr, dat, alt):
 
 def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled, lkas11, hud_alert, keep_stock=False):
   values = {
-    "CF_Lkas_Icon": 0,
+    "CF_Lkas_Icon": 2,
     "CF_Lkas_LdwsSysState": 3 if steer_req else (lkas11["CF_Lkas_LdwsSysState"] if keep_stock else 1),
     "CF_Lkas_SysWarning": hud_alert,
     "CF_Lkas_LdwsLHWarning": lkas11["CF_Lkas_LdwsLHWarning"] if keep_stock else 0,
@@ -18,7 +18,7 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
     "CR_Lkas_StrToqReq": apply_steer,
     "CF_Lkas_ActToi": steer_req,
     "CF_Lkas_ToiFlt": 0,
-    "CF_Lkas_HbaSysState": lkas11["CF_Lkas_HbaSysState"] if keep_stock else 1,
+    "CF_Lkas_HbaSysState": lkas11["CF_Lkas_HbaSysState"] if keep_stock else 0,
     "CF_Lkas_FcwOpt": lkas11["CF_Lkas_FcwOpt"] if keep_stock else 0,
     "CF_Lkas_HbaOpt": lkas11["CF_Lkas_HbaOpt"] if keep_stock else 1,
     "CF_Lkas_MsgCount": cnt,
@@ -26,8 +26,8 @@ def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled,
     "CF_Lkas_FcwCollisionWarning": lkas11["CF_Lkas_FcwCollisionWarning"] if keep_stock else 0,
     "CF_Lkas_FusionState": lkas11["CF_Lkas_FusionState"] if keep_stock else 0,
     "CF_Lkas_Chksum": 0,
-    "CF_Lkas_FcwOpt_USM": lkas11["CF_Lkas_FcwOpt_USM"] if keep_stock else 0,
-    "CF_Lkas_LdwsOpt_USM": lkas11["CF_Lkas_LdwsOpt_USM"] if keep_stock else 3,
+    "CF_Lkas_FcwOpt_USM": lkas11["CF_Lkas_FcwOpt_USM"] if keep_stock else 2,
+    "CF_Lkas_LdwsOpt_USM": lkas11["CF_Lkas_LdwsOpt_USM"] if keep_stock else 0,
   }
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
