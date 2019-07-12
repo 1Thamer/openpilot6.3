@@ -89,16 +89,6 @@ class CarController(object):
 
     ### Minimum Steer Speed ###
 
-    # Learn Minimum Steer Speed
-    if CS.mdps12_flt != 0 and CS.v_ego_raw > 0. and abs(CS.angle_steers) < 10.0 and CS.lkas11_icon != 2:
-      if CS.v_ego_raw > CS.min_steer_speed:
-        update_min_speed(CS.v_ego_raw + 0.1)
-        cloudlog.info("Discovered new Min Speed as", CS.min_steer_speed)
-    # If we have LKAS_Icon == 2, then we know its 16.7m/s
-    elif CS.lkas11_icon == 2 and CS.min_steer_speed < 16.7:
-      update_min_speed(16.7)
-      cloudlog.info("Suspected Genesis, new Min Speed as 16.7")
-
     # Apply Usage of Minimum Steer Speed
     if CS.v_ego_raw < CS.min_steer_speed:
       disable_steer = True
