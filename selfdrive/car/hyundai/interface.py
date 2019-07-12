@@ -93,6 +93,12 @@ class CarInterface(object):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
       ret.minSteerSpeed = 35 * CV.MPH_TO_MS
+    elif candidate == CAR.GENESIS_G90:
+      ret.mass = 2200
+      ret.wheelbase = 3.15
+      ret.steerRatio = 12.069
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
     elif candidate == CAR.KIA_OPTIMA:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3558. * CV.LB_TO_KG
