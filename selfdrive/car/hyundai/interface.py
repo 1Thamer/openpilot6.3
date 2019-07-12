@@ -21,8 +21,8 @@ class CarInterface(object):
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
     self.low_speed_alert = False
+    self.lkas_button_on_prev = False
     self.vEgo_prev = False
-    self.force_disable = True
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -97,7 +97,13 @@ class CarInterface(object):
       ret.steerRatio = 16.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
-      ret.minEnableSpeed = 35 * CV.MPH_TO_MS
+      ret.minSteerSpeed = 35 * CV.MPH_TO_MS
+    elif candidate == CAR.GENESIS_G90:
+      ret.mass = 2200
+      ret.wheelbase = 3.15
+      ret.steerRatio = 12.069
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
     elif candidate == CAR.KIA_OPTIMA:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3558. * CV.LB_TO_KG
@@ -245,8 +251,8 @@ class CarInterface(object):
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
-      events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    #if ret.seatbeltUnlatched:
+      #events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.esp_disabled:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not self.CS.main_on:
@@ -255,17 +261,21 @@ class CarInterface(object):
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-    if ret.vEgo < self.CP.minEnableSpeed:
-      events.append(create_event('speedTooLow', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-      self.force_disable = False
-    elif ret.vEgo > (self.CP.minEnableSpeed + 1):
-      self.force_disable = True
+    if self.CS.lkas_button_on and not self.lkas_button_on_prev:
+      events.append(create_event('wrongCarMode', [ET.ENABLE]))
+    if not self.CS.lkas_button_on:
+      events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     # enable request in prius is simple, as we activate when Toyota is active (rising edge)
-    if ret.cruiseState.enabled and (not self.cruise_enabled_prev or ret.vEgo > self.CP.minEnableSpeed >= self.vEgo_prev):
-      events.append(create_event('pcmEnable', [ET.ENABLE]))
-    elif not ret.cruiseState.enabled:
-      events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
+    #if ret.cruiseState.enabled and not self.cruise_enabled_prev:
+      #events.append(create_event('pcmEnable', [ET.ENABLE]))
+    #elif not ret.cruiseState.enabled:
+      #events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
+    if ret.vEgo < self.CP.minEnableSpeed:
+      events.append(create_event('speedTooLow', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+    elif ret.vEgo > self.CP.minEnableSpeed >= self.vEgo_prev:
+      events.append(create_event('speedTooLow', [ET.ENABLE]))
+
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
     #if (ret.gasPressed and not self.gas_pressed_prev) or \
@@ -284,6 +294,7 @@ class CarInterface(object):
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
+    self.lkas_button_on_prev = self.CS.lkas_button_on
     self.vEgo_prev = ret.vEgo
 
     return ret.as_reader()
@@ -291,7 +302,6 @@ class CarInterface(object):
   def apply(self, c):
 
     hud_alert = get_hud_alerts(c.hudControl.visualAlert, c.hudControl.audibleAlert)
-    if not self.force_disable: c.cruiseControl.cancel = False
 
     can_sends = self.CC.update(c.enabled, self.CS, c.actuators,
                                c.cruiseControl.cancel, hud_alert)
