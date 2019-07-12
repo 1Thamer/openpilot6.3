@@ -22,6 +22,7 @@ class CarInterface(object):
     self.cruise_enabled_prev = False
     self.low_speed_alert = False
     self.lkas_button_on_prev = False
+    self.vEgo_prev = False
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -54,7 +55,11 @@ class CarInterface(object):
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerRateCost = 0.5
+
     tire_stiffness_factor = 1.
+
+    ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
+
 
     if candidate == CAR.SANTA_FE:
       ret.lateralTuning.pid.kf = 0.00005
@@ -116,7 +121,6 @@ class CarInterface(object):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
       ret.minSteerSpeed = 0.
 
-    ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
     ret.longitudinalTuning.kpBP = [0.]
     ret.longitudinalTuning.kpV = [0.]
     ret.longitudinalTuning.kiBP = [0.]
@@ -267,6 +271,11 @@ class CarInterface(object):
       #events.append(create_event('pcmEnable', [ET.ENABLE]))
     #elif not ret.cruiseState.enabled:
       #events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
+    if ret.vEgo < self.CP.minEnableSpeed:
+      events.append(create_event('speedTooLow', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+    elif ret.vEgo > self.CP.minEnableSpeed >= self.vEgo_prev:
+      events.append(create_event('speedTooLow', [ET.ENABLE]))
+
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
     #if (ret.gasPressed and not self.gas_pressed_prev) or \
@@ -286,6 +295,7 @@ class CarInterface(object):
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
     self.lkas_button_on_prev = self.CS.lkas_button_on
+    self.vEgo_prev = ret.vEgo
 
     return ret.as_reader()
 
