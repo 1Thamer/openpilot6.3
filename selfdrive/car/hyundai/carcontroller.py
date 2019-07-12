@@ -3,7 +3,6 @@ from selfdrive.car.hyundai.hyundaican import create_lkas11, create_lkas12, \
                                              create_1191, create_1156, \
                                              create_clu11, learn_checksum, create_mdps12
 from selfdrive.car.hyundai.values import Buttons
-from selfdrive.car.hyundai.carstate import update_min_speed
 from selfdrive.can.packer import CANPacker
 import zmq
 from selfdrive.services import service_list
