@@ -75,6 +75,7 @@ def get_can_parser(CP):
     ("CF_Mdps_FailStat", "MDPS12", 0),
     ("CR_Mdps_OutTq", "MDPS12", 0),
 
+    ("MainMode_ACC", "SCC11", 0),
     ("VSetDis", "SCC11", 0),
     ("SCCInfoDisplay", "SCC11", 0),
     ("ACCMode", "SCC12", 1),
@@ -165,7 +166,7 @@ class CarState(object):
 
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
     self.main_on = True
-    self.acc_active = cp.vl["SCC11"]["MainMode_ACC"] != 0
+    self.acc_active = cp.vl["SCC11"]['MainMode_ACC'] != 0
     self.pcm_acc_status = int(self.acc_active)
 
     # calc best v_ego estimate, by averaging two opposite corners
