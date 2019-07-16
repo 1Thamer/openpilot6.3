@@ -261,16 +261,16 @@ class CarInterface(object):
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-    if self.CS.lkas_button_on and not self.lkas_button_on_prev:
-      events.append(create_event('wrongCarMode', [ET.ENABLE]))
-    if not self.CS.lkas_button_on:
-      events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
+    #if self.CS.lkas_button_on and not self.lkas_button_on_prev:
+      #events.append(create_event('wrongCarMode', [ET.ENABLE]))
+    #if not self.CS.lkas_button_on:
+      #events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     # enable request in prius is simple, as we activate when Toyota is active (rising edge)
-    #if ret.cruiseState.enabled and not self.cruise_enabled_prev:
-      #events.append(create_event('pcmEnable', [ET.ENABLE]))
-    #elif not ret.cruiseState.enabled:
-      #events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
+    if ret.cruiseState.enabled and not self.cruise_enabled_prev:
+      events.append(create_event('pcmEnable', [ET.ENABLE]))
+    elif not ret.cruiseState.enabled:
+      events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
     if ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     elif ret.vEgo > self.CP.minEnableSpeed >= self.vEgo_prev:
