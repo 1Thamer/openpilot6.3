@@ -59,6 +59,7 @@ class CarInterface(object):
     tire_stiffness_factor = 1.
 
     ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
+    ret.minSteerSpeed = 0.
 
 
     if candidate == CAR.SANTA_FE:
@@ -97,8 +98,8 @@ class CarInterface(object):
       ret.steerRatio = 16.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
-      ret.minSteerSpeed = 35 * CV.MPH_TO_MS
-    elif candidate == CAR.GENESIS_G90:
+      ret.minEnableSpeed = 35 * CV.MPH_TO_MS
+    elif candidate == CAR.GENESIS_G90 or CAR.GENESIS_G80:
       ret.mass = 2200
       ret.wheelbase = 3.15
       ret.steerRatio = 12.069
@@ -119,7 +120,6 @@ class CarInterface(object):
       ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-      ret.minSteerSpeed = 0.
 
     ret.longitudinalTuning.kpBP = [0.]
     ret.longitudinalTuning.kpV = [0.]
