@@ -35,21 +35,13 @@ static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (addr == 832) {
     hyundai_camera_bus = bus;
   }
-/*
+
   // enter controls on rising edge of ACC, exit controls on ACC off
   if (addr == 1057) {
-    // 2 bits: 13-14
-    int cruise_engaged = (to_push->RDLR >> 13) & 0x3;
-    if (cruise_engaged && !hyundai_cruise_engaged_last) {
-      controls_allowed = 1;
-    }
-    if (!cruise_engaged) {
-      controls_allowed = 0;
-    }
-    hyundai_cruise_engaged_last = cruise_engaged;
+    controls_allowed = 1;
   }
-*/
-  controls_allowed = 1;
+
+
   // 832 is lkas cmd. If it is on camera bus, then giraffe switch 2 is high
   if ((addr == 832) && (bus == hyundai_camera_bus) && (hyundai_camera_bus != 0)) {
     hyundai_giraffe_switch_2 = 1;
