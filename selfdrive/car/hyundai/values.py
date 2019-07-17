@@ -18,6 +18,7 @@ class CAR:
   KIA_STINGER = "KIA STINGER GT2 2018"
   SANTA_FE = "HYUNDAI SANTA FE LIMITED 2019"
   GENESIS_G90 = "GENESIS G90 2017"
+  GENESIS_G80 = "GENESIS G80 2017"
 
 class Buttons:
   NONE = 0
@@ -60,7 +61,7 @@ CAMERA_MSGS = [832, 1156, 1191, 1342]
 CHECKSUM = {
   "crc8": [CAR.SANTA_FE],
   "6B": [CAR.KIA_SORENTO, CAR.GENESIS],
-  "7B": [CAR.KIA_STINGER, CAR.ELANTRA, CAR.KIA_OPTIMA, CAR.GENESIS_G90],
+  "7B": [CAR.KIA_STINGER, CAR.ELANTRA, CAR.KIA_OPTIMA, CAR.GENESIS_G90, CAR.GENESIS_G80],
 }
 
 FEATURES = {
@@ -77,6 +78,7 @@ DBC = {
   CAR.KIA_STINGER: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', None),
   CAR.GENESIS_G90: dbc_dict('hyundai_kia_generic', None),
+  CAR.GENESIS_G80: dbc_dict('hyundai_kia_generic', None),
 }
 
 STEER_THRESHOLD = 100
