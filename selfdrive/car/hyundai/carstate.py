@@ -108,6 +108,7 @@ def get_camera_parser(CP):
 
   signals = [
     # sig_name, sig_address, default
+    ("CF_Lkas_Icon", "LKAS11", 0),
     ("CF_Lkas_LdwsSysState", "LKAS11", 0),
     ("CF_Lkas_SysWarning", "LKAS11", 0),
     ("CF_Lkas_LdwsLHWarning", "LKAS11", 0),
@@ -122,7 +123,13 @@ def get_camera_parser(CP):
     ("CF_Lkas_FcwCollisionWarning", "LKAS11", 0),
     ("CF_Lkas_FusionState", "LKAS11", 0),
     ("CF_Lkas_FcwOpt_USM", "LKAS11", 0),
-    ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0)
+    ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0),
+    ("CF_Lkas_Unknown1", "LKAS11", 0),
+    ("CF_Lkas_Unknown2", "LKAS11", 0),
+    ("CF_Lkas_ActToi", "LKAS11", 0),
+    ("CR_Lkas_StrToqReq", "LKAS11", 0),
+    ("CF_Lkas_MsgCount", "LKAS11", 0),
+    ("CF_Lkas_Chksum", "LKAS11", 0)
   ]
 
   checks = []
