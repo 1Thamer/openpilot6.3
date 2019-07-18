@@ -292,7 +292,7 @@ class CarInterface(object):
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     if self.turning_indicator_alert:
-      events.append(create_event('belowSteerSpeed', [ET.WARNING]))
+      events.append(create_event('turningIndicatorOn', [ET.WARNING]))
 
     ret.events = events
     ret.canMonoTimes = canMonoTimes
