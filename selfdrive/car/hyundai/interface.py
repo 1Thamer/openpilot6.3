@@ -23,6 +23,7 @@ class CarInterface(object):
     self.low_speed_alert = False
     self.lkas_button_on_prev = False
     self.vEgo_prev = False
+    self.turning_indicator_alert = False
 
     # *** init the major players ***
     self.CS = CarState(CP)
@@ -246,6 +247,8 @@ class CarInterface(object):
     if ret.vEgo > (self.CP.minSteerSpeed + 4.):
       self.low_speed_alert = False
 
+    self.turning_indicator_alert = True if (self.CS.left_blinker_on or self.CS.right_blinker_on == 1) else False
+
     events = []
     if not ret.gearShifter == 'drive':
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
@@ -288,6 +291,9 @@ class CarInterface(object):
     if self.low_speed_alert:
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
+    if self.turning_indicator_alert:
+      events.append(create_event('belowSteerSpeed', [ET.WARNING]))
+
     ret.events = events
     ret.canMonoTimes = canMonoTimes
 
@@ -302,8 +308,10 @@ class CarInterface(object):
   def apply(self, c):
 
     hud_alert = get_hud_alerts(c.hudControl.visualAlert, c.hudControl.audibleAlert)
+    
+    enable = c.enabled if not self.turning_indicator_alert else 0
 
-    can_sends = self.CC.update(c.enabled, self.CS, c.actuators,
+    can_sends = self.CC.update(enable, self.CS, c.actuators,
                                c.cruiseControl.cancel, hud_alert)
 
     return can_sends
