@@ -89,6 +89,8 @@ class CarController(object):
     ### Minimum Steer Speed ###
 
     # Learn Minimum Steer Speed
+    if CS.mdps_hard_falt:
+      self.min_steer_speed = 60 * CV.KPH_TO_MS
     if CS.mdps12_flt != 0 and CS.v_ego_raw > 0. and abs(CS.angle_steers) < 10.0 :
       if CS.v_ego_raw > self.min_steer_speed:
         self.min_steer_speed = CS.v_ego_raw + 0.1
