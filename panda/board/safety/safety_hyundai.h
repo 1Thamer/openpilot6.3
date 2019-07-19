@@ -125,7 +125,9 @@ static int hyundai_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   // forward cam to ccan and viceversa, except lkas cmd
   if (hyundai_giraffe_switch_2) {
     if (bus_num == 0) {
-      bus_fwd = hyundai_camera_bus;
+      int addr = GET_ADDR(to_fwd);
+      if (addr != 593) {
+        bus_fwd = hyundai_camera_bus;
     }
     if (bus_num == hyundai_camera_bus) {
       int addr = GET_ADDR(to_fwd);
