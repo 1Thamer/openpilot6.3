@@ -160,6 +160,7 @@ class CarState(object):
     self.right_blinker_flash = 0
     self.has_scc = False
     self.min_steer_speed = 0
+    self.mdps_hard_falt = False
   
   def update_min_speed(speed):
     self.min_steer_speed = speed
@@ -204,6 +205,9 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     is_set_speed_in_mph = int(cp.vl["CLU11"]['CF_Clu_SPEED_UNIT'])
     speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
+    
+    if (cp_cam.vl["LKAS11"]['CF_Lkas_Icon'] == 2):
+      self.mdps_hard_falt = True
 
     self.cruise_set_speed = (cp.vl["SCC11"]['VSetDis'] * speed_conv) if self.has_scc else (cp.vl["LVR12"]["CF_Lvr_CruiseSet"] * speed_conv)
     self.standstill = not v_wheel > 0.1
