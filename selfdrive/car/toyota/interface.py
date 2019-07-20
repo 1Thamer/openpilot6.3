@@ -130,7 +130,7 @@ class CarInterface(object):
       ret.safetyParam = 73
       ret.wheelbase = 2.78
       ret.steerRatio = 16.0
-      tire_stiffness_factor = 0.444  # not optimized yet
+      tire_stiffness_factor = 0.8
       ret.mass = 4607. * CV.LB_TO_KG + STD_CARGO_KG #mean between normal and hybrid limited
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.05]]
       ret.lateralTuning.pid.kf = 0.00006
