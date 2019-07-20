@@ -94,7 +94,7 @@ static int forward_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   controls_allowed = 0;
 }
 
- const safety_hooks forward_hooks = {
+const safety_hooks forward_hooks = {
   .init = forward_init,
   .rx = forward_rx_hook,
   .tx = forward_tx_hook,
