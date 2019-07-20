@@ -81,7 +81,7 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_FORWARD, &forward_hooks},
 };
 
-extern uint16_t current_safety_mode = SAFETY_NOOUTPUT;
+uint16_t current_safety_mode = SAFETY_NOOUTPUT;
 
 int safety_set_mode(uint16_t mode, int16_t param) {
   int set_status = -1;   // not set
