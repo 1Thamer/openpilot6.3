@@ -99,8 +99,8 @@ class CarInterface(object):
       ret.steerRatio = 12.069
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.03]]
-      ret.minEnableSpeed = 60 * CV.KPH_TO_MS
-    elif candidate == CAR.GENESIS_G90 or CAR.GENESIS_G80:
+      ret.minSteerSpeed = 60 * CV.KPH_TO_MS
+    elif candidate == CAR.GENESIS_G90 or candidate == CAR.GENESIS_G80:
       ret.mass = 2200
       ret.wheelbase = 3.15
       ret.steerRatio = 12.069
@@ -242,9 +242,9 @@ class CarInterface(object):
     ret.seatbeltUnlatched = not self.CS.seatbelt
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
-    if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
+    if ret.vEgo < self.CP.minSteerSpeed and self.CP.minSteerSpeed > 10.:
       self.low_speed_alert = True
-    if ret.vEgo > (self.CP.minSteerSpeed + 4.):
+    if ret.vEgo > self.CP.minSteerSpeed:
       self.low_speed_alert = False
 
     self.turning_indicator_alert = True if (self.CS.left_blinker_on or self.CS.right_blinker_on == 1) else False
@@ -274,11 +274,6 @@ class CarInterface(object):
       #events.append(create_event('pcmEnable', [ET.ENABLE]))
     #elif not ret.cruiseState.enabled:
       #events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
-    if ret.vEgo < self.CP.minEnableSpeed:
-      events.append(create_event('speedTooLow', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-    elif ret.vEgo > self.CP.minEnableSpeed >= self.vEgo_prev:
-      events.append(create_event('speedTooLow', [ET.ENABLE]))
-
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
     #if (ret.gasPressed and not self.gas_pressed_prev) or \
@@ -309,7 +304,7 @@ class CarInterface(object):
 
     hud_alert = get_hud_alerts(c.hudControl.visualAlert, c.hudControl.audibleAlert)
     
-    enable = c.enabled if not self.turning_indicator_alert else 0
+    enable = 0 if self.turning_indicator_alert or self.low_speed_alert else c.enabled
 
     can_sends = self.CC.update(enable, self.CS, c.actuators,
                                c.cruiseControl.cancel, hud_alert)
