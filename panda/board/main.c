@@ -523,6 +523,12 @@ void safety_cb_enable_all() {
       can_init_all();
 }
 
+// disable safety_forward
+void safety_cb_disable_all() {
+      // disable sending can messages
+      can_silent = ALL_CAN_SILENT;
+      can_init_all();
+}
 
 // ***************************** main code *****************************
 
