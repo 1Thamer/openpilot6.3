@@ -9,33 +9,33 @@ uint16_t candidate_fp[2][20][3] = {
   { {1,832,8}, {0,339,8},{0,356,4},{0,593,8},{0,608,8},{0,809,8},{0,897,8},{0,902,8},{0,916,8},{0,1078,4},{0,1170,8},{0,1265,4},{0,1312,8},{0,1345,8},{0,1419,8} }
 };
 
- // Candidate Car Forwarding Profiles
+// Candidate Car Forwarding Profiles
 //  forwarding format:   [bus0to, bus1to, bus2to]
 //    array[bus#] = bus# to forward message to (or -1 for no forwarding)
 //  the order of the forwarding profiles must match the candidate_fp order above.
-int forward_profile[2][3] = { 
+int forward_profile[2][3] = {
   // Hyundai new Giraffe (camera = bus2)
   {  2, -1,  0 },
   // Hyundai old Giraffe (camera = bus1)
   {  1,  0, -1 }
 };
 
- // Stores the array index of a matched car fingerprint/forwarding profile
+// Stores the array index of a matched car fingerprint/forwarding profile
 int identified_car = -1;
 
 
- static void forward_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static void forward_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
-   // skip everything if we've already completed fingerprinting 
+  // skip everything if we've already completed fingerprinting
   //   can be extended in the future for fancier forwarding rules based on specific car id
   if (identified_car >= 0) {
     return;
   }
 
-   // temporarily store our bus number, address, and data length
+  // temporarily store our bus number, address, and data length
   uint16_t msg_metadata[3];
 
-   // store the bus number
+  // store the bus number
   msg_metadata[0] = (uint32_t)0x000000FF & (to_push->RDTR >> 4);
   // get the can message info needed for fingerprinting
   if (to_push->RIR & 4) {
@@ -49,7 +49,7 @@ int identified_car = -1;
   // store the length
   msg_metadata[2] = (uint32_t)0x0000000F & (to_push->RDTR);
 
-   // iterate over all candidate fingerprints
+  // iterate over all candidate fingerprints
   for (int i = 0; i < (sizeof(candidate_fp) / sizeof(candidate_fp[0])); i++) {
     bool matched = true;
     // iterate over all fingers in this fingerprint
@@ -73,7 +73,7 @@ int identified_car = -1;
   }
 }
 
- static int forward_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+static int forward_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   if (identified_car >= 0) {
       // must be true for fwd_hook to function
       return true;
@@ -81,7 +81,7 @@ int identified_car = -1;
   return false;
 }
 
- static int forward_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+static int forward_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   // can be extended in the future for fancier forwarding based on specific id
   if (identified_car >= 0) {
       // Hopefully you put valid bus numbers in the forwarding profiles!
@@ -90,11 +90,11 @@ int identified_car = -1;
   return -1;
 }
 
- static void forward_init(int16_t param) {
+static void forward_init(int16_t param) {
   controls_allowed = 0;
 }
 
- const safety_hooks forward_hooks = {
+const safety_hooks forward_hooks = {
   .init = forward_init,
   .rx = forward_rx_hook,
   .tx = forward_tx_hook,
