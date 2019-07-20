@@ -23,10 +23,14 @@ static void forward_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
   if ((enabled != 1) && (hyundai_camera_detected != 1) && (hyundai_giraffe_switch_2 == 1)) {
     safety_cb_enable_all();
-    // we found an exact match, begin forwarding with that profile
+    // begin forwarding with that profile
     enabled = 1;
     }
-
+  if ((enabled == 1) && (hyundai_camera_detected == 1)) {
+    safety_cb_disable_all();
+    // camera connected, disable forwarding
+    enabled = 0;
+    }
 
 }
 
