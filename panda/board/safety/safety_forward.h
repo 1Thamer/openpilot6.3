@@ -1,8 +1,4 @@
 
-bool hyundai_camera_detected = 0;
-bool hyundai_giraffe_switch_2 = 0;          // is giraffe switch 2 high?
-int hyundai_camera_bus = 0;
-
 // Stores the array index of a matched car fingerprint/forwarding profile
 int enabled = -1;
 
