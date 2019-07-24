@@ -173,7 +173,7 @@ class CarState(object):
 
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
     self.main_on = True
-    self.acc_active = cp.vl['EMS16']['CRUISE_LAMP_M']
+    self.acc_active = cp.vl["SCC11"]['MainMode_ACC'] != 0
     self.pcm_acc_status = int(self.acc_active)
 
     # calc best v_ego estimate, by averaging two opposite corners
@@ -195,7 +195,7 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
     speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
-    self.cruise_set_speed = cp.vl["LVR12"]["CF_Lvr_CruiseSet"] * speed_conv
+    self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
     self.standstill = not v_wheel > 0.1
 
     self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
@@ -212,14 +212,14 @@ class CarState(object):
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["MDPS11"]['CR_Mdps_DrvTq']
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
-    self.stopped = False
+    self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
 
     self.user_brake = 0
 
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
     self.brake_lights = bool(self.brake_pressed)
-    #if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
-      #self.pedal_gas = 0
+    if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
+      self.pedal_gas = 0
     else:
       self.pedal_gas = cp.vl["EMS12"]['TPS']
     self.car_gas = cp.vl["EMS12"]['TPS']
