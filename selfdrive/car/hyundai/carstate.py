@@ -29,6 +29,9 @@ def get_can_parser(CP):
     ("TPS", "EMS12", 0),
 
     ("CYL_PRES", "ESP12", 0),
+    
+    ("CRUISE_LAMP_M", "EMS16", 0),
+
 
     ("CF_Clu_CruiseSwState", "CLU11", 0),
     ("CF_Clu_CruiseSwMain" , "CLU11", 0),
@@ -49,6 +52,9 @@ def get_can_parser(CP):
     ("CF_Clu_InhibitR", "CLU15", 0),
 
     ("CF_Lvr_Gear","LVR12",0),
+    
+    ("CF_Lvr_CruiseSet","LVR12",0),    
+
     ("CUR_GR", "TCU12",0),
 
     ("ACCEnable", "TCS13", 0),
