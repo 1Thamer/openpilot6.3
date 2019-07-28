@@ -37,9 +37,9 @@ static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
 
   // enter controls on rising edge of ACC, exit controls on ACC off
-  if (addr == 1057) {
+  // if (addr == 1057) {
     controls_allowed = 1;
-  }
+  //}
 
 
   // 832 is lkas cmd. If it is on camera bus, then giraffe switch 2 is high
