@@ -159,7 +159,6 @@ class CarState(object):
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
     self.has_scc = False
-    self.lkas_button_on = 0
 
   def update(self, cp, cp_cam):
     if (cp.vl["SCC11"]['TauGapSet'] > 0):
@@ -202,7 +201,7 @@ class CarState(object):
     is_set_speed_in_mph = int(cp.vl["CLU11"]['CF_Clu_SPEED_UNIT'])
     speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
 
-    self.cruise_set_speed = (cp.vl["SCC11"]['VSetDis'] * speed_conv) if self.has_scc else (cp.vl["LVR12"]['CF_Lvr_CruiseSet'] * speed_conv)
+    self.cruise_set_speed = (cp.vl["SCC11"]['VSetDis'] * speed_conv) if self.has_scc else (cp.vl["LVR12"]["CF_Lvr_CruiseSet"] * speed_conv)
     self.standstill = not v_wheel > 0.1
 
     self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
@@ -221,8 +220,8 @@ class CarState(object):
     self.steer_torque_driver = cp.vl["MDPS12"]['CR_Mdps_StrColTq']
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
     self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4. if self.has_scc else False
-    self.mdps11_strang = cp.vl["MDPS11"]['CR_Mdps_StrAng']
-    self.mdps11_stat = cp.vl["MDPS11"]['CF_Mdps_Stat']
+    self.mdps11_strang = cp.vl["MDPS11"]["CR_Mdps_StrAng"]
+    self.mdps11_stat = cp.vl["MDPS11"]["CF_Mdps_Stat"]
     self.mdps12_flt = cp.vl["MDPS12"]['CF_Mdps_ToiFlt']
 
     self.user_brake = 0
@@ -236,7 +235,7 @@ class CarState(object):
     self.car_gas = cp.vl["EMS12"]['TPS']
 
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
-    gear = cp.vl["LVR12"]['CF_Lvr_Gear']
+    gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
     if gear == 5:
       self.gear_shifter = "drive"
     elif gear == 6:
@@ -271,7 +270,6 @@ class CarState(object):
     else:
       self.gear_tcu = "unknown"
 
-    # save the entire LKAS11, CLU11 and MDPS12 messages
+    # save the entire LKAS11 and CLU11
     self.lkas11 = cp_cam.vl["LKAS11"]
     self.clu11 = cp.vl["CLU11"]
-    self.mdps12 = cp.vl["MDPS12"]
