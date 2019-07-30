@@ -81,4 +81,4 @@ DBC = {
   CAR.GENESIS_G80: dbc_dict('hyundai_kia_generic', None),
 }
 
-STEER_THRESHOLD = 100
+STEER_THRESHOLD = 300
