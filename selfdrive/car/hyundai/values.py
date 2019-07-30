@@ -20,6 +20,7 @@ class CAR:
   KONA = "HYUNDAI KONA 2019"
   GENESIS_G90 = "GENESIS G90 2017"
   GENESIS_G80 = "GENESIS G80 2017"
+  IONIQ = "HYUNDAI KONA 2019"
 
 class Buttons:
   NONE = 0
@@ -61,6 +62,9 @@ FINGERPRINTS = {
   CAR.KONA: [{
     67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 354: 3, 356: 4, 544: 8, 593: 8, 608: 8, 688: 5, 809: 8, 832: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 909: 8, 916: 8, 1040: 8, 1078: 4, 1107: 5, 1136: 8, 1156: 8, 1170: 8, 1173: 8, 1191: 2, 1265: 4, 1280: 1, 1287: 4, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1384: 8, 1394: 8,1407: 8, 1414: 3, 1419: 8, 1427: 6, 1456: 4, 1470: 8, 2004: 8, 2009: 8, 2012: 8
   }],
+  CAR.IONIQ: [{
+    68: 8, 127: 8, 304: 8, 320: 8, 339: 8, 352: 8, 356: 4, 544: 8, 576: 8, 593: 8, 688: 5, 881: 8, 882: 8, 897: 8, 902: 8, 903: 8, 916: 8, 1040: 8, 1056: 8, 1057: 8, 1078: 4, 1136: 6, 1173: 8, 1225: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1291: 8, 1292: 8, 1294: 8, 1322: 8, 1345: 8, 1348: 8, 1355: 8, 1363: 8, 1369: 8, 1407: 8, 1419: 8, 1427: 6, 1429: 8, 1430: 8, 1448: 8, 1456: 4, 1470:8, 1476: 8, 1535: 8
+  }],
 }
 
 CAMERA_MSGS = [832, 1156, 1191, 1342]
@@ -68,11 +72,11 @@ CAMERA_MSGS = [832, 1156, 1191, 1342]
 CHECKSUM = {
   "crc8": [CAR.SANTA_FE],
   "6B": [CAR.KIA_SORENTO, CAR.GENESIS],
-  "7B": [CAR.KIA_STINGER, CAR.ELANTRA, CAR.KIA_OPTIMA, CAR.GENESIS_G90, CAR.GENESIS_G80, CAR.KONA],
+  "7B": [CAR.KIA_STINGER, CAR.ELANTRA, CAR.KIA_OPTIMA, CAR.GENESIS_G90, CAR.GENESIS_G80, CAR.KONA, CAR.IONIQ],
 }
 
 FEATURES = {
-  "use_cluster_gears": [CAR.ELANTRA, CAR.KONA],                   # Use Cluster for Gear Selection, rather than Transmission
+  "use_cluster_gears": [CAR.ELANTRA, CAR.KONA],         # Use Cluster for Gear Selection, rather than Transmission
   "use_tcu_gears": [CAR.KIA_OPTIMA],                    # Use TCU Message for Gear Selection
   "icon_basic": [CAR.GENESIS],                          # Anything but 2 for LKAS_Icon causes MDPS Fault
 }
@@ -87,6 +91,7 @@ DBC = {
   CAR.GENESIS_G90: dbc_dict('hyundai_kia_generic', None),
   CAR.GENESIS_G80: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA: dbc_dict('hyundai_kia_generic', None),
+  CAR.IONIQ: dbc_dict('hyundai_kia_generic', None),
 }
 
 STEER_THRESHOLD = 100
