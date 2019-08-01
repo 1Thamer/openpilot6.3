@@ -136,7 +136,6 @@ def get_camera_parser(CP):
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, timeout=100)
 
-
 class CarState(object):
   def __init__(self, CP):
 
@@ -160,9 +159,6 @@ class CarState(object):
     self.right_blinker_flash = 0
     self.has_scc = False
     self.min_steer_speed = 0
-  
-  def update_min_speed(speed):
-    self.min_steer_speed = speed
 
   def update(self, cp, cp_cam):
     if (cp.vl["SCC11"]['TauGapSet'] > 0):
@@ -224,8 +220,9 @@ class CarState(object):
     self.steer_torque_driver = cp.vl["MDPS12"]['CR_Mdps_StrColTq']
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
     self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4. if self.has_scc else False
-    self.mdps11_strang = cp.vl["MDPS11"]["CR_Mdps_StrAng"]
-    self.mdps11_stat = cp.vl["MDPS11"]["CF_Mdps_Stat"]
+    self.mdps11_strang = cp.vl["MDPS11"]['CR_Mdps_StrAng']
+    self.mdps11_stat = cp.vl["MDPS11"]['CF_Mdps_Stat']
+    self.lkas11_icon = cp_cam.vl["LKAS11"]['CF_Lkas_Icon']
     self.mdps12_flt = cp.vl["MDPS12"]['CF_Mdps_ToiFlt']
 
     self.user_brake = 0
@@ -237,6 +234,14 @@ class CarState(object):
     else:
       self.pedal_gas = cp.vl["EMS12"]['TPS']
     self.car_gas = cp.vl["EMS12"]['TPS']
+
+    # Learn Minimum Steer Speed
+    if self.mdps12_flt != 0 and self.v_ego_raw > 0. and abs(self.angle_steers) < 5.0 and self.lkas11_icon != 2:
+      if self.v_ego_raw > self.min_steer_speed:
+        self.min_steer_speed = self.v_ego_raw + 0.1
+    # If we have LKAS_Icon == 2, then we know its 16.7m/s
+    elif self.lkas11_icon == 2 and self.min_steer_speed < 16.7:
+      self.min_steer_speed = 16.7
 
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
     gear = cp.vl["LVR12"]["CF_Lvr_Gear"]

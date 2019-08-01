@@ -1,3 +1,14 @@
+Version 0.6.0.4-ku7 (2019-07-**)
+========================
+* HKG - Log to cloudlog rather than print to stdout
+* HKG - WIP: mapd is going to need a lot of reworking
+* HKG - Forward LKAS_Icon (not really an icon)
+* HKG - Disengage Properly
+* HKG - Fixed Brute Force Checksum Learner
+* HKG - Detect Genesis and default min speed
+* HLG - Fix Min Speed Code
+
+
 Version 0.6.0.3-ku7 (2019-07-09)
 ========================
 * HKG - Send fingerprints to Sentry
