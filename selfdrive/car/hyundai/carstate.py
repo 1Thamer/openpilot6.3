@@ -101,14 +101,14 @@ def get_can_parser(CP):
     ("SAS11", 100)
   ]
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, timeout=100)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
 
 def get_camera_parser(CP):
 
   signals = [
     # sig_name, sig_address, default
-    ("CF_Lkas_Icon", "LKAS11", 0),
+    ("CF_Lkas_Bca_R", "LKAS11", 0),
     ("CF_Lkas_LdwsSysState", "LKAS11", 0),
     ("CF_Lkas_SysWarning", "LKAS11", 0),
     ("CF_Lkas_LdwsLHWarning", "LKAS11", 0),
@@ -134,7 +134,7 @@ def get_camera_parser(CP):
 
   checks = []
 
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, timeout=100)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
 class CarState(object):
   def __init__(self, CP):
@@ -222,7 +222,7 @@ class CarState(object):
     self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4. if self.has_scc else False
     self.mdps11_strang = cp.vl["MDPS11"]['CR_Mdps_StrAng']
     self.mdps11_stat = cp.vl["MDPS11"]['CF_Mdps_Stat']
-    self.lkas11_icon = cp_cam.vl["LKAS11"]['CF_Lkas_Icon']
+    self.lkas11_icon = cp_cam.vl["LKAS11"]['CF_Lkas_Bca_R']
     self.mdps12_flt = cp.vl["MDPS12"]['CF_Mdps_ToiFlt']
 
     self.user_brake = 0
@@ -235,13 +235,13 @@ class CarState(object):
       self.pedal_gas = cp.vl["EMS12"]['TPS']
     self.car_gas = cp.vl["EMS12"]['TPS']
 
-    # Learn Minimum Steer Speed
-    if self.mdps12_flt != 0 and self.v_ego_raw > 0. and abs(self.angle_steers) < 5.0 and self.lkas11_icon != 2:
-      if self.v_ego_raw > self.min_steer_speed:
-        self.min_steer_speed = self.v_ego_raw + 0.1
+    self.low_speed_alert = False
+    # If MDPS faults, low speed alert
+    if self.mdps12_flt == 0:
+      self.low_speed_alert = True
     # If we have LKAS_Icon == 2, then we know its 16.7m/s
-    elif self.lkas11_icon == 2 and self.min_steer_speed < 16.7:
-      self.min_steer_speed = 16.7
+    if self.lkas11_icon == 2 and self.v_ego_raw < 16.8:
+      self.low_speed_alert = True
 
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
     gear = cp.vl["LVR12"]["CF_Lvr_Gear"]

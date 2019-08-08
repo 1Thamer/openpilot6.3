@@ -1,7 +1,8 @@
 from selfdrive.car import limit_steer_rate
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_lkas12, \
                                              create_1191, create_1156, \
-                                             learn_checksum, create_mdps12 #, create_clu11
+                                             learn_checksum, create_mdps12, create_clu11
+
 from selfdrive.car.hyundai.values import Buttons
 from selfdrive.can.packer import CANPacker
 import zmq
@@ -89,7 +90,7 @@ class CarController(object):
     ### Minimum Steer Speed ###
 
     # Apply Usage of Minimum Steer Speed
-    if CS.v_ego_raw < CS.min_steer_speed:
+    if CS.low_speed_alert and False:
       disable_steer = True
 
     ### Turning Indicators ###
@@ -177,9 +178,10 @@ class CarController(object):
 
 #    if pcm_cancel_cmd:
 #      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, 0))
-#    elif CS.stopped and (self.cnt - self.last_resume_cnt) > 5:
-#      self.last_resume_cnt = self.cnt
-#      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, 0))
+    if CS.stopped and (self.cnt - self.last_resume_cnt) > 20:
+      if (self.cnt - self.last_resume_cnt) > 20:
+        self.last_resume_cnt = self.cnt
+      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, self.clu11_cnt))
 
     self.cnt += 1
 
