@@ -391,6 +391,7 @@ struct CarParams {
 
     k @6 :List(Float32);  # LQR gain
     l @7 :List(Float32);  # Kalman gain
+    reactMPC @8 :Float32;
   }
 
 

@@ -1,15 +1,22 @@
 import numpy as np
 from selfdrive.controls.lib.drive_helpers import get_steer_max
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from cereal import log
-
+from selfdrive.kegman_conf import kegman_conf
+from common.realtime import sec_since_boot
 
 class LatControlLQR(object):
   def __init__(self, CP, rate=100):
     self.sat_flag = False
     self.scale = CP.lateralTuning.lqr.scale
     self.ki = CP.lateralTuning.lqr.ki
-
+    kegman_conf(CP)
+    self.frame = 0
+    self.react_mpc = CP.lateralTuning.lqr.reactMPC
+    self.damp_mpc = CP.lateralTuning.lqr.dampMPC
+    self.damp_angle_steers_des = 0.0
+    self.damp_rate_steers_des = 0.0
+    self.angle_bias = 0.
 
     self.A = np.array(CP.lateralTuning.lqr.a).reshape((2,2))
     self.B = np.array(CP.lateralTuning.lqr.b).reshape((2,1))
@@ -28,14 +35,27 @@ class LatControlLQR(object):
     self.i_lqr = 0.0
     self.output_steer = 0.0
 
-  def update(self, active, v_ego, angle_steers, angle_steers_rate, eps_torque, steer_override, CP, VM, path_plan):
+  def live_tune(self, CP):
+    self.frame += 1
+    if self.frame % 300 == 0:
+      # live tuning through /data/openpilot/tune.py overrides interface.py settings
+      kegman = kegman_conf()
+      self.react_mpc = float(kegman.conf['reactMPC'])
+      self.damp_mpc = float(kegman.conf['dampMPC'])
+
+  def update(self, active, v_ego, angle_steers, angle_steers_rate, eps_torque, steer_override, blinkers_on, CP, VM, path_plan, live_params):
     lqr_log = log.ControlsState.LateralLQRState.new_message()
 
     torque_scale = (0.45 + v_ego / 60.0)**2  # Scale actuator model with speed
 
+    max_bias_change = 0.0002 / (abs(self.angle_bias) + 0.0001)
+    self.angle_bias = float(np.clip(live_params.angleOffset - live_params.angleOffsetAverage, self.angle_bias - max_bias_change, self.angle_bias + max_bias_change))
+    self.damp_angle_steers_des += (interp(sec_since_boot() + self.damp_mpc + self.react_mpc, path_plan.mpcTimes, path_plan.mpcAngles) - self.damp_angle_steers_des) / max(1.0, self.damp_mpc * 100.)
+
     # Subtract offset. Zero angle should correspond to zero torque
-    self.angle_steers_des = path_plan.angleSteers - path_plan.angleOffset
-    angle_steers -= path_plan.angleOffset
+    self.angle_steers_des = self.damp_angle_steers_des - live_params.angleOffsetAverage
+    angle_steers -= live_params.angleOffsetAverage - self.angle_bias
+    self.damp_angle_steers = angle_steers
 
     # Update Kalman filter
     angle_steers_k = float(self.C.dot(self.x_hat))

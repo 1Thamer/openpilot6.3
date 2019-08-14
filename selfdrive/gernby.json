@@ -11,8 +11,8 @@
   "polyReact":"-1",
   "polyDamp":"-1",
   "polyFactor":"-1",
-  "timeConst":"-1",
   "actEffect":"-1",
+  "innerGain":"-1",
   "outerGain":"-1",
-  "innerGain":"-1"
+  "timeConst":"-1"
 }

@@ -69,7 +69,12 @@ class kegman_conf():
     self.element_updated = False
 
     with open('/data/openpilot/selfdrive/gernby.json', 'r') as f:
-      base_config = json.load(f)
+      try:
+        base_config = json.load(f)
+      except IOError:
+        base_config = {  "tuneRev": "0.0.2","Kf": "-1","Ki": "-1","Kp": "-1","dampTime": "-1","rateFFGain": "-1","reactMPC": "-1", \
+          "type": "-1","dampMPC":"-1","polyReact":"-1","polyDamp":"-1","polyFactor":"-1","timeConst":"-1","actEffect":"-1", \
+          "outerGain":"-1","innerGain":"-1","innerGain":"-1","outerGain":"-1","actEffect":"-1","timeConst":"-1"}
 
     if Reset or not os.path.isfile('/data/kegman.json'):
       self.config = {"cameraOffset":"0.06", "lastTrMode":"1", "battChargeMin":"60", "battChargeMax":"70", "wheelTouchSeconds":"180", \

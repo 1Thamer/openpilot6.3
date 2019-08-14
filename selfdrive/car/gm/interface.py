@@ -209,7 +209,8 @@ class CarInterface(object):
 
     # steering wheel
     ret.steeringAngle = self.CS.angle_steers
-
+    ret.steeringRate = self.CS.angle_steers_rate
+    
     # torque and user override. Driver awareness
     # timer resets when the user uses the steering wheel.
     ret.steeringPressed = self.CS.steer_override
