@@ -1,4 +1,10 @@
-Version 0.6.2.6-ku7 (2019-08)
+Version 0.6.2.7-ku7 (2019-08-14)
+========================
+  * Improve Auto Checksum Learner (this should fix LKAS Error Bugs)
+  * Reimpliment Dynamic Low Speed Alert
+  * Fixed 16.7m/s Low Speed Alert if believed to be Genesis
+
+Version 0.6.2.6-ku7 (2019-08-08)
 ========================
   * Merged in 0.6.2
   * HKG - Fixed Panda, but no PUF yet
@@ -73,9 +79,6 @@ Version 0.6.0.1-ku7 (2019-07-05)
   * HKG - Removed Fingerprint Requiement
   * HKG - Removed Noisy Console/Logs
   * HKG - Remove remnants of CP UI
-
-
-
 
 Version 0.6 (2019-07-01)
 ========================
