@@ -55,6 +55,10 @@ class CarInterface(object):
     ret.enableCruise = not ret.enableGasInterceptor
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
+
+
+    ret.lateralTuning.init('pid')
+    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.dampTime = 0.0
     ret.lateralTuning.pid.reactMPC = 0.0
     ret.lateralTuning.pid.dampMPC = 0.1
@@ -62,9 +66,6 @@ class CarInterface(object):
     ret.lateralTuning.pid.polyFactor = 0.001
     ret.lateralTuning.pid.polyDampTime = 0.15
     ret.lateralTuning.pid.polyReactTime = 0.5
-
-    ret.lateralTuning.init('pid')
-    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
