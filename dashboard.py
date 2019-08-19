@@ -22,7 +22,7 @@ def dashboard_thread(rate=100):
   vEgo = 0.0
   controlsState = messaging.sub_sock(service_list['controlsState'].port)
   #controlsState = messaging.sub_sock(context, service_list['controlsState'].port, addr=ipaddress, conflate=False, poller=poller)
-  carState = None #messaging.sub_sock(context, service_list['carState'].port, addr=ipaddress, conflate=False, poller=poller)
+  carState = messaging.sub_sock(service_list['carState'].port)
   liveMap = None #messaging.sub_sock(context, service_list['liveMapData'].port, addr=ipaddress, conflate=False, poller=poller)
   liveStreamData = None #messaging.sub_sock(context, 8600, addr=ipaddress, conflate=False, poller=poller)
   osmData = None #messaging.sub_sock(context, 8601, addr=ipaddress, conflate=False, poller=poller)
@@ -66,6 +66,7 @@ def dashboard_thread(rate=100):
   if liveParameters != None: poller.register(liveParameters, zmq.POLLIN)
   if gpsLocation != None: poller.register(gpsLocation, zmq.POLLIN)
   if pathPlan != None: poller.register(pathPlan, zmq.POLLIN)
+  if carState != None: poller.register(carState, zmq.POLLIN)
 
   try:
     if os.path.isfile('/data/kegman.json'):
@@ -110,7 +111,11 @@ def dashboard_thread(rate=100):
 
   lastGPStime = 0
   lastMaptime = 0
-
+  eps_torque = 0.0
+  eps_angle = 0.0
+  eps_rate = 0.0
+  eps_driver = 0.0
+  boolStockRcvd = False
   monoTimeOffset = 0
   receiveTime = 0
   active = False
@@ -134,6 +139,15 @@ def dashboard_thread(rate=100):
       if socket is liveStreamData:
         livestream = liveStreamData.recv_string() + str(receiveTime) + "|"
         if vEgo > 0 and active: liveStreamDataString += livestream
+
+      if socket is carState:
+        _carState = messaging.drain_sock(socket)
+        for _cs in _carState:
+          boolStockRcvd = True
+          eps_torque = _cs.carState.steeringTorqueEps
+          eps_angle = _cs.carState.steeringAngle
+          eps_rate = _cs.carState.steeringRate
+          eps_driver = _cs.carState.steeringTorque
 
       if socket is liveParameters:
         _liveParams = messaging.drain_sock(socket)
@@ -199,7 +213,7 @@ def dashboard_thread(rate=100):
           if lateral_type == "":
             if l100.controlsState.lateralControlState.which == "pidState":
               lateral_type = "pid"
-              influxFormatString = user_id + ",sources=capnp curvature=%s,v_curvature=%s,ff_angle=%s,damp_angle_steers_des=%s,angle_steers_des=%s,angle_steers=%s,damp_angle_steers=%s,angle_bias=%s,steer_override=%s,v_ego=%s,p2=%s,p=%s,i=%s,f=%s,output=%s %s\n"
+              influxFormatString = user_id + ",sources=capnp curvature=%s,v_curvature=%s,ff_angle=%s,damp_angle_steers_des=%s,angle_steers_des=%s,angle_steers=%s,damp_angle_steers=%s,angle_bias=%s,steer_override=%s,v_ego=%s,p2=%s,p=%s,i=%s,f=%s,output=%s,eps_torque=%s,eps_rate=%s,eps_angle=%s,eps_driver=%s %s\n"
               kegmanFormatString = user_id + ",sources=kegman KpV=%s,KiV=%s,Kf=%s,dampMPC=%s,reactMPC=%s,rate_ff_gain=%s,dampTime=%s,polyFactor=%s,reactPoly=%s,dampPoly=%s %s\n"
             else:
               lateral_type = "indi"
@@ -207,7 +221,7 @@ def dashboard_thread(rate=100):
               kegmanFormatString = user_id + ",sources=kegman time_const=%s,act_effect=%s,inner_gain=%s,outer_gain=%s,reactMPC=%s %s\n"
           vEgo = l100.controlsState.vEgo
           active = l100.controlsState.active
-          #active = True
+          active = True
           #vEgo = 1.
           #print(active)
           receiveTime = int((monoTimeOffset + l100.logMonoTime) * .0000002) * 5
@@ -219,9 +233,9 @@ def dashboard_thread(rate=100):
             #print(dat)
 
             if lateral_type == "pid":
-              influxDataString += ("%0.4f,%0.4f,%0.3f,%0.3f,%0.3f,%0.3f,%0.4f,%0.4f,%d,%0.1f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%d|" %
+              influxDataString += ("%0.4f,%0.4f,%0.3f,%0.3f,%0.3f,%0.3f,%0.4f,%0.4f,%d,%0.1f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%d|" %
                   (dat.curvature, dat.vCurvature, dat.lateralControlState.pidState.angleFFRatio, dat.dampAngleSteersDes, dat.angleSteersDes, dat.angleSteers, dat.dampAngleSteers, dat.lateralControlState.pidState.angleBias, dat.steerOverride, vEgo,
-                  dat.lateralControlState.pidState.p2, dat.lateralControlState.pidState.p, dat.lateralControlState.pidState.i, dat.lateralControlState.pidState.f,dat.lateralControlState.pidState.output, receiveTime))
+                  dat.lateralControlState.pidState.p2, dat.lateralControlState.pidState.p, dat.lateralControlState.pidState.i, dat.lateralControlState.pidState.f,dat.lateralControlState.pidState.output, eps_torque, eps_rate, eps_angle, eps_driver, receiveTime))
             else:
               s = dat.lateralControlState.indiState
               influxDataString += ("%0.3f,%0.2f,%0.2f,%d,%0.1f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%0.4f,%d|" %
