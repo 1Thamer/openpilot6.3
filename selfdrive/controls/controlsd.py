@@ -225,7 +225,7 @@ def state_control(frame, rcv_frame, plan, path_plan, live_params, CS, CP, state,
   # check if user has interacted with the car
   driver_engaged = len(CS.buttonEvents) > 0 or \
                    v_cruise_kph != v_cruise_kph_last or \
-                   CS.steeringPressed
+                   CS.steeringPressed or CS.vEgo == 0.0
 
   # add eventual driver distracted events
   events = driver_status.update(events, driver_engaged, isActive(state), CS.standstill)
@@ -366,7 +366,8 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
     "vTargetLead": float(v_acc),
     "aTarget": float(a_acc),
     "jerkFactor": float(sm['plan'].jerkFactor),
-    "angleModelBias": float(LaC.angle_bias),
+    "angleModelBias": 0.,
+    "dampAngleBias": float(LaC.angle_bias),
     "gpsPlannerActive": sm['plan'].gpsPlannerActive,
     "vCurvature": sm['plan'].vCurvature,
     "decelForModel": sm['plan'].longitudinalPlanSource == log.Plan.LongitudinalPlanSource.model,

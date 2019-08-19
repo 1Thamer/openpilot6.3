@@ -72,13 +72,15 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     calibrationProgress @47;
     lowBattery @48;
     invalidGiraffeHonda @49;
-    vehicleModelInvalid @50;
-    controlsFailed @51;
-    sensorDataInvalid @52;
-    commIssue @53;
-    tooDistracted @54;
-    posenetInvalid @55;
-    soundsUnavailable @56;
+    manualSteeringRequired @50;
+    manualSteeringRequiredBlinkersOn @51;
+    vehicleModelInvalid @52;
+    controlsFailed @53;
+    sensorDataInvalid @54;
+    commIssue @55;
+    tooDistracted @56;
+    posenetInvalid @57;
+    soundsUnavailable @58;
   }
 }
 
@@ -124,11 +126,13 @@ struct CarState {
   leftBlinker @20 :Bool;
   rightBlinker @21 :Bool;
   genericToggle @23 :Bool;
+  readdistancelines @26 :Float32;
+  lkMode @29 :Bool;
 
   # lock info
   doorOpen @24 :Bool;
   seatbeltUnlatched @25 :Bool;
-  canValid @26 :Bool;
+  canValid @28 :Bool;
 
   # which packets this state came from
   canMonoTimes @12: List(UInt64);

@@ -145,10 +145,10 @@ class CarInterface(object):
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.01]]
     ret.lateralTuning.pid.kf = 0.000035   # full torque for 20 deg at 80mph means 0.00007818594
     ret.lateralTuning.pid.dampTime = 0.0
-    ret.lateralTuning.pid.reactMPC = 0.025
+    ret.lateralTuning.pid.reactMPC = 0.0
     ret.lateralTuning.pid.dampMPC = 0.1
     ret.lateralTuning.pid.rateFFGain = 0.4
-    ret.lateralTuning.pid.polyFactor = 0.002
+    ret.lateralTuning.pid.polyFactor = 0.001
     ret.lateralTuning.pid.polyDampTime = 0.15
     ret.lateralTuning.pid.polyReactTime = 0.5
 
@@ -210,7 +210,7 @@ class CarInterface(object):
     # steering wheel
     ret.steeringAngle = self.CS.angle_steers
     ret.steeringRate = self.CS.angle_steers_rate
-    
+
     # torque and user override. Driver awareness
     # timer resets when the user uses the steering wheel.
     ret.steeringPressed = self.CS.steer_override

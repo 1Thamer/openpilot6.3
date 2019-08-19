@@ -25,7 +25,7 @@ class LatControlPID(object):
     self.cur_poly_scale = 0.0
     self.d_poly = [0., 0., 0., 0.]
     self.s_poly = [0., 0., 0., 0.]
-    self.p_prob = 0.
+    self.c_prob = 1.0
     self.damp_angle_steers = 0.
     self.damp_time = 0.1
     self.react_mpc = 0.0
@@ -51,6 +51,8 @@ class LatControlPID(object):
     self.driver_assist_offset = 0.0
     self.driver_assist_hold = False
     self.angle_bias = 0.
+    self.curv_factor = 0.
+    self.x = 0.
 
     try:
       lateral_params = self.params.get("LateralParams")
@@ -78,24 +80,29 @@ class LatControlPID(object):
       self.bias_factor = float()
 
   def get_projected_path_error(self, v_ego, angle_feedforward, angle_steers, live_params, path_plan, VM):
-    curv_factor = interp(abs(angle_feedforward), [1.0, 5.0], [0.0, 1.0])
-    self.d_poly[3] += (path_plan.dPoly[3] - self.d_poly[3]) / self.poly_smoothing
-    self.d_poly[2] += curv_factor * (path_plan.dPoly[2] - self.d_poly[2]) / (self.poly_smoothing) # * 1.5)
-    self.d_poly[1] += curv_factor * (path_plan.dPoly[1] - self.d_poly[1]) / (self.poly_smoothing) # * 3.0)
-    self.d_poly[0] += curv_factor * (path_plan.dPoly[0] - self.d_poly[0]) / (self.poly_smoothing) # * 4.5)
-    #self.p_prob += (path_plan.pProb - self. p_prob) / (self.poly_smoothing)
-    self.s_poly[1] = float(np.tan(VM.calc_curvature(np.radians(angle_steers - live_params.angleOffsetAverage - self.angle_bias), float(v_ego))))
+    self.curv_factor += (interp(abs(angle_feedforward), [1.0, 5.0], [0.0, 1.0]) - self.curv_factor) / (3.0)
+    #self.curv_factor = 1.0
+    self.d_poly[3] += (path_plan.dPoly[3] - self.d_poly[3]) / 1.0
+    self.d_poly[2] += self.curv_factor * (path_plan.dPoly[2] - self.d_poly[2]) #/ (1.5)
+    self.d_poly[1] += self.curv_factor * (path_plan.dPoly[1] - self.d_poly[1]) #/ (3.0)
+    self.d_poly[0] += self.curv_factor * (path_plan.dPoly[0] - self.d_poly[0]) #/ (4.5)
+    self.c_prob += (path_plan.cProb - self.c_prob) #/ (3.0)
+    self.s_poly[1] = self.curv_factor * float(np.tan(VM.calc_curvature(np.radians(angle_steers - live_params.angleOffsetAverage - self.angle_bias), float(v_ego))))
     x = int(float(v_ego) * self.total_poly_projection * interp(abs(angle_feedforward), [0., 5.], [0.25, 1.0]))
-    self.d_pts = np.polyval(self.d_poly, np.arange(0, x))
+    self.c_pts = np.polyval(self.d_poly, np.arange(0, x))
     self.s_pts = np.polyval(self.s_poly, np.arange(0, x))
-    return (np.sum(self.d_pts) - np.sum(self.s_pts))
+    path_error = self.c_prob * (np.sum(self.c_pts) - np.sum(self.s_pts))
+    if abs(path_error) < abs(self.path_error):
+      path_error *= 0.25
+    return path_error
 
   def reset(self):
     self.pid.reset()
 
   def adjust_angle_gain(self):
-    if (self.pid.f > 0) == (self.pid.i > 0) and abs(self.pid.i) >= abs(self.previous_integral):
-      if not abs(self.pid.f + self.pid.i + self.pid.p) > 1: self.angle_ff_gain *= 1.0001
+    if (self.pid.f > 0) == (self.pid.i > 0) and (abs(self.pid.i) >= abs(self.previous_integral) or abs(self.pid.i) + abs(self.pid.f) < 1.0):
+      #if not abs(self.pid.f + self.pid.i + self.pid.p) > 1: self.angle_ff_gain *= 1.0001
+      if (self.pid.p2 >= 0) == (self.pid.f >= 0): self.angle_ff_gain *= 1.0001
     elif self.angle_ff_gain > 1.0:
       self.angle_ff_gain *= 0.9999
     self.previous_integral = self.pid.i
@@ -201,7 +208,8 @@ class LatControlPID(object):
       else:
         self.driver_assist_hold = steer_override and self.driver_assist_hold
 
-      self.path_error = float(v_ego) * float(self.get_projected_path_error(v_ego, angle_feedforward, angle_steers, live_params, path_plan, VM)) * self.poly_factor * self.cur_poly_scale * self.angle_ff_gain
+      self.path_error += (float(v_ego) * float(self.get_projected_path_error(v_ego, angle_feedforward, angle_steers, live_params, path_plan, VM)) \
+                          * self.poly_factor * self.cur_poly_scale * self.angle_ff_gain - self.path_error) / (self.poly_smoothing)
 
       if self.driver_assist_hold and not steer_override and abs(angle_steers) > abs(self.damp_angle_steers_des):
         #self.angle_bias = 0.0

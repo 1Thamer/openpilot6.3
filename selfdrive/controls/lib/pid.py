@@ -67,7 +67,7 @@ class PIController(object):
     if override and not self.saturated:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
-      i = self.i + (error + add_error * 0.5) * self.k_i * self.i_rate
+      i = self.i + (error) * self.k_i * self.i_rate
       control = self.p + self.p2 + self.f + i
 
       if self.convert is not None:
@@ -75,8 +75,8 @@ class PIController(object):
 
       # Update when changing i will move the control away from the limits
       # or when i will move towards the sign of the error
-      if (((error + add_error) >= 0 and (control <= self.pos_limit or i < 0.0)) or \
-          ((error + add_error) <= 0 and (control >= self.neg_limit or i > 0.0))) and \
+      if (((error) >= 0 and (control <= self.pos_limit or i < 0.0)) or \
+          ((error) <= 0 and (control >= self.neg_limit or i > 0.0))) and \
          not freeze_integrator:
         self.i = i
 
@@ -85,7 +85,7 @@ class PIController(object):
       control = self.convert(control, speed=self.speed)
 
     if check_saturation:
-      self.saturated = self._check_saturation(control, override, (error + add_error))
+      self.saturated = self._check_saturation(control, override, error)
     else:
       self.saturated = False
 
