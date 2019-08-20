@@ -12,7 +12,7 @@ class RadarInterface(object):
     self.delay = 0.1
     self.CS = CarState(CP)
     self.cp = get_can_parser(CP)
-    self.trigger_msg = self.CS.scc11['ACC_ObjStatus']
+    self.trigger_msg = self.CS.scc11["ACC_ObjStatus"]
     self.updated_messages = set()
     self.no_radar = False
 
@@ -44,11 +44,11 @@ class RadarInterface(object):
       errors.append("canError")
     ret.errors = errors
 
-    valid = self.CS.scc11['ACC_ObjStatus']
+    valid = self.CS.scc11["ACC_ObjStatus"]
     if valid:
-      self.pts.dRel = self.CS.scc11['ACC_ObjDist']  # from front of car
-      self.pts.yRel = self.CS.scc11['ACC_ObjLatPos']  # in car frame's y axis, left is negative
-      self.pts.vRel = self.CS.scc11['ACC_ObjRelSpd']
+      self.pts.dRel = self.CS.scc11["ACC_ObjDist"]  # from front of car
+      self.pts.yRel = self.CS.scc11["ACC_ObjLatPos"]  # in car frame's y axis, left is negative
+      self.pts.vRel = self.CS.scc11["ACC_ObjRelSpd"]
       self.pts.aRel = float('nan')
       self.pts.yvRel = float('nan')
       self.pts.measured = True
