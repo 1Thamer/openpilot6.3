@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from cereal import car
 import time
+from selfdrive.car.hyundai.carstate import CarState
 
 
 class RadarInterface(object):
