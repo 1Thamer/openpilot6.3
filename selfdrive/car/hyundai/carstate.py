@@ -78,6 +78,11 @@ def get_can_parser(CP):
     ("MainMode_ACC", "SCC11", 0),
     ("VSetDis", "SCC11", 0),
     ("SCCInfoDisplay", "SCC11", 0),
+    ("ACC_ObjStatus", "SCC11", 0),
+    ("ACC_ObjLatPos", "SCC11", 0),
+    ("ACC_ObjDist", "SCC11", 0),
+    ("ACC_ObjRelSpd", "SCC11", 0),
+    
     ("ACCMode", "SCC12", 1),
 
     ("SAS_Angle", "SAS11", 0),
@@ -266,3 +271,5 @@ class CarState(object):
     self.lkas11 = cp_cam.vl["LKAS11"]
     self.clu11 = cp.vl["CLU11"]
     self.mdps12 = cp.vl["MDPS12"]
+    self.scc11 = cp.vl["SCC11"]
+    
