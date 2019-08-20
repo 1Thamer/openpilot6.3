@@ -164,6 +164,7 @@ class CarState(object):
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
     self.lkas_button_on = 0
+    self.scc11 = False
 
   def update(self, cp, cp_cam):
     # update prevs, update must run once per Loop
