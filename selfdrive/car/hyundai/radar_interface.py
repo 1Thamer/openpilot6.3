@@ -12,7 +12,7 @@ class RadarInterface(object):
     self.delay = 0.1
     self.CS = CarState(CP)
     self.cp = get_can_parser(CP)
-    self.trigger_msg = self.CS.scc11["ACC_ObjStatus"]
+    self.trigger_msg = self.CS.scc11
     self.updated_messages = set()
     self.no_radar = False
 
