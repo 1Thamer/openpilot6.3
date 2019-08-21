@@ -7,7 +7,7 @@ def make_can_msg(addr, dat, alt):
 
 def create_lkas11(packer, car_fingerprint, apply_steer, steer_req, cnt, enabled, lkas11, hud_alert, keep_stock, checksum):
   values = {
-    "CF_Lkas_Icon": 2,
+    "CF_Lkas_Bca_R": lkas11["CF_Lkas_Bca_R"] if keep_stock else 3,
     "CF_Lkas_LdwsSysState": 3 if steer_req else 1,
     "CF_Lkas_SysWarning": hud_alert,
     "CF_Lkas_LdwsLHWarning": lkas11["CF_Lkas_LdwsLHWarning"] if keep_stock else 0,
@@ -81,7 +81,7 @@ def create_mdps12(packer, car_fingerprint, cnt, mdps12, lkas11, checksum):
     "CR_Mdps_StrColTq": mdps12["CR_Mdps_StrColTq"],
     "CF_Mdps_Def": mdps12["CF_Mdps_Def"],
     "CF_Mdps_ToiActive": mdps12["CF_Mdps_ToiActive"] if (checksum == "crc8") else lkas11["CF_Lkas_ActToi"],
-    "CF_Mdps_ToiUnavail": mdps12["CF_Mdps_ToiUnavail"],
+    "CF_Mdps_ToiUnavail": 1, #mdps12["CF_Mdps_ToiUnavail"],
     "CF_Mdps_MsgCount2": mdps12["CF_Mdps_MsgCount2"] if (checksum == "crc8") else cnt,
     "CF_Mdps_Chksum2": mdps12["CF_Mdps_Chksum2"],
     "CF_Mdps_ToiFlt": mdps12["CF_Mdps_ToiFlt"] if (checksum == "crc8") else 0,
@@ -101,7 +101,7 @@ def create_mdps12(packer, car_fingerprint, cnt, mdps12, lkas11, checksum):
 
 def learn_checksum(packer, lkas11):
     values = {
-      "CF_Lkas_Icon": lkas11["CF_Lkas_Icon"],
+      "CF_Lkas_Bca_R": lkas11["CF_Lkas_Bca_R"],
       "CF_Lkas_LdwsSysState": lkas11["CF_Lkas_LdwsSysState"],
       "CF_Lkas_SysWarning": lkas11["CF_Lkas_SysWarning"],
       "CF_Lkas_LdwsLHWarning": lkas11["CF_Lkas_LdwsLHWarning"],

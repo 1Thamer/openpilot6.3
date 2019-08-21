@@ -1,7 +1,8 @@
 from selfdrive.car import limit_steer_rate
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_lkas12, \
                                              create_1191, create_1156, \
-                                             create_clu11, learn_checksum, create_mdps12
+                                             learn_checksum, create_mdps12, create_clu11
+
 from selfdrive.car.hyundai.values import Buttons
 from selfdrive.can.packer import CANPacker
 import zmq
@@ -9,6 +10,8 @@ from selfdrive.services import service_list
 import selfdrive.messaging as messaging
 from selfdrive.config import Conversions as CV
 from common.params import Params
+from selfdrive.swaglog import cloudlog
+
 
 
 # Steer torque limits
@@ -16,7 +19,7 @@ from common.params import Params
 class SteerLimitParams:
   STEER_MAX = 255   # >255 results in frozen torque, >409 results in no torque
   STEER_DELTA_UP = 3
-  STEER_DELTA_DOWN = 7
+  STEER_DELTA_DOWN = 5
   STEER_DRIVER_ALLOWANCE = 50
   STEER_DRIVER_MULTIPLIER = 2
   STEER_DRIVER_FACTOR = 1
@@ -34,9 +37,8 @@ class CarController(object):
     self.last_resume_cnt = 0
 
     self.map_speed = 0
-    #context = zmq.Context()
-    #self.map_data_sock = messaging.sub_sock(context, service_list['liveMapData'].port, conflate=True)
-    #self.params = Params()
+    self.map_data_sock = messaging.sub_sock(service_list['liveMapData'].port)
+    self.params = Params()
     self.speed_conv = 3.6
     self.speed_offset = 1.03      # Multiplier for cruise speed vs speed limit  TODO: Add to UI
     self.speed_enable = True      # Enable Auto Speed Set                       TODO: Add to UI
@@ -46,8 +48,8 @@ class CarController(object):
     self.checksum_learn_cnt = 0
 
     self.turning_signal_timer = 0
-    self.min_steer_speed = 0.
     self.camera_disconnected = False
+    self.checksum_found = False
 
     self.packer = CANPacker(dbc_name)
 
@@ -58,44 +60,45 @@ class CarController(object):
 
     ### Learn Checksum ###
 
-    # Learn Checksum from the Camera
-    if self.checksum == "NONE":
-      self.checksum = learn_checksum(self.packer, CS.lkas11)
-      print ("Discovered Checksum", self.checksum)
-      if self.checksum == "NONE" and self.checksum_learn_cnt < 50:
-        self.checksum_learn_cnt += 1
-        return
-
-    # If MDPS is faulted from bad checksum, then cycle through all Checksums until 1 works
-    if CS.steer_error == 1:
-      self.camera_disconnected = True
-      print ("Camera Not Detected: Brute Forcing Checksums")
-      if self.checksum_learn_cnt > 250:
-        self.checksum_learn_cnt = 50
-        if self.checksum == "NONE":
-          print ("Testing 6B Checksum")
-          self.checksum == "6B"
-        elif self.checksum == "6B":
-          print ("Testing 7B Checksum")
-          self.checksum == "7B"
-        elif self.checksum == "7B":
-          print ("Testing CRC8 Checksum")
-          self.checksum == "crc8"
+    if not self.checksum_found:
+      # Learn Checksum from the Camera
+      if self.checksum == "NONE":
+        self.checksum = learn_checksum(self.packer, CS.lkas11)
+        if self.checksum == "NONE" and self.checksum_learn_cnt < 50:
+          self.checksum_learn_cnt += 1
+          return
         else:
-          self.checksum == "NONE"
+          cloudlog.info("Discovered Checksum %s" % self.checksum)
+          self.checksum_found = True
+
+      # If MDPS is faulted from bad checksum, then cycle through all Checksums until 1 works
+      if CS.steer_error == 1:
+        self.camera_disconnected = True
+        cloudlog.warning("Camera Not Detected: Brute Forcing Checksums")
+        if self.checksum_learn_cnt > 300:
+          self.checksum_learn_cnt = 50
+          if self.checksum == "NONE":
+            cloudlog.info("Testing 6B Checksum")
+            self.checksum = "6B"
+          elif self.checksum == "6B":
+            cloudlog.info("Testing 7B Checksum")
+            self.checksum = "7B"
+          elif self.checksum == "7B":
+            cloudlog.info("Testing CRC8 Checksum")
+            self.checksum = "crc8"
+          else:
+            self.checksum = "NONE"
+            return
+        else:
+          self.checksum_learn_cnt += 1
       else:
-        self.checksum_learn_cnt += 1
+        cloudlog.info("Discovered Checksum %s" % self.checksum)
+        self.checksum_found = True
 
     ### Minimum Steer Speed ###
 
-    # Learn Minimum Steer Speed
-    if CS.mdps12_flt != 0 and CS.v_ego_raw > 0. and abs(CS.angle_steers) < 10.0 :
-      if CS.v_ego_raw > self.min_steer_speed:
-        self.min_steer_speed = CS.v_ego_raw + 0.1
-        print ("Discovered new Min Speed as", self.min_steer_speed)
-
     # Apply Usage of Minimum Steer Speed
-    if CS.v_ego_raw < self.min_steer_speed:
+    if CS.low_speed_alert:
       disable_steer = True
 
     ### Turning Indicators ###
@@ -112,8 +115,9 @@ class CarController(object):
 
     if not enabled or disable_steer:
       apply_steer = 0
-
-    steer_req = 1 if enabled else 0
+      steer_req = 0
+    else:
+      steer_req = 1
 
     self.apply_steer_last = apply_steer
 
@@ -162,7 +166,7 @@ class CarController(object):
     ### Generate CAN Messages ###
 
     self.lkas11_cnt = self.cnt % 0x10
-    self.clu11_cnt = self.cnt % 0x10
+#   self.clu11_cnt = self.cnt % 0x10
     self.mdps12_cnt = self.cnt % 0x100
 
     if self.camera_disconnected:
@@ -180,11 +184,12 @@ class CarController(object):
       can_sends.append(create_mdps12(self.packer, self.car_fingerprint, self.mdps12_cnt, CS.mdps12, CS.lkas11, \
                                     self.checksum))
 
-    if pcm_cancel_cmd:
-      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, 0))
-    elif CS.stopped and (self.cnt - self.last_resume_cnt) > 5:
-      self.last_resume_cnt = self.cnt
-      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, 0))
+#    if pcm_cancel_cmd:
+#      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL, 0))
+    if CS.stopped and (self.cnt - self.last_resume_cnt) > 20:
+      if (self.cnt - self.last_resume_cnt) > 20:
+        self.last_resume_cnt = self.cnt
+      can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, self.clu11_cnt))
 
     self.cnt += 1
 

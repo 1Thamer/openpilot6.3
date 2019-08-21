@@ -39,13 +39,14 @@ class CarInterface(object):
     return 1.0
 
   @staticmethod
-  def get_params(candidate, fingerprint, vin=""):
+  def get_params(candidate, fingerprint, vin="", is_panda_black=False):
 
     ret = car.CarParams.new_message()
 
     ret.carName = "hyundai"
     ret.carFingerprint = candidate
     ret.carVin = vin
+    ret.isPandaBlack = is_panda_black
     ret.radarOffCan = True
     ret.safetyModel = car.CarParams.SafetyModel.hyundai
     ret.enableCruise = True  # stock acc
@@ -107,17 +108,16 @@ class CarInterface(object):
     return ret
 
   # returns a car.CarState
-  def update(self, c):
+  def update(self, c, can_strings):
     # ******************* do can recv *******************
-    canMonoTimes = []
-    can_rcv_valid, _ = self.cp.update(int(sec_since_boot() * 1e9), True)
-    cam_rcv_valid, _ = self.cp_cam.update(int(sec_since_boot() * 1e9), False)
+    self.cp.update_strings(int(sec_since_boot() * 1e9), can_strings)
+    self.cp_cam.update_strings(int(sec_since_boot() * 1e9), can_strings)
 
     self.CS.update(self.cp, self.cp_cam)
     # create message
     ret = car.CarState.new_message()
 
-    ret.canValid = can_rcv_valid and cam_rcv_valid and self.cp.can_valid  # TODO: check cp_cam validity
+    ret.canValid = self.cp.can_valid  # TODO: check cp_cam validity
 
     # speeds
     ret.vEgo = self.CS.v_ego
@@ -177,12 +177,6 @@ class CarInterface(object):
     ret.doorOpen = not self.CS.door_all_closed
     ret.seatbeltUnlatched = not self.CS.seatbelt
 
-    # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
-    if ret.vEgo < (self.CS.min_steer_speed + 2.) and self.CS.min_steer_speed > 10.:
-      self.low_speed_alert = True
-    if ret.vEgo > (self.CS.min_steer_speed + 4.):
-      self.low_speed_alert = False
-
     events = []
     if (self.CS.gear_shifter != 'drive') and (self.CS.gear_tcu != 'drive') and (self.CS.gear_shifter_cluster != 'drive'):
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
@@ -209,11 +203,10 @@ class CarInterface(object):
     if ret.gasPressed:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
-    if self.low_speed_alert:
+    if self.CS.low_speed_alert:
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     ret.events = events
-    ret.canMonoTimes = canMonoTimes
 
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
