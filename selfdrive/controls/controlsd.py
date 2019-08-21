@@ -213,7 +213,7 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
   return state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last
 
 
-def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last,
+def state_control(frame, rcv_frame, plan, path_plan, live_params, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last,
                   AM, rk, driver_status, LaC, LoC, VM, read_only, is_metric, cal_perc):
   """Given the state, this function returns an actuators packet"""
 
@@ -225,7 +225,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   # check if user has interacted with the car
   driver_engaged = len(CS.buttonEvents) > 0 or \
                    v_cruise_kph != v_cruise_kph_last or \
-                   CS.steeringPressed
+                   CS.steeringPressed or CS.vEgo == 0.0
 
   # add eventual driver distracted events
   events = driver_status.update(events, driver_engaged, isActive(state), CS.standstill)
@@ -261,7 +261,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
                                               v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
   # Steering PID loop and lateral MPC
-  actuators.steer, actuators.steerAngle, lac_log = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate, CS.steeringTorqueEps, CS.steeringPressed, CP, VM, path_plan)
+  actuators.steer, actuators.steerAngle, lac_log = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate, CS.steeringTorqueEps, CS.steeringPressed, CS.leftBlinker or CS.rightBlinker, CP, VM, path_plan, live_params)
 
   # Send a "steering required alert" if saturation count has reached the limit
   if LaC.sat_flag and CP.steerLimitAlert:
@@ -350,7 +350,8 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
     "vEgo": CS.vEgo,
     "vEgoRaw": CS.vEgoRaw,
     "angleSteers": CS.steeringAngle,
-    "curvature": VM.calc_curvature((CS.steeringAngle - sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, CS.vEgo),
+    "dampAngleSteers": float(LaC.damp_angle_steers),
+    "curvature": VM.calc_curvature((CS.steeringAngle - sm['liveParameters'].angleOffsetAverage - LaC.angle_bias) * CV.DEG_TO_RAD, CS.vEgo),
     "steerOverride": CS.steeringPressed,
     "state": state,
     "engageable": not bool(get_events(events, [ET.NO_ENTRY])),
@@ -361,10 +362,12 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
     "uiAccelCmd": float(LoC.pid.i),
     "ufAccelCmd": float(LoC.pid.f),
     "angleSteersDes": float(LaC.angle_steers_des),
+    "dampAngleSteersDes": float(LaC.damp_angle_steers_des),
     "vTargetLead": float(v_acc),
     "aTarget": float(a_acc),
     "jerkFactor": float(sm['plan'].jerkFactor),
     "angleModelBias": 0.,
+    "dampAngleBias": float(LaC.angle_bias),
     "gpsPlannerActive": sm['plan'].gpsPlannerActive,
     "vCurvature": sm['plan'].vCurvature,
     "decelForModel": sm['plan'].longitudinalPlanSource == log.Plan.LongitudinalPlanSource.model,
@@ -434,7 +437,7 @@ def controlsd_thread(gctx=None):
   is_metric = params.get("IsMetric") == "1"
   passive = params.get("Passive") != "0"
 
-  sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan'])
+  sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan', 'liveParameters'])
 
   logcan = messaging.sub_sock(service_list['can'].port)
 
@@ -544,7 +547,7 @@ def controlsd_thread(gctx=None):
 
     # Compute actuators (runs PID loops and lateral MPC)
     actuators, v_cruise_kph, driver_status, v_acc, a_acc, lac_log = \
-      state_control(sm.frame, sm.rcv_frame, sm['plan'], sm['pathPlan'], CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
+      state_control(sm.frame, sm.rcv_frame, sm['plan'], sm['pathPlan'], sm['liveParameters'], CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
                     driver_status, LaC, LoC, VM, read_only, is_metric, cal_perc)
 
     prof.checkpoint("State Control")

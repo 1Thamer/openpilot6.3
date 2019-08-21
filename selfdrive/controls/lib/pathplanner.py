@@ -2,7 +2,6 @@ import os
 import math
 import numpy as np
 
-# from common.numpy_fast import clip
 from common.realtime import sec_since_boot
 from selfdrive.services import service_list
 from selfdrive.swaglog import cloudlog
@@ -12,7 +11,7 @@ from selfdrive.controls.lib.lane_planner import LanePlanner
 import selfdrive.messaging as messaging
 
 LOG_MPC = os.environ.get('LOG_MPC', False)
-
+MAX_STEER_ACCEL = 10.5
 
 def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
   states[0].x = v_ego * delay
@@ -24,6 +23,10 @@ class PathPlanner(object):
   def __init__(self, CP):
     self.LP = LanePlanner()
 
+    self.l_poly = libmpc_py.ffi.new("double[4]")
+    self.r_poly = libmpc_py.ffi.new("double[4]")
+    self.p_poly = libmpc_py.ffi.new("double[4]")
+
     self.last_cloudlog_t = 0
 
     self.plan = messaging.pub_sock(service_list['pathPlan'].port)
@@ -31,11 +34,10 @@ class PathPlanner(object):
 
     self.setup_mpc(CP.steerRateCost)
     self.solution_invalid_cnt = 0
-    self.path_offset_i = 0.0
 
   def setup_mpc(self, steer_rate_cost):
     self.libmpc = libmpc_py.libmpc
-    self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, steer_rate_cost)
+    self.libmpc.init(MPC_COST_LAT.PATH * 0.1, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, steer_rate_cost * 0.7)
 
     self.mpc_solution = libmpc_py.ffi.new("log_t *")
     self.cur_state = libmpc_py.ffi.new("state_t *")
@@ -43,66 +45,70 @@ class PathPlanner(object):
     self.cur_state[0].y = 0.0
     self.cur_state[0].psi = 0.0
     self.cur_state[0].delta = 0.0
+    self.mpc_angles = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    self.mpc_rates = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    self.mpc_times = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
     self.angle_steers_des = 0.0
     self.angle_steers_des_mpc = 0.0
     self.angle_steers_des_prev = 0.0
     self.angle_steers_des_time = 0.0
+    self.rate_des_prev = 0.0
+    self.angle_offset = 0.0
 
   def update(self, sm, CP, VM):
     v_ego = sm['carState'].vEgo
     angle_steers = sm['carState'].steeringAngle
-    active = sm['controlsState'].active
-
+    cur_time = sec_since_boot()
     angle_offset_average = sm['liveParameters'].angleOffsetAverage
-    angle_offset_bias = sm['controlsState'].angleModelBias + angle_offset_average
+    angle_offset = sm['controlsState'].dampAngleBias + angle_offset_average
 
-    self.LP.update(v_ego, sm['model'])
+    self.LP.update(sm['model'], sm['controlsState'])
 
     # Run MPC
     self.angle_steers_des_prev = self.angle_steers_des_mpc
     VM.update_params(sm['liveParameters'].stiffnessFactor, sm['liveParameters'].steerRatio)
     curvature_factor = VM.curvature_factor(v_ego)
+    self.l_poly = list(self.LP.l_poly)
+    self.r_poly = list(self.LP.r_poly)
+    self.p_poly = list(self.LP.p_poly)
+    self.d_poly = list(self.LP.d_poly)
 
-    # TODO: Check for active, override, and saturation
-    # if active:
-    #   self.path_offset_i += self.LP.d_poly[3] / (60.0 * 20.0)
-    #   self.path_offset_i = clip(self.path_offset_i, -0.5,  0.5)
-    #   self.LP.d_poly[3] += self.path_offset_i
-    # else:
-    #   self.path_offset_i = 0.0
+    # prevent over-inflation of desired angle
+    actual_delta = math.radians(angle_steers - angle_offset) / VM.sR
+    self.cur_state[0].delta = actual_delta
 
     # account for actuation delay
-    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset_average, curvature_factor, VM.sR, CP.steerActuatorDelay)
+    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset, curvature_factor, VM.sR, CP.steerActuatorDelay)
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
-                        list(self.LP.l_poly), list(self.LP.r_poly), list(self.LP.d_poly),
-                        self.LP.l_prob, self.LP.r_prob, curvature_factor, v_ego_mpc, self.LP.lane_width)
-
-    # reset to current steer angle if not active or overriding
-    if active:
-      delta_desired = self.mpc_solution[0].delta[1]
-      rate_desired = math.degrees(self.mpc_solution[0].rate[0] * VM.sR)
-    else:
-      delta_desired = math.radians(angle_steers - angle_offset_bias) / VM.sR
-      rate_desired = 0.0
-
-    self.cur_state[0].delta = delta_desired
-
-    self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.sR) + angle_offset_bias)
+                        self.l_poly, self.r_poly, self.d_poly,
+                        self.LP.l_prob, self.LP.r_prob, 1.0, curvature_factor, v_ego_mpc, self.LP.lane_width)
 
     #  Check for infeasable MPC solution
     mpc_nans = np.any(np.isnan(list(self.mpc_solution[0].delta)))
-    t = sec_since_boot()
-    if mpc_nans:
-      self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, CP.steerRateCost)
-      self.cur_state[0].delta = math.radians(angle_steers - angle_offset_bias) / VM.sR
 
-      if t > self.last_cloudlog_t + 5.0:
-        self.last_cloudlog_t = t
+    if not mpc_nans:
+      self.mpc_angles[0] = float(math.degrees(self.mpc_solution[0].delta[0] * VM.sR) + angle_offset_average)
+      self.mpc_times[0] = sm.logMonoTime['model'] * 1e-9
+      for i in range(1,7):
+        time_step = 0.05 if i < 6 else 0.15
+        self.mpc_times[i] = self.mpc_times[i-1] + time_step
+        self.mpc_rates[i-1] = float(math.degrees(self.mpc_solution[0].rate[i-1] * VM.sR))
+        self.mpc_angles[i] = (time_step * self.mpc_rates[i-1] + self.mpc_angles[i-1])
+
+      self.cur_state[0].delta = self.mpc_solution[0].delta[1]
+      rate_desired = math.degrees(self.mpc_solution[0].rate[0] * VM.sR)
+      self.angle_steers_des_mpc = float(math.degrees(self.mpc_solution[0].delta[1] * VM.sR) + angle_offset_average)
+    else:
+      self.libmpc.init(MPC_COST_LAT.PATH * 0.1, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, CP.steerRateCost * 0.7)
+      rate_desired = 0.0
+      if cur_time > self.last_cloudlog_t + 5.0:
+        self.last_cloudlog_t = cur_time
         cloudlog.warning("Lateral mpc - nan: True")
 
+    self.rate_des_prev = rate_desired
     if self.mpc_solution[0].cost > 20000. or mpc_nans:   # TODO: find a better way to detect when MPC did not converge
       self.solution_invalid_cnt += 1
     else:
@@ -113,15 +119,21 @@ class PathPlanner(object):
     plan_send.init('pathPlan')
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'liveParameters', 'model'])
     plan_send.pathPlan.laneWidth = float(self.LP.lane_width)
+    plan_send.pathPlan.pPoly = [float(x) for x in self.LP.p_poly]
     plan_send.pathPlan.dPoly = [float(x) for x in self.LP.d_poly]
-    plan_send.pathPlan.lPoly = [float(x) for x in self.LP.l_poly]
+    plan_send.pathPlan.cPoly = [float(x) for x in self.LP.c_poly]
+    plan_send.pathPlan.lPoly = [float(x) for x in self.l_poly]
     plan_send.pathPlan.lProb = float(self.LP.l_prob)
-    plan_send.pathPlan.rPoly = [float(x) for x in self.LP.r_poly]
+    plan_send.pathPlan.cProb = float(self.LP.c_prob)
+    plan_send.pathPlan.rPoly = [float(x) for x in self.r_poly]
     plan_send.pathPlan.rProb = float(self.LP.r_prob)
-
     plan_send.pathPlan.angleSteers = float(self.angle_steers_des_mpc)
     plan_send.pathPlan.rateSteers = float(rate_desired)
-    plan_send.pathPlan.angleOffset = float(self.path_offset_i)
+    plan_send.pathPlan.angleBias = float(angle_offset - angle_offset_average)
+    plan_send.pathPlan.angleOffset = float(angle_offset_average)
+    plan_send.pathPlan.mpcAngles = [float(x) for x in self.mpc_angles]
+    plan_send.pathPlan.mpcTimes = [float(x) for x in self.mpc_times]
+    plan_send.pathPlan.mpcRates = [float(x) for x in self.mpc_rates]
     plan_send.pathPlan.mpcSolutionValid = bool(plan_solution_valid)
     plan_send.pathPlan.paramsValid = bool(sm['liveParameters'].valid)
     plan_send.pathPlan.sensorValid = bool(sm['liveParameters'].sensorValid)
@@ -129,12 +141,11 @@ class PathPlanner(object):
 
     self.plan.send(plan_send.to_bytes())
 
-    if LOG_MPC:
-      dat = messaging.new_message()
-      dat.init('liveMpc')
-      dat.liveMpc.x = list(self.mpc_solution[0].x)
-      dat.liveMpc.y = list(self.mpc_solution[0].y)
-      dat.liveMpc.psi = list(self.mpc_solution[0].psi)
-      dat.liveMpc.delta = list(self.mpc_solution[0].delta)
-      dat.liveMpc.cost = self.mpc_solution[0].cost
-      self.livempc.send(dat.to_bytes())
+    dat = messaging.new_message()
+    dat.init('liveMpc')
+    dat.liveMpc.x = list(self.mpc_solution[0].x)
+    dat.liveMpc.y = list(self.mpc_solution[0].y)
+    dat.liveMpc.psi = list(self.mpc_solution[0].psi)
+    dat.liveMpc.delta = list(self.mpc_solution[0].delta)
+    dat.liveMpc.cost = self.mpc_solution[0].cost
+    self.livempc.send(dat.to_bytes())

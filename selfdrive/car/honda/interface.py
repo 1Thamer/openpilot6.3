@@ -96,6 +96,11 @@ class CarInterface(object):
     else:
       self.compute_gb = compute_gb_honda
 
+    if self.CS.CP.carFingerprint in HONDA_BOSCH and self.CS.CP.carFingerprint not in (CAR.CRV_HYBRID, CAR.CRV, CAR.CRV_5G):
+      self.bosch_honda = True
+    else:
+      self.bosch_honda = False
+
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
 
@@ -160,8 +165,27 @@ class CarInterface(object):
     # Tire stiffness factor fictitiously lower if it includes the steering column torsion effect.
     # For modeling details, see p.198-200 in "The Science of Vehicle Dynamics (2014), M. Guiggiani"
 
-    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-    ret.lateralTuning.pid.kf = 0.00006 # conservative feed-forward
+    if True == True:
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kf = 0.00006 # conservative feed-forward
+      ret.lateralTuning.pid.dampTime = 0.0
+      ret.lateralTuning.pid.reactMPC = 0.0
+      ret.lateralTuning.pid.dampMPC = 0.1
+      ret.lateralTuning.pid.rateFFGain = 0.4
+      ret.lateralTuning.pid.polyFactor = 0.001
+      ret.lateralTuning.pid.polyDampTime = 0.15
+      ret.lateralTuning.pid.polyReactTime = 0.5
+    else:
+      ret.lateralTuning.init('lqr')
+      ret.lateralTuning.lqr.scale = 1500.0
+      ret.lateralTuning.lqr.ki = 0.01
+
+      ret.lateralTuning.lqr.a = [0., 1., -0.22619643, 1.21822268]
+      ret.lateralTuning.lqr.b = [-1.92006585e-04, 3.95603032e-05]
+      ret.lateralTuning.lqr.c = [1., 0.]
+      ret.lateralTuning.lqr.k = [-110.73572306, 451.22718255]
+      ret.lateralTuning.lqr.l = [0.03233671, 0.03185757]
+      ret.lateralTuning.lqr.dcGain = 0.002237852961363602
 
     if candidate in [CAR.CIVIC, CAR.CIVIC_BOSCH]:
       stop_and_go = True
@@ -350,7 +374,7 @@ class CarInterface(object):
     ret.longitudinalTuning.deadzoneV = [0.]
 
     ret.stoppingControl = True
-    ret.steerLimitAlert = True
+    ret.steerLimitAlert = False
     ret.startAccel = 0.5
 
     ret.steerActuatorDelay = 0.1
@@ -500,21 +524,32 @@ class CarInterface(object):
     if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
 
+    if ret.brakePressed and not self.brake_pressed_prev:
+      self.CS.auto_resume = ret.cruiseState.enabled
+
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.gasPressed and not self.gas_pressed_prev) or \
+    if (ret.gasPressed and not self.gas_pressed_prev and not self.bosch_honda) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    if ret.gasPressed:
+    if ret.gasPressed and not self.bosch_honda:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
+
+    if not self.CP.radarOffCan and self.CS.auto_resume and self.CS.pedal_gas > 0 and self.CS.v_ego > 3.0:
+      if not self.CS.auto_resuming:
+        self.CS.auto_resuming = True
+      else:
+        events.append(create_event('buttonEnable', [ET.ENABLE]))
+        self.CS.auto_resuming = False
+        self.CS.auto_resume = False
 
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
     if self.CP.enableCruise and not ret.cruiseState.enabled and c.actuators.brake <= 0.:
       # non loud alert if cruise disbales below 25mph as expected (+ a little margin)
       if ret.vEgo < self.CP.minEnableSpeed + 2.:
-        events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
-      else:
+      #  events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
+      #else:
         events.append(create_event("cruiseDisabled", [ET.IMMEDIATE_DISABLE]))
     if self.CS.CP.minEnableSpeed > 0 and ret.vEgo < 0.001:
       events.append(create_event('manualRestart', [ET.WARNING]))
@@ -544,6 +579,8 @@ class CarInterface(object):
          (enable_pressed and get_events(events, [ET.NO_ENTRY])):
         events.append(create_event('buttonEnable', [ET.ENABLE]))
         self.last_enable_sent = cur_time
+      elif ret.cruiseState.enabled and self.CS.auto_resume:
+        events.append(create_event('buttonEnable', [ET.ENABLE]))
     elif enable_pressed:
       events.append(create_event('buttonEnable', [ET.ENABLE]))
 
