@@ -81,6 +81,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     tooDistracted @56;
     posenetInvalid @57;
     soundsUnavailable @58;
+    turningIndicatorOn @59;
   }
 }
 
