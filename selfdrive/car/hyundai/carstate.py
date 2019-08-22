@@ -27,6 +27,7 @@ def get_can_parser(CP):
     ("BRAKE_ACT", "EMS12", 0),
     ("PV_AV_CAN", "EMS12", 0),
     ("TPS", "EMS12", 0),
+    ("CRUISE_LAMP_M", "EMS16", 0),
 
     ("CYL_PRES", "ESP12", 0),
 
@@ -176,7 +177,7 @@ class CarState(object):
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
     self.main_on = True
     #self.acc_active = cp.vl["SCC11"]['MainMode_ACC'] != 0
-    self.acc_active = cp.vl["LVR12"]["CF_Lvr_CruiseSet"] > 1
+    self.acc_active = cp.vl['EMS16']['CRUISE_LAMP_M']
     self.pcm_acc_status = int(self.acc_active)
 
     # calc best v_ego estimate, by averaging two opposite corners
@@ -216,7 +217,7 @@ class CarState(object):
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["MDPS11"]['CR_Mdps_DrvTq']
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
-    self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
+    self.stopped = False
 
     self.user_brake = 0
 
