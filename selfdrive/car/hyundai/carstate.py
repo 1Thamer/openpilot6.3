@@ -82,6 +82,8 @@ def get_can_parser(CP):
 
     ("SAS_Angle", "SAS11", 0),
     ("SAS_Speed", "SAS11", 0),
+    
+    ("CF_Spas_FI_Ind", "SPAS12", 0),
   ]
 
   checks = [
@@ -259,6 +261,10 @@ class CarState(object):
       self.gear_tcu = "drive"
     else:
       self.gear_tcu = "unknown"
+
+    gear3 = cp.vl["SPAS12"]["CF_Spas_FI_Ind"]
+    if gear3 == 1:
+      self.gear_shifter_cluster = "drive"
 
     self.lkas_button_on = 7 >= cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"] != 0
     
