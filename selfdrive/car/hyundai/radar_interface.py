@@ -29,6 +29,7 @@ class RadarInterface(object):
     self.delay = 0.1
     self.rcp = get_radar_can_parser(CP)
     self.updated_messages = set()
+    self.track_id = 0
     self.no_radar = False
 
   def update(self, can_strings):
@@ -57,6 +58,8 @@ class RadarInterface(object):
 
     valid = cpt["SCC11"]['ACC_ObjStatus']
     if valid:
+      self.pts[0] = car.RadarData.RadarPoint.new_message()
+      self.pts[0].trackId = self.track_id
       self.pts[0].dRel = cpt["SCC11"]['ACC_ObjDist']  # from front of car
       self.pts[0].yRel = cpt["SCC11"]['ACC_ObjLatPos']  # in car frame's y axis, left is negative
       self.pts[0].vRel = cpt["SCC11"]['ACC_ObjRelSpd']
