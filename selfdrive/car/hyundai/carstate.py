@@ -264,7 +264,7 @@ class CarState(object):
 
     gear3 = cp.vl["SPAS12"]["CF_Spas_FI_Ind"]
     if gear3 == 1:
-      self.gear_shifter_cluster = "drive"
+      self.gear_tcu = "drive"
 
     self.lkas_button_on = 7 >= cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"] != 0
     
