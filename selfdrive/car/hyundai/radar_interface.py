@@ -29,6 +29,7 @@ class RadarInterface(object):
     self.delay = 0.1
     self.rcp = get_radar_can_parser(CP)
     self.updated_messages = set()
+    self.trigger_msg = 0x420
     self.track_id = 0
     self.no_radar = False
 
@@ -41,6 +42,9 @@ class RadarInterface(object):
     tm = int(sec_since_boot() * 1e9)
     vls = self.rcp.update_strings(tm, can_strings)
     self.updated_messages.update(vls)
+
+    if self.trigger_msg not in self.updated_messages:
+      return None
 
     rr =  self._update(self.updated_messages)
     self.updated_messages.clear()
