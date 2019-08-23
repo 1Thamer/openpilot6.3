@@ -63,7 +63,7 @@ class CarController(object):
 
     #if pcm_cancel_cmd:
       #can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.CANCEL))
-    if CS.stopped and (self.cnt - self.last_resume_cnt) > 20:
+    if CS.stopped and CS.lead_distance > 4.85 and (self.cnt - self.last_resume_cnt) > 10:
       if (self.cnt - self.last_resume_cnt) % 5 == 0:
         self.last_resume_cnt = self.cnt
       can_sends.append(create_clu11(self.packer, CS.clu11, Buttons.RES_ACCEL, self.clu11_cnt))
