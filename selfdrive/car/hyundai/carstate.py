@@ -27,6 +27,7 @@ def get_can_parser(CP):
     ("BRAKE_ACT", "EMS12", 0),
     ("PV_AV_CAN", "EMS12", 0),
     ("TPS", "EMS12", 0),
+    ("CRUISE_LAMP_M", "EMS16", 0),
 
     ("CYL_PRES", "ESP12", 0),
 
@@ -49,6 +50,8 @@ def get_can_parser(CP):
     ("CF_Clu_InhibitR", "CLU15", 0),
 
     ("CF_Lvr_Gear","LVR12",0),
+    ("CF_Lvr_CruiseSet", "LVR12", 0),
+
     ("CUR_GR", "TCU12",0),
 
     ("ACCEnable", "TCS13", 0),
@@ -86,18 +89,11 @@ def get_can_parser(CP):
 
   checks = [
     # address, frequency
-    ("MDPS12", 50),
-    ("MDPS11", 100),
     ("TCS15", 10),
-    ("TCS13", 50),
     ("CLU11", 50),
     ("ESP12", 100),
-    ("EMS12", 100),
     ("CGW1", 10),
-    ("CGW4", 5),
     ("WHL_SPD11", 50),
-    ("SCC11", 50),
-    ("SCC12", 50),
     ("SAS11", 100)
   ]
 
@@ -173,7 +169,8 @@ class CarState(object):
 
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
     self.main_on = True
-    self.acc_active = cp.vl["SCC11"]['MainMode_ACC'] != 0
+    #self.acc_active = cp.vl["SCC11"]['MainMode_ACC'] != 0
+    self.acc_active = cp.vl['EMS16']['CRUISE_LAMP_M']
     self.pcm_acc_status = int(self.acc_active)
 
     # calc best v_ego estimate, by averaging two opposite corners
@@ -195,7 +192,8 @@ class CarState(object):
     self.a_ego = float(v_ego_x[1])
     is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
     speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
-    self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
+    #self.cruise_set_speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
+    self.cruise_set_speed = cp.vl["LVR12"]["CF_Lvr_CruiseSet"] * speed_conv
     self.standstill = not v_wheel > 0.1
 
     self.angle_steers = cp.vl["SAS11"]['SAS_Angle']
@@ -212,16 +210,16 @@ class CarState(object):
     self.brake_error = 0
     self.steer_torque_driver = cp.vl["MDPS11"]['CR_Mdps_DrvTq']
     self.steer_torque_motor = cp.vl["MDPS12"]['CR_Mdps_OutTq']
-    self.stopped = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
+    self.stopped = False
 
     self.user_brake = 0
 
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
     self.brake_lights = bool(self.brake_pressed)
-    if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
-      self.pedal_gas = 0
-    else:
-      self.pedal_gas = cp.vl["EMS12"]['TPS']
+    #if (cp.vl["TCS13"]["DriverOverride"] == 0 and cp.vl["TCS13"]['ACC_REQ'] == 1):
+    self.pedal_gas = 0
+    #else:
+      #self.pedal_gas = cp.vl["EMS12"]['TPS']
     self.car_gas = cp.vl["EMS12"]['TPS']
 
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
