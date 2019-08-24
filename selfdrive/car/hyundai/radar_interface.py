@@ -31,7 +31,7 @@ class RadarInterface(object):
     self.updated_messages = set()
     self.trigger_msg = 0x420
     self.track_id = 0
-    self.no_radar = False
+    self.no_radar = True
 
   def update(self, can_strings):
     if self.no_radar:
