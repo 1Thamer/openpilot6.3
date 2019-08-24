@@ -37,8 +37,7 @@ static void hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
 
   // enter controls on rising edge of ACC, exit controls on ACC off
-  controls_allowed = 1;
-  if (addr == 1057) {
+  if (addr == 872) {
     // 2 bits: 13-14
     //int cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3;
     //if (cruise_engaged && !hyundai_cruise_engaged_last) {
@@ -152,7 +151,7 @@ static int hyundai_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
 
 static void hyundai_init(int16_t param) {
   UNUSED(param);
-  controls_allowed = 0;
+  controls_allowed = 1;
   hyundai_giraffe_switch_2 = 0;
 }
 
