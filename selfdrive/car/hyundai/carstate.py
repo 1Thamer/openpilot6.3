@@ -88,18 +88,11 @@ def get_can_parser(CP):
 
   checks = [
     # address, frequency
-    ("MDPS12", 50),
-    ("MDPS11", 100),
     ("TCS15", 10),
-    ("TCS13", 50),
     ("CLU11", 50),
     ("ESP12", 100),
-    ("EMS12", 100),
     ("CGW1", 10),
-    ("CGW4", 5),
     ("WHL_SPD11", 50),
-    ("SCC11", 50),
-    ("SCC12", 50),
     ("SAS11", 100)
   ]
 
