@@ -256,7 +256,7 @@ class CarState(object):
       self.gear_tcu = "unknown"
 
     gear3 = cp.vl["SPAS12"]["CF_Spas_FI_Ind"]
-    if gear3:
+    if gear3 == 1:
       self.gear_tcu = "drive"
 
     self.lkas_button_on = 7 >= cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"] != 0
