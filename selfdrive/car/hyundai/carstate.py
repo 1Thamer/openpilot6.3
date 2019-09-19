@@ -170,7 +170,7 @@ class CarState(object):
     self.seatbelt = cp.vl["CGW1"]['CF_Gway_DrvSeatBeltSw']
 
     self.brake_pressed = cp.vl["TCS13"]['DriverBraking']
-    self.esp_disabled = 0
+    self.esp_disabled = 0 # openpilot still works even if esp is turned off
    # self.esp_disabled = cp.vl["TCS15"]['ESC_Off_Step']
 
     self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
